@@ -12,7 +12,35 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\PandaNuGet\PandaNuGet.csproj"/>
+        <ProjectReference Include="..\..\src\SharedKernel\SharedKernel.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Update="wwwroot\assets\js\docs.js">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <Pack>true</Pack>
+        <PackagePath>contentFiles\any\any</PackagePath>
+      </Content>
+      <Content Update="wwwroot\assets\css\panda-style.css">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <Pack>true</Pack>
+        <PackagePath>contentFiles\any\any</PackagePath>
+      </Content>
+      <Content Update="wwwroot\assets\images\logo.svg">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <Pack>true</Pack>
+        <PackagePath>contentFiles\any\any</PackagePath>
+      </Content>
+      <Content Update="wwwroot\assets\images\favicon.svg">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <Pack>true</Pack>
+        <PackagePath>contentFiles\any\any</PackagePath>
+      </Content>
+      <Content Update="wwwroot\assets\images\logo-wording.svg">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <Pack>true</Pack>
+        <PackagePath>contentFiles\any\any</PackagePath>
+      </Content>
     </ItemGroup>
 
 </Project>

@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <PackageIcon>pandatech.png</PackageIcon>
+        <PackageReadmeFile>Readme.md</PackageReadmeFile>
+        <Authors>Pandatech</Authors>
+        <Copyright>MIT</Copyright>
+        <Version>1.0.0</Version>
+        <PackageId>Pandatech.SharedKernel</PackageId>
+        <Title>Pandatech Shared Kernel Library</Title>
+        <PackageTags>Pandatech, shared kernel, library, OpenAPI, Swagger, utilities, scalar</PackageTags>
+        <Description>Pandatech.SharedKernel provides centralized configurations, utilities, and extensions for ASP.NET Core projects. For more information refere to readme.md document.</Description>
+        <RepositoryUrl>https://github.com/PandaTechAM/be-lib-sharedkernel</RepositoryUrl>
+        <PackageReleaseNotes>InitialCommit</PackageReleaseNotes>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="..\..\pandatech.png" Pack="true" PackagePath="\"/>
+        <None Include="..\..\Readme.md" Pack="true" PackagePath="\"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
+        <PackageReference Include="Pandatech.RegexBox" Version="2.0.1" />
+        <PackageReference Include="Scalar.AspNetCore" Version="1.2.37" />
+        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="7.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="wwwroot\**" CopyToOutputDirectory="PreserveNewest" Pack="true" PackagePath="contentFiles\any\any" />
+    </ItemGroup>
+
+
+</Project>
