@@ -1,3 +1,5 @@
+using DistributedCache.Extensions;
+using DistributedCache.Options;
 using FluentMinimalApiMapper;
 using Microsoft.AspNetCore.Mvc;
 using SharedKernel.Demo;
@@ -21,14 +23,15 @@ builder
    .AddResponseCrafter(NamingConvention.ToSnakeCase)
    .AddOpenApi()
    .AddOpenTelemetry()
-   .AddEndpoints(AssemblyRegistry.ToArray())
+   .AddMinimalApis(AssemblyRegistry.ToArray())
    .AddControllers(AssemblyRegistry.ToArray())
    .AddMediatrWithBehaviors(AssemblyRegistry.ToArray())
    .AddResilienceDefaultPipeline()
+   .AddRedis(KeyPrefix.AssemblyNamePrefix)
+   .AddDistributedSignalR("DistributedSignalR") // or .AddSignalR()
    .MapDefaultTimeZone()
-   .AddCors();
-
-builder.Services.AddHealthChecks();
+   .AddCors()
+   .AddHealthChecks();
 
 
 var app = builder.Build();
@@ -37,11 +40,12 @@ app
    .UseRequestResponseLogging()
    .UseResponseCrafter()
    .UseCors()
-   .MapEndpoints()
+   .MapMinimalApis()
    .MapDefaultEndpoints()
    .EnsureHealthy()
    .ClearAssemblyRegistry()
-   .UseOpenApi();
+   .UseOpenApi()
+   .MapControllers();
 
 app.MapPost("/params", ([AsParameters] TestTypes testTypes) => TypedResults.Ok(testTypes));
 app.MapPost("/body", ([FromBody] TestTypes testTypes) => TypedResults.Ok(testTypes));

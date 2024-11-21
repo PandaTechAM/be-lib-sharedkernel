@@ -23,6 +23,7 @@ This package currently supports:
 - **Cors Configuration** with easy configuration options.
 - **Resilience Pipelines** for `HttpClient` operations.
 - **Controller Extensions** for mapping old-style MVC controllers.
+- **SignalR Extensions** for adding simple SignalR or distributed SignalR backed with Redis.
 - **OpenTelemetry Integration** for tracking metrics, traces, and logging.
 - **Health Checks** with default endpoints and startup validation.
 - Various **Extensions and Utilities**, including enumerable, string, and queryable extensions.
@@ -121,6 +122,7 @@ Follow this example to set up your project with all the features provided by thi
     },
     "RepositoryName": "be-lib-sharedkernel",
     "ConnectionStrings": {
+        "Redis": "localhost:6379",
         "PersistentStorage": "/persistence"
     },
     "Security": {
@@ -143,14 +145,15 @@ builder
    .AddResponseCrafter(NamingConvention.ToSnakeCase)
    .AddOpenApi()
    .AddOpenTelemetry()
-   .AddEndpoints(AssemblyRegistry.ToArray())
+   .AddMapMinimalApis(AssemblyRegistry.ToArray())
    .AddControllers(AssemblyRegistry.ToArray())
    .AddMediatrWithBehaviors(AssemblyRegistry.ToArray())
    .AddResilienceDefaultPipeline()
    .MapDefaultTimeZone()
-   .AddCors();
-
-builder.Services.AddHealthChecks();
+   .AddRedis(KeyPrefix.AssemblyNamePrefix)
+   .AddDistributedSignalR("DistributedSignalR") // or .AddSignalR()
+   .AddCors()
+   .AddHealthChecks();
 
 
 var app = builder.Build();
@@ -159,11 +162,12 @@ app
    .UseRequestResponseLogging()
    .UseResponseCrafter()
    .UseCors()
-   .MapEndpoints()
+   .MapMinimalApis()
    .MapDefaultEndpoints()
    .EnsureHealthy()
    .ClearAssemblyRegistry()
-   .UseOpenApi();
+   .UseOpenApi()
+   .MapControllers();
 
 app.LogStartSuccess();
 app.Run();
@@ -531,11 +535,16 @@ The default resilience pipeline includes the following policies:
 
 For mapping old style MVC controllers, use `builder.AddControllers()`.
 The `AddControllers()` method can also accept assembly names as parameters to scan for controllers.
+The `MapControllers()` method maps the controllers to the application.
 
 Example:
 
 ```csharp
+var builder = WebApplication.CreateBuilder(args);
 builder.AddControllers([typeof(Program).Assembly]);
+var app = builder.Build();
+app.MapControllers();
+app.Run();
 ```
 
 ## OpenTelemetry
@@ -598,6 +607,7 @@ This package includes various extensions and utilities to aid development:
 - **Pandatech.FluentMinimalApiMapper:** Simplifies mapping in minimal APIs.
 - **Pandatech.RegexBox:** A collection of useful regular expressions.
 - **Pandatech.ResponseCrafter:** A utility for crafting consistent API responses.
+- **Pandatech.DistributedCache:** A distributed cache provider for Redis.
 
 ## License
 

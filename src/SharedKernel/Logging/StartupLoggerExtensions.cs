@@ -1,6 +1,6 @@
 using System.Globalization;
+using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
-using Newtonsoft.Json;
 
 namespace SharedKernel.Logging;
 
@@ -11,7 +11,7 @@ public static class StartupLoggerExtensions
    public static WebApplicationBuilder LogStartAttempt(this WebApplicationBuilder builder)
    {
       var now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
-      Console.WriteLine(JsonConvert.SerializeObject(new
+      Console.WriteLine(JsonSerializer.Serialize(new
       {
          Timestamp = now,
          Event = "ApplicationStartAttempt",
@@ -27,7 +27,7 @@ public static class StartupLoggerExtensions
                         .TotalMilliseconds;
       var deltaInSeconds = Math.Round(delta / 1000, 2);
       var now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
-      Console.WriteLine(JsonConvert.SerializeObject(new
+      Console.WriteLine(JsonSerializer.Serialize(new
       {
          Timestamp = now,
          Event = "ApplicationStartSuccess",
@@ -40,7 +40,7 @@ public static class StartupLoggerExtensions
       string moduleName)
    {
       var now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
-      Console.WriteLine(JsonConvert.SerializeObject(new
+      Console.WriteLine(JsonSerializer.Serialize(new
       {
          Timestamp = now,
          Event = "ModuleRegistrationSuccess",
@@ -52,7 +52,7 @@ public static class StartupLoggerExtensions
    public static WebApplication LogModuleUseSuccess(this WebApplication app, string moduleName)
    {
       var now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
-      Console.WriteLine(JsonConvert.SerializeObject(new
+      Console.WriteLine(JsonSerializer.Serialize(new
       {
          Timestamp = now,
          Event = "ModuleUseSuccess",

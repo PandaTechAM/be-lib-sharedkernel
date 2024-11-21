@@ -5,7 +5,7 @@ using ResponseCrafter.HttpExceptions;
 
 namespace SharedKernel.Extensions;
 
-public static class HealthCheckRunnerExtension
+public static class HealthCheckExtensions
 {
    public static WebApplication EnsureHealthy(this WebApplication app)
    {
@@ -41,5 +41,11 @@ public static class HealthCheckRunnerExtension
 
       var message = $"Unhealthy services detected: {string.Join(", ", unhealthyChecks)}";
       throw new ServiceUnavailableException(message);
+   }
+
+   public static WebApplicationBuilder AddHealthChecks(this WebApplicationBuilder builder)
+   {
+      builder.Services.AddHealthChecks();
+      return builder;
    }
 }
