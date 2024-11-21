@@ -120,13 +120,12 @@ Follow this example to set up your project with all the features provided by thi
             }
         }
     },
+    "ResponseCrafterVisibility": "Private",
+    "DefaultTimeZone": "Caucasus Standard Time",
     "RepositoryName": "be-lib-sharedkernel",
     "ConnectionStrings": {
         "Redis": "localhost:6379",
         "PersistentStorage": "/persistence"
-    },
-    "Security": {
-        "AllowedCorsOrigins": "https://example.com,https://api.example.com"
     }
 }
 ```
