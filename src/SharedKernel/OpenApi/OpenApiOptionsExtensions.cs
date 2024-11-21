@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.OpenApi;
-using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Models;
 using SharedKernel.OpenApi.Options;
 
@@ -44,12 +43,12 @@ internal static class OpenApiOptionsExtensions
          {
             Description = scheme.Description,
             Name = scheme.HeaderName,
-            In = ParameterLocation.Header,
+            In = ParameterLocation.Header
          };
 
          options.AddDocumentTransformer((document, _, _) =>
          {
-            document.Components ??= new();
+            document.Components ??= new OpenApiComponents();
             document.Components.SecuritySchemes.Add(scheme.HeaderName, securityScheme);
             return Task.CompletedTask;
          });

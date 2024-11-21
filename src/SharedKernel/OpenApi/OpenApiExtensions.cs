@@ -12,7 +12,8 @@ namespace SharedKernel.OpenApi;
 
 public static class OpenApiExtensions
 {
-   public static WebApplicationBuilder AddOpenApi(this WebApplicationBuilder builder, Action<OpenApiOptions>? configureOptions = null)
+   public static WebApplicationBuilder AddOpenApi(this WebApplicationBuilder builder,
+      Action<OpenApiOptions>? configureOptions = null)
    {
       var openApiConfiguration = builder.Configuration
                                         .GetSection("OpenApi")
@@ -22,7 +23,7 @@ public static class OpenApiExtensions
       {
          return builder;
       }
-      
+
 
       foreach (var document in openApiConfiguration.Documents)
       {

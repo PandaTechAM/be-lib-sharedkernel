@@ -1,4 +1,4 @@
-namespace PandaNuGet.Tests;
+namespace SharedKernel.Tests;
 
 public class UnitTest1
 {
