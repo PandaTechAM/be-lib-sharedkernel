@@ -421,12 +421,11 @@ The package includes extension methods to simplify common validation scenarios:
 
 - File Validations:
     - HasMaxFileSize(maxFileSizeInMb): Validates that an uploaded file does not exceed the specified maximum size.
-        - FileTypeIsOneOf(allowedFileExtensions): Validates that the uploaded file has one of the allowed file
+    - FileTypeIsOneOf(allowedFileExtensions): Validates that the uploaded file has one of the allowed file
           extensions.
 - String Validations:
     - IsValidJson(): Validates that a string is a valid JSON.
-        - IsXssSanitized(): Validates that a string is sanitized against XSS attacks.
-        -
+    - IsXssSanitized(): Validates that a string is sanitized against XSS attacks.
 
 ## Cors
 
