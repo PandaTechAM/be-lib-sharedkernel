@@ -8,13 +8,13 @@
         <PackageReadmeFile>Readme.md</PackageReadmeFile>
         <Authors>Pandatech</Authors>
         <Copyright>MIT</Copyright>
-        <Version>1.0.0</Version>
+        <Version>1.0.1</Version>
         <PackageId>Pandatech.SharedKernel</PackageId>
         <Title>Pandatech Shared Kernel Library</Title>
         <PackageTags>Pandatech, shared kernel, library, OpenAPI, Swagger, utilities, scalar</PackageTags>
         <Description>Pandatech.SharedKernel provides centralized configurations, utilities, and extensions for ASP.NET Core projects. For more information refere to readme.md document.</Description>
         <RepositoryUrl>https://github.com/PandaTechAM/be-lib-sharedkernel</RepositoryUrl>
-        <PackageReleaseNotes>InitialCommit</PackageReleaseNotes>
+        <PackageReleaseNotes>Nuget updates</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
@@ -37,10 +37,10 @@
         <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.9.0"/>
         <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.9.0"/>
         <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.9.0"/>
-        <PackageReference Include="Pandatech.Crypto" Version="3.0.0" />
+        <PackageReference Include="Pandatech.Crypto" Version="4.0.0" />
         <PackageReference Include="Pandatech.FluentMinimalApiMapper" Version="2.0.0" />
-        <PackageReference Include="Pandatech.PandaVaultClient" Version="3.1.0" />
-        <PackageReference Include="Pandatech.RegexBox" Version="2.0.1" />
+        <PackageReference Include="Pandatech.PandaVaultClient" Version="4.0.0" />
+        <PackageReference Include="Pandatech.RegexBox" Version="3.0.0" />
         <PackageReference Include="Pandatech.ResponseCrafter" Version="4.0.1" />
         <PackageReference Include="Scalar.AspNetCore" Version="1.2.42" />
         <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
