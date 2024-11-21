@@ -8,6 +8,7 @@ internal static class ConfigurationExtensions
    private const string PersistentConfigurationPath = "PersistentStorage";
    private const string RepositoryNameConfigurationPath = "RepositoryName";
    private const string TimeZoneConfigurationPath = "DefaultTimeZone";
+   private const string RedisConfigurationPath = "Redis";
 
    internal static string GetAllowedCorsOrigins(this IConfiguration configuration)
    {
@@ -51,5 +52,16 @@ internal static class ConfigurationExtensions
       }
 
       return timeZone;
+   }
+   
+   public static string GetRedisUrl(this IConfiguration configuration)
+   {
+      var redisConnectionString = configuration.GetConnectionString(RedisConfigurationPath);
+      if (redisConnectionString is null)
+      {
+         throw new InvalidOperationException("Redis connection string is not configured.");
+      }
+
+      return redisConnectionString;
    }
 }
