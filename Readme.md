@@ -24,8 +24,8 @@ This package currently supports:
 - **Resilience Pipelines** for `HttpClient` operations.
 - **Controller Extensions** for mapping old-style MVC controllers.
 - **SignalR Extensions** for adding simple SignalR or distributed SignalR backed with Redis.
-- **OpenTelemetry Integration** for tracking metrics, traces, and logging.
-- **Health Checks** with default endpoints and startup validation.
+- **OpenTelemetry**: Metrics, traces, and logs with Prometheus support.
+- **Health Checks**: Startup validation and endpoints for monitoring.
 - Various **Extensions and Utilities**, including enumerable, string, and queryable extensions.
 
 ## Prerequisites
@@ -120,13 +120,12 @@ Follow this example to set up your project with all the features provided by thi
             }
         }
     },
+    "ResponseCrafterVisibility": "Private",
+    "DefaultTimeZone": "Caucasus Standard Time",
     "RepositoryName": "be-lib-sharedkernel",
     "ConnectionStrings": {
         "Redis": "localhost:6379",
         "PersistentStorage": "/persistence"
-    },
-    "Security": {
-        "AllowedCorsOrigins": "https://example.com,https://api.example.com"
     }
 }
 ```
@@ -163,8 +162,9 @@ app
    .UseResponseCrafter()
    .UseCors()
    .MapMinimalApis()
-   .MapDefaultEndpoints()
    .EnsureHealthy()
+   .MapHealthCheckEndpoints()
+   .MapPrometheusExporterEndpoints()
    .ClearAssemblyRegistry()
    .UseOpenApi()
    .MapControllers();
@@ -422,12 +422,11 @@ The package includes extension methods to simplify common validation scenarios:
 
 - File Validations:
     - HasMaxFileSize(maxFileSizeInMb): Validates that an uploaded file does not exceed the specified maximum size.
-        - FileTypeIsOneOf(allowedFileExtensions): Validates that the uploaded file has one of the allowed file
-          extensions.
+    - FileTypeIsOneOf(allowedFileExtensions): Validates that the uploaded file has one of the allowed file
+      extensions.
 - String Validations:
     - IsValidJson(): Validates that a string is a valid JSON.
-        - IsXssSanitized(): Validates that a string is sanitized against XSS attacks.
-        -
+    - IsXssSanitized(): Validates that a string is sanitized against XSS attacks.
 
 ## Cors
 
@@ -547,45 +546,43 @@ app.MapControllers();
 app.Run();
 ```
 
-## OpenTelemetry
+## Telemetry Integration
 
-Use `builder.AddOpenTelemetry()` to add OpenTelemetry to your project. This will track metrics, traces, and logging at
-runtime, including ASP.NET Core and `HttpClient` operations.
-
-Example:
-
-```csharp
-var builder = WebApplication.CreateBuilder(args);
-builder.AddOpenTelemetry();
-```
+Integrate OpenTelemetry for observability, including metrics, traces, and logging:
+1. Setup:
+    ```csharp
+    var builder = WebApplication.CreateBuilder(args);
+    builder.AddOpenTelemetry();
+    var app = builder.Build();
+    app.MapPrometheusExporterEndpoints();
+    app.Run();
+    ```
+2. Prometheus Endpoints:
+    - Metrics: `url/above-board/metrics`
+    - Health Metrics: `url/above-board/metrics/health`
+3. Included Features:
+    - ASP.NET Core metrics
+    - HTTP client telemetry
+    - Distributed tracing
+    - Logging
+    - Prometheus exporter
 
 ## HealthChecks
-
-The `app.EnsureHealthy()` extension method performs a health check at startup and will terminate the application if it
-is not healthy.
+- **Startup Validation:** `app.EnsureHealthy()` performs a health check at startup and terminates the application if it
+  is not healthy.
+- **Endpoints Mapping:** `app.MapHealthCheckEndpoints()` maps default health check endpoints to the application.
+- **Mapped Endpoints:**
+  - Ping Endpoint: `url/above-board/ping`
+  - Health Check Endpoint: `url/above-board/health`
 
 Example:
-
 ```csharp
 var app = builder.Build();
-app.EnsureHealthy();
-```
 
-### Default Endpoints
+app.EnsureHealthy(); // Startup validation
+app.MapHealthCheckEndpoints(); // Map health check routes
 
-To map default endpoints, use `app.MapDefaultEndpoints()`. This will add the following endpoints:
-
-- Ping Endpoint: `url/above-board/ping`
-- Health Check Endpoint: `url/above-board/health`
-- Prometheus Metrics Endpoint: `url/above-board/metrics`
-- Prometheus Health Metrics Endpoint: `url/above-board/metrics/health`
-
-> Note: To use Prometheus endpoints, you need to apply `OpenTelemetry` as well.
-
-Example:
-
-```csharp
-app.MapDefaultEndpoints();
+app.Run();
 ```
 
 ## Additional Extensions and NuGet Packages

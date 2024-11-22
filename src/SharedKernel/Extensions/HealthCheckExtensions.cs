@@ -1,7 +1,11 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using HealthChecks.UI.Client;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using ResponseCrafter.HttpExceptions;
+using SharedKernel.Constants;
 
 namespace SharedKernel.Extensions;
 
@@ -47,5 +51,22 @@ public static class HealthCheckExtensions
    {
       builder.Services.AddHealthChecks();
       return builder;
+   }
+
+   public static WebApplication MapHealthCheckEndpoints(this WebApplication app)
+   {
+      app
+         .MapGet($"{EndpointConstants.BasePath}/ping", () => "pong")
+         .Produces<string>()
+         .WithTags(EndpointConstants.TagName)
+         .WithOpenApi();
+
+      app.MapHealthChecks($"{EndpointConstants.BasePath}/health",
+         new HealthCheckOptions
+         {
+            ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+         });
+
+      return app;
    }
 }

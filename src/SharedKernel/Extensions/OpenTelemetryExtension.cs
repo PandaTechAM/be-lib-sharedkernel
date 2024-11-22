@@ -1,9 +1,12 @@
+using System.Net;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using SharedKernel.Constants;
 
 namespace SharedKernel.Extensions;
 
@@ -34,5 +37,15 @@ public static class OpenTelemetryExtension
              });
 
       return builder;
+   }
+
+   public static WebApplication MapPrometheusExporterEndpoints(this WebApplication app)
+   {
+      app.MapPrometheusScrapingEndpoint($"{EndpointConstants.BasePath}/metrics");
+
+      app.UseHealthChecksPrometheusExporter($"{EndpointConstants.BasePath}/metrics/health",
+         options => options.ResultStatusCodes[HealthStatus.Unhealthy] = (int)HttpStatusCode.OK);
+
+      return app;
    }
 }
