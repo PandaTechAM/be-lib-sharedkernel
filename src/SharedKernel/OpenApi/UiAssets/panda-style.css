@@ -58,7 +58,7 @@ element.style {
 
 .swagger-ui .topbar-wrapper .link::before {
     content: "";
-    background: url("../images/logo.svg") no-repeat center;
+    background: url("/swagger-resources/logo.svg") no-repeat center;
     background-size: contain;
     width: 36.402px;
     height: 28.8px;
@@ -69,7 +69,7 @@ element.style {
 /* Add your second image */
 .swagger-ui .topbar-wrapper .link::after {
     content: "";
-    background: url("../images/logo-wording.svg") no-repeat center;
+    background: url("/swagger-resources/logo-wording.svg") no-repeat center;
     background-size: contain;
     width: 90.0276px;
     height: 20.2044px;

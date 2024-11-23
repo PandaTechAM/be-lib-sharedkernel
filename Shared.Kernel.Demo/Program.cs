@@ -1,8 +1,7 @@
-using DistributedCache.Extensions;
 using DistributedCache.Options;
 using FluentMinimalApiMapper;
 using Microsoft.AspNetCore.Mvc;
-using SharedKernel.Demo;
+using SharedKernel.Demo2;
 using ResponseCrafter.Enums;
 using ResponseCrafter.Extensions;
 using SharedKernel.Extensions;
@@ -18,7 +17,7 @@ builder.LogStartAttempt();
 AssemblyRegistry.Add(typeof(Program).Assembly);
 
 builder
-   .AddPandaVault()
+  // .AddPandaVault()
    .AddSerilog()
    .AddResponseCrafter(NamingConvention.ToSnakeCase)
    .AddOpenApi()
@@ -48,6 +47,7 @@ app
    .UseOpenApi()
    .MapControllers();
 
+
 app.MapPost("/params", ([AsParameters] TestTypes testTypes) => TypedResults.Ok(testTypes));
 app.MapPost("/body", ([FromBody] TestTypes testTypes) => TypedResults.Ok(testTypes));
 
@@ -55,7 +55,7 @@ app.MapPost("/body", ([FromBody] TestTypes testTypes) => TypedResults.Ok(testTyp
 app.LogStartSuccess();
 app.Run();
 
-namespace SharedKernel.Demo
+namespace SharedKernel.Demo2
 {
    public class TestTypes
    {

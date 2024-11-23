@@ -1,6 +1,8 @@
+using System.Reflection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Scalar.AspNetCore;
+using SharedKernel.Extensions;
 using SharedKernel.OpenApi.Options;
 using Swashbuckle.AspNetCore.SwaggerUI;
 
@@ -50,7 +52,7 @@ internal static class UiExtensions
          options.Theme = ScalarTheme.Kepler;
          if (scalarConfig?.FaviconPath is not null)
          {
-            options.Favicon = "/assets/images/favicon.svg";
+            options.Favicon = "/swagger-resources/favicon.svg";
          }
       });
       return app;
@@ -68,16 +70,9 @@ internal static class UiExtensions
       {
          return options;
       }
-
-      foreach (var cssPath in swaggerUiConfig.InjectedCssPaths)
-      {
-         options.InjectStylesheet(cssPath);
-      }
-
-      foreach (var jsPath in swaggerUiConfig.InjectedJsPaths)
-      {
-         options.InjectJavascript(jsPath);
-      }
+      
+      options.InjectStylesheet("/swagger-resources/panda-style.css");
+      options.InjectJavascript("/swagger-resources/panda-style.js");
 
       return options;
    }
