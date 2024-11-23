@@ -12,10 +12,6 @@ internal static class UiExtensions
 {
    internal static WebApplication MapSwaggerUi(this WebApplication app, OpenApiConfig openApiConfigConfiguration)
    {
-      var swaggerUiConfig = app.Configuration
-                               .GetSection("SwaggerUi")
-                               .Get<SwaggerUiConfig>();
-
       app.UseSwaggerUI(options =>
       {
          foreach (var document in openApiConfigConfiguration.Documents)
@@ -24,7 +20,7 @@ internal static class UiExtensions
          }
 
          options.RoutePrefix = "swagger";
-         options.AddPandaOptions(swaggerUiConfig);
+         options.AddPandaOptions();
       });
 
 
@@ -34,7 +30,7 @@ internal static class UiExtensions
          {
             options.SwaggerEndpoint($"{document.GetEndpointUrl()}", document.Title);
             options.RoutePrefix = $"doc/{document.GroupName}";
-            options.AddPandaOptions(swaggerUiConfig);
+            options.AddPandaOptions();
          });
       }
 
@@ -43,17 +39,11 @@ internal static class UiExtensions
 
    internal static WebApplication MapScalarUi(this WebApplication app)
    {
-      var scalarConfig = app.Configuration
-                            .GetSection("ScalarUi")
-                            .Get<ScalarUiConfig>();
-
       app.MapScalarApiReference(options =>
       {
          options.Theme = ScalarTheme.Kepler;
-         if (scalarConfig?.FaviconPath is not null)
-         {
-            options.Favicon = "/swagger-resources/favicon.svg";
-         }
+
+         options.Favicon = "/swagger-resources/favicon.svg";
       });
       return app;
    }
@@ -63,14 +53,10 @@ internal static class UiExtensions
       return $"/openapi/{document.GroupName}.json";
    }
 
-   private static SwaggerUIOptions AddPandaOptions(this SwaggerUIOptions options, SwaggerUiConfig? swaggerUiConfig)
+   private static SwaggerUIOptions AddPandaOptions(this SwaggerUIOptions options)
    {
       options.DocExpansion(DocExpansion.None);
-      if (swaggerUiConfig is null)
-      {
-         return options;
-      }
-      
+
       options.InjectStylesheet("/swagger-resources/panda-style.css");
       options.InjectJavascript("/swagger-resources/panda-style.js");
 

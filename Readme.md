@@ -92,17 +92,6 @@ Follow this example to set up your project with all the features provided by thi
             "Url": "https://pandatech.it",
             "Email": "info@pandatech.it"
         }
-    },
-    "SwaggerUi": {
-        "InjectedCssPaths": [
-            "/assets/css/panda-style.css"
-        ],
-        "InjectedJsPaths": [
-            "/assets/js/docs.js"
-        ]
-    },
-    "ScalarUi": {
-        "FaviconPath": "/assets/images/favicon.svg"
     }
 }
 ```
@@ -186,7 +175,6 @@ of Swashbuckle for generating OpenAPI definitions. Along with this new library, 
 - **Multiple API Documents:** Easily define and organize multiple API documentation groups.
 - **Enum String Values:** Enum string values are automatically displayed in the documentation, simplifying integration
   for external partners.
-- **Customizable SwaggerUI:** Add custom styles and JavaScript to tailor the UI.
 - **Security Schemes:** Configure security headers directly in your OpenAPI settings.
 
 ### Adding OpenAPI to Your Project
@@ -247,17 +235,6 @@ Add the following configuration to your `appsettings.json` file:
             "Url": "https://pandatech.it",
             "Email": "info@pandatech.it"
         }
-    },
-    "SwaggerUi": {
-        "InjectedCssPaths": [
-            "/assets/css/panda-style.css"
-        ],
-        "InjectedJsPaths": [
-            "/assets/js/docs.js"
-        ]
-    },
-    "ScalarUi": {
-        "FaviconPath": "/assets/images/favicon.svg"
     }
 }
 ```
@@ -549,6 +526,7 @@ app.Run();
 ## Telemetry Integration
 
 Integrate OpenTelemetry for observability, including metrics, traces, and logging:
+
 1. Setup:
     ```csharp
     var builder = WebApplication.CreateBuilder(args);
@@ -568,14 +546,16 @@ Integrate OpenTelemetry for observability, including metrics, traces, and loggin
     - Prometheus exporter
 
 ## HealthChecks
+
 - **Startup Validation:** `app.EnsureHealthy()` performs a health check at startup and terminates the application if it
   is not healthy.
 - **Endpoints Mapping:** `app.MapHealthCheckEndpoints()` maps default health check endpoints to the application.
 - **Mapped Endpoints:**
-  - Ping Endpoint: `url/above-board/ping`
-  - Health Check Endpoint: `url/above-board/health`
+    - Ping Endpoint: `url/above-board/ping`
+    - Health Check Endpoint: `url/above-board/health`
 
 Example:
+
 ```csharp
 var app = builder.Build();
 
