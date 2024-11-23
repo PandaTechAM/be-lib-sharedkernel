@@ -15,6 +15,7 @@ public static class OpenApiExtensions
    public static WebApplicationBuilder AddOpenApi(this WebApplicationBuilder builder,
       Action<OpenApiOptions>? configureOptions = null)
    {
+
       var openApiConfiguration = builder.Configuration
                                         .GetSection("OpenApi")
                                         .Get<OpenApiConfig>();
@@ -51,14 +52,10 @@ public static class OpenApiExtensions
          return app;
       }
 
-      app.MapStaticAssets();
       app.MapOpenApi();
+      app.MapSwaggerUiAssetEndpoint();
       app.MapSwaggerUi(openApiConfiguration);
-      app.MapScalarApiReference(options =>
-      {
-         options.Theme = ScalarTheme.Kepler;
-         options.Favicon = "/assets/images/favicon.svg";
-      });
+      app.MapScalarUi();
       return app;
    }
 
