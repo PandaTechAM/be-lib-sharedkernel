@@ -1,15 +1,15 @@
 ﻿using Microsoft.AspNetCore.Builder;
-using PandaVaultClient;
+using PandaVaultClient.Extensions;
 
 namespace SharedKernel.Extensions;
 
 public static class PandaVaultExtension
 {
-   public static WebApplicationBuilder AddPandaVault(this WebApplicationBuilder builder)
+   public static WebApplicationBuilder ConfigureWithPandaVault(this WebApplicationBuilder builder)
    {
       if (!builder.Environment.IsLocal())
       {
-         builder.Configuration.AddPandaVault();
+         builder.AddPandaVault();
       }
 
       return builder;

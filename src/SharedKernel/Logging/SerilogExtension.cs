@@ -76,7 +76,9 @@ public static class SerilogExtension
          .Filter
          .ByExcluding(logEvent => logEvent.ShouldExcludeOutboxDbCommandLogs())
          .Filter
-         .ByExcluding(logEvent => logEvent.ShouldExcludeSwaggerLogs());
+         .ByExcluding(logEvent => logEvent.ShouldExcludeSwaggerLogs())
+         .Filter
+         .ByExcluding(logEvent => logEvent.ShouldExcludeMassTransitHealthCheckLogs());
       return loggerConfig;
    }
 
@@ -104,6 +106,14 @@ public static class SerilogExtension
                 .Value
                 ?.ToString()
                 ?.Contains("/swagger") == true;
+   }
+   
+   private static bool ShouldExcludeMassTransitHealthCheckLogs(this LogEvent logEvent)
+   {
+      var message = logEvent.RenderMessage();
+      return message.Contains("Health check masstransit-bus")
+             && message.Contains("Unhealthy")
+             && message.Contains("Not ready: not started");
    }
 
    private static string GetLogsPath(this WebApplicationBuilder builder)

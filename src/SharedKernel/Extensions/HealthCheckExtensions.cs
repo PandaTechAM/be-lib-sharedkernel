@@ -14,6 +14,7 @@ public static class HealthCheckExtensions
    public static WebApplication EnsureHealthy(this WebApplication app)
    {
       var healthCheckService = app.Services.GetRequiredService<HealthCheckService>();
+      
       var report = healthCheckService.CheckHealthAsync()
                                      .Result;
 

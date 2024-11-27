@@ -128,7 +128,7 @@ builder.LogStartAttempt();
 AssemblyRegistry.Add(typeof(Program).Assembly);
 
 builder
-   .AddPandaVault()
+   .ConfigureWithPandaVault()
    .AddSerilog()
    .AddResponseCrafter(NamingConvention.ToSnakeCase)
    .AddOpenApi()
