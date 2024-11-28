@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using SharedKernel.Demo2;
 using ResponseCrafter.Enums;
 using ResponseCrafter.Extensions;
+using ResponseCrafter.HttpExceptions;
 using SharedKernel.Extensions;
 using SharedKernel.Helpers;
 using SharedKernel.Logging;
@@ -17,7 +18,7 @@ builder.LogStartAttempt();
 AssemblyRegistry.Add(typeof(Program).Assembly);
 
 builder
-  // .ConfigureWithPandaVault()
+   // .ConfigureWithPandaVault()
    .AddSerilog()
    .AddResponseCrafter(NamingConvention.ToSnakeCase)
    .AddOpenApi()
