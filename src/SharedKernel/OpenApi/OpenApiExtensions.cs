@@ -31,6 +31,7 @@ public static class OpenApiExtensions
          builder.Services.AddOpenApi(document.GroupName,
             options =>
             {
+               options.AddDocumentTransformer<RemoveServersTransformer>();
                options.AddDocument(document, openApiConfiguration);
                options.AddSchemaTransformer<EnumSchemaTransformer>();
                options.UseApiSecuritySchemes(openApiConfiguration);
