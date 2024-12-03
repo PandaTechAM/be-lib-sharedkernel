@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using System.Text.RegularExpressions;
+using Humanizer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,48 +26,11 @@ public class ToLowerNamingConvention : IControllerModelConvention
 {
    public void Apply(ControllerModel controller)
    {
-      controller.ControllerName = controller.ControllerName.ToLower();
+      controller.ControllerName = controller.ControllerName.Kebaberize();
 
       foreach (var action in controller.Actions)
       {
-         action.ActionName = action.ActionName.ToLower();
+         action.ActionName = action.ActionName.Kebaberize();
       }
    }
 }
-
-// public class KebabCaseTagNamingDocumentFilter : IDocumentFilter
-// {
-//    public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
-//    {
-//       // Modify the OpenAPI document here if needed
-//       foreach (var pathItem in swaggerDoc.Paths)
-//       {
-//          // Modify the OpenAPI operation tags to kebab case
-//          foreach (var operation in pathItem.Value.Operations)
-//          {
-//             operation.Value.Tags = operation.Value
-//                                             .Tags
-//                                             .Select(tag => KebabCase(tag))
-//                                             .ToList();
-//          }
-//       }
-//    }
-//
-//    private OpenApiTag KebabCase(OpenApiTag tag)
-//    {
-//       // Simple kebab case conversion logic
-//       const string pattern = "[^a-zA-Z-]";
-//
-//       var name = Regex.Replace(tag.Name, pattern, "");
-//
-//       var newName = string
-//                     .Concat(name.Select((x, i) => i > 0 && char.IsUpper(x)
-//                        ? "-" + x.ToString()
-//                                 .ToLower()
-//                        : x.ToString()))
-//                     .ToLower();
-//
-//       tag.Name = newName;
-//       return tag;
-//    }
-// }

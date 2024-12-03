@@ -14,7 +14,7 @@
         <PackageTags>Pandatech, shared kernel, library, OpenAPI, Swagger, utilities, scalar</PackageTags>
         <Description>Pandatech.SharedKernel provides centralized configurations, utilities, and extensions for ASP.NET Core projects. For more information refere to readme.md document.</Description>
         <RepositoryUrl>https://github.com/PandaTechAM/be-lib-sharedkernel</RepositoryUrl>
-        <PackageReleaseNotes>Controller naming to lower</PackageReleaseNotes>
+        <PackageReleaseNotes>Controller naming to kebab</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
