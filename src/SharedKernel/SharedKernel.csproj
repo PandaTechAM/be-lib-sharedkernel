@@ -8,13 +8,13 @@
         <PackageReadmeFile>Readme.md</PackageReadmeFile>
         <Authors>Pandatech</Authors>
         <Copyright>MIT</Copyright>
-        <Version>1.0.12</Version>
+        <Version>1.0.13</Version>
         <PackageId>Pandatech.SharedKernel</PackageId>
         <Title>Pandatech Shared Kernel Library</Title>
         <PackageTags>Pandatech, shared kernel, library, OpenAPI, Swagger, utilities, scalar</PackageTags>
         <Description>Pandatech.SharedKernel provides centralized configurations, utilities, and extensions for ASP.NET Core projects. For more information refere to readme.md document.</Description>
         <RepositoryUrl>https://github.com/PandaTechAM/be-lib-sharedkernel</RepositoryUrl>
-        <PackageReleaseNotes>Controller naming to kebab</PackageReleaseNotes>
+        <PackageReleaseNotes>Language iso code helper added</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
@@ -51,7 +51,7 @@
         <PackageReference Include="Pandatech.PandaVaultClient" Version="4.0.3" />
         <PackageReference Include="Pandatech.RegexBox" Version="3.0.0" />
         <PackageReference Include="Pandatech.ResponseCrafter" Version="5.0.3" />
-        <PackageReference Include="Scalar.AspNetCore" Version="1.2.45" />
+        <PackageReference Include="Scalar.AspNetCore" Version="1.2.46" />
         <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
         <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="7.1.0" />
     </ItemGroup>
