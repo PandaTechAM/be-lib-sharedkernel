@@ -577,6 +577,7 @@ This package includes various extensions and utilities to aid development:
   which
   retrieves DefaultTimeZone from `appsettings.json` and sets it as the default time zone.
 - **UrlBuilder:** A utility for building URLs with query parameters.
+- **Language ISO Code Helper:** Validate, query, and retrieve information about ISO language codes.
 
 ### Related NuGet Packages
 
