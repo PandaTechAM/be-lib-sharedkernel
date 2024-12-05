@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
+using OpenTelemetry;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -22,28 +24,34 @@ public static class OpenTelemetryExtension
 
       builder.Services
              .AddOpenTelemetry()
+             .UseOtlpExporter()
              .ConfigureResource(resource => resource.AddService(builder.Environment.ApplicationName))
              .WithMetrics(metrics =>
              {
                 metrics.AddRuntimeInstrumentation()
                        .AddAspNetCoreInstrumentation()
                        .AddHttpClientInstrumentation()
-                       .AddPrometheusExporter();
+                       .AddPrometheusExporter()
+                       .AddOtlpExporter();
              })
              .WithTracing(tracing =>
              {
                 tracing.AddAspNetCoreInstrumentation()
-                       .AddHttpClientInstrumentation();
+                       .AddHttpClientInstrumentation()
+                       .AddEntityFrameworkCoreInstrumentation()
+                       .AddOtlpExporter();
              });
+
+      builder.Logging.AddOpenTelemetry(logging => logging.AddOtlpExporter());
 
       return builder;
    }
 
    public static WebApplication MapPrometheusExporterEndpoints(this WebApplication app)
    {
-      app.MapPrometheusScrapingEndpoint($"{EndpointConstants.BasePath}/metrics");
+      app.MapPrometheusScrapingEndpoint($"{EndpointConstants.BasePath}/prometheus");
 
-      app.UseHealthChecksPrometheusExporter($"{EndpointConstants.BasePath}/metrics/health",
+      app.UseHealthChecksPrometheusExporter($"{EndpointConstants.BasePath}/prometheus/health",
          options => options.ResultStatusCodes[HealthStatus.Unhealthy] = (int)HttpStatusCode.OK);
 
       return app;

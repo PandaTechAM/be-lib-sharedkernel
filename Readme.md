@@ -536,14 +536,25 @@ Integrate OpenTelemetry for observability, including metrics, traces, and loggin
     app.Run();
     ```
 2. Prometheus Endpoints:
-    - Metrics: `url/above-board/metrics`
-    - Health Metrics: `url/above-board/metrics/health`
-3. Included Features:
+    - Metrics: `url/above-board/prometheus`
+    - Health Metrics: `url/above-board/prometheus/health`
+
+3. OTLP Configuration:
+   To configure the OTLP exporter, ensure the following entries are present in your appsettings{Environment}.json or as environment variables:
+    ```json
+    {
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317",
+        "OTEL_SERVICE_NAME": "OTLP-Example"
+    }
+    ```
+4. Included Features:
     - ASP.NET Core metrics
     - HTTP client telemetry
     - Distributed tracing
     - Logging
     - Prometheus exporter
+    - OTLP exporter
+    - EF Core telemetry
 
 ## HealthChecks
 
