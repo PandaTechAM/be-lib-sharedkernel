@@ -24,25 +24,31 @@ public static class OpenTelemetryExtension
 
       builder.Services
              .AddOpenTelemetry()
-             .UseOtlpExporter()
              .ConfigureResource(resource => resource.AddService(builder.Environment.ApplicationName))
              .WithMetrics(metrics =>
              {
                 metrics.AddRuntimeInstrumentation()
                        .AddAspNetCoreInstrumentation()
                        .AddHttpClientInstrumentation()
-                       .AddPrometheusExporter()
-                       .AddOtlpExporter();
+                       .AddPrometheusExporter();
              })
              .WithTracing(tracing =>
              {
                 tracing.AddAspNetCoreInstrumentation()
                        .AddHttpClientInstrumentation()
-                       .AddEntityFrameworkCoreInstrumentation()
-                       .AddOtlpExporter();
+                       .AddEntityFrameworkCoreInstrumentation();
              });
+      
+      var otlpEnabled = !string.IsNullOrEmpty(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
 
-      builder.Logging.AddOpenTelemetry(logging => logging.AddOtlpExporter());
+      if (!otlpEnabled)
+      {
+         return builder;
+      }
+
+      builder.Services.ConfigureOpenTelemetryLoggerProvider(l => l.AddOtlpExporter());
+      builder.Services.ConfigureOpenTelemetryTracerProvider(t => t.AddOtlpExporter());
+      builder.Services.ConfigureOpenTelemetryTracerProvider(t => t.AddOtlpExporter());
 
       return builder;
    }
