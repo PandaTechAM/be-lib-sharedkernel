@@ -543,8 +543,7 @@ Integrate OpenTelemetry for observability, including metrics, traces, and loggin
    To configure the OTLP exporter, ensure the following entries are present in your appsettings{Environment}.json or as environment variables:
     ```json
     {
-        "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317",
-        "OTEL_SERVICE_NAME": "OTLP-Example"
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317"
     }
     ```
 4. Included Features:
