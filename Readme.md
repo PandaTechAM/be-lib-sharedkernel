@@ -253,7 +253,7 @@ Add the following configuration to your `appsettings.json` file:
 Based on the above configuration, the UI will be accessible at the following URLs:
 
 - **Swagger (all documents):** [http://localhost/swagger](http://localhost/swagger)
-- **Swagger (external document only):** [http://localhost/doc/integration-v1](http://localhost/doc/integration-v1)
+- **Swagger (external document only):** [http://localhost/swagger/integration-v1](http://localhost/swagger/integration-v1)
 - **Scalar (admin document):** [http://localhost/scalar/admin-v1](http://localhost/scalar/admin-v1)
 - **Scalar (integration document):** [http://localhost/scalar/integration-v1](http://localhost/scalar/integration-v1)
 
