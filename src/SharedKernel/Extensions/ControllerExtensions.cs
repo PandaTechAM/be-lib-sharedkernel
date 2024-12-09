@@ -1,10 +1,8 @@
 ﻿using System.Reflection;
-using System.Text.RegularExpressions;
 using Humanizer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.OpenApi.Models;
 
 namespace SharedKernel.Extensions;
 

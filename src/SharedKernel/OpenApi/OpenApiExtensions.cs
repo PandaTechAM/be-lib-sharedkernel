@@ -5,7 +5,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using RegexBox;
-using Scalar.AspNetCore;
 using SharedKernel.OpenApi.Options;
 
 namespace SharedKernel.OpenApi;

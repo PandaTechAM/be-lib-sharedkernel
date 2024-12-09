@@ -1,10 +1,8 @@
-using DistributedCache.Options;
 using FluentMinimalApiMapper;
 using Microsoft.AspNetCore.Mvc;
 using SharedKernel.Demo2;
 using ResponseCrafter.Enums;
 using ResponseCrafter.Extensions;
-using ResponseCrafter.HttpExceptions;
 using SharedKernel.Extensions;
 using SharedKernel.Helpers;
 using SharedKernel.Logging;
@@ -27,8 +25,8 @@ builder
    .AddControllers(AssemblyRegistry.ToArray())
    .AddMediatrWithBehaviors(AssemblyRegistry.ToArray())
    .AddResilienceDefaultPipeline()
-   .AddRedis(KeyPrefix.AssemblyNamePrefix)
-   .AddDistributedSignalR("DistributedSignalR") // or .AddSignalR()
+  // .AddRedis(KeyPrefix.AssemblyNamePrefix)
+   //.AddDistributedSignalR("DistributedSignalR") // or .AddSignalR()
    .MapDefaultTimeZone()
    .AddCors()
    .AddHealthChecks();

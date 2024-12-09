@@ -1,8 +1,5 @@
-using System.Reflection;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
 using Scalar.AspNetCore;
-using SharedKernel.Extensions;
 using SharedKernel.OpenApi.Options;
 using Swashbuckle.AspNetCore.SwaggerUI;
 
@@ -29,7 +26,7 @@ internal static class UiExtensions
          app.UseSwaggerUI(options =>
          {
             options.SwaggerEndpoint($"{document.GetEndpointUrl()}", document.Title);
-            options.RoutePrefix = $"doc/{document.GroupName}";
+            options.RoutePrefix = $"swagger/{document.GroupName}";
             options.AddPandaOptions();
          });
       }
