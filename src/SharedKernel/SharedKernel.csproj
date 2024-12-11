@@ -8,13 +8,13 @@
         <PackageReadmeFile>Readme.md</PackageReadmeFile>
         <Authors>Pandatech</Authors>
         <Copyright>MIT</Copyright>
-        <Version>1.0.16</Version>
+        <Version>1.0.17</Version>
         <PackageId>Pandatech.SharedKernel</PackageId>
         <Title>Pandatech Shared Kernel Library</Title>
         <PackageTags>Pandatech, shared kernel, library, OpenAPI, Swagger, utilities, scalar</PackageTags>
         <Description>Pandatech.SharedKernel provides centralized configurations, utilities, and extensions for ASP.NET Core projects. For more information refere to readme.md document.</Description>
         <RepositoryUrl>https://github.com/PandaTechAM/be-lib-sharedkernel</RepositoryUrl>
-        <PackageReleaseNotes>Swagger enhancment</PackageReleaseNotes>
+        <PackageReleaseNotes>Nuget updates</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
@@ -42,7 +42,7 @@
         <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.10.0" />
         <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.8.0-rc.1"/>
         <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.10.0" />
-        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.10.0" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.10.1" />
         <PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.0.0-beta.12" />
         <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.10.0" />
         <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.10.0" />
@@ -51,10 +51,10 @@
         <PackageReference Include="Pandatech.FluentMinimalApiMapper" Version="2.0.1" />
         <PackageReference Include="Pandatech.PandaVaultClient" Version="4.0.3" />
         <PackageReference Include="Pandatech.RegexBox" Version="3.0.0" />
-        <PackageReference Include="Pandatech.ResponseCrafter" Version="5.0.3" />
-        <PackageReference Include="Scalar.AspNetCore" Version="1.2.49" />
+        <PackageReference Include="Pandatech.ResponseCrafter" Version="5.1.0" />
+        <PackageReference Include="Scalar.AspNetCore" Version="1.2.51" />
         <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
-        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="7.1.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="7.2.0" />
     </ItemGroup>
 
 </Project>
