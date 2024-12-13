@@ -15,7 +15,7 @@ public static class MediatrExtension
       builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(assemblies));
       builder.Services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviorWithoutResponse<,>));
       builder.Services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviorWithResponse<,>));
-      builder.Services.AddValidatorsFromAssemblies(assemblies);
+      builder.Services.AddValidatorsFromAssemblies(assemblies, includeInternalTypes: true);
       return builder;
    }
 }
