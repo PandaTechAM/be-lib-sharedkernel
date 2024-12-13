@@ -130,7 +130,7 @@ AssemblyRegistry.Add(typeof(Program).Assembly);
 builder
    .ConfigureWithPandaVault()
    .AddSerilog()
-   .AddResponseCrafter(NamingConvention.ToSnakeCase)
+   .AddResponseCrafter(NamingConvention.ToUpperSnakeCase)
    .AddOpenApi()
    .AddOpenTelemetry()
    .AddMapMinimalApis(AssemblyRegistry.ToArray())
