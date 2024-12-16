@@ -25,7 +25,7 @@ builder
    .AddControllers(AssemblyRegistry.ToArray())
    .AddMediatrWithBehaviors(AssemblyRegistry.ToArray())
    .AddResilienceDefaultPipeline()
-  // .AddRedis(KeyPrefix.AssemblyNamePrefix)
+   // .AddRedis(KeyPrefix.AssemblyNamePrefix)
    //.AddDistributedSignalR("DistributedSignalR") // or .AddSignalR()
    .MapDefaultTimeZone()
    .AddCors()
