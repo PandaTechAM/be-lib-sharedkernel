@@ -19,7 +19,7 @@ internal class RequestResponseLoggingMiddleware(RequestDelegate next, ILogger<Re
 
    public async Task InvokeAsync(HttpContext context)
    {
-      if (context.Request.Method.Equals("OPTIONS", StringComparison.OrdinalIgnoreCase))
+      if (HttpMethods.IsOptions(context.Request.Method))
       {
          await next(context);
          return;
@@ -31,6 +31,7 @@ internal class RequestResponseLoggingMiddleware(RequestDelegate next, ILogger<Re
       var originalBodyStream = context.Response.Body;
       await using var responseBody = new MemoryStream();
       context.Response.Body = responseBody;
+      
       var stopwatch = Stopwatch.GetTimestamp();
       try
       {
@@ -81,7 +82,6 @@ internal class RequestResponseLoggingMiddleware(RequestDelegate next, ILogger<Re
       var body = await reader.ReadToEndAsync();
       var sanitizedHeaders = JsonSerializer.Serialize(RedactSensitiveData(headers));
       var bodyContent = JsonSerializer.Serialize(ParseAndRedactJson(body));
-
       return (sanitizedHeaders, bodyContent);
    }
 

@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
+using ResponseCrafter.ExceptionHandlers.SignalR;
 using StackExchange.Redis;
 
 namespace SharedKernel.Extensions;
@@ -11,7 +13,7 @@ public static class SignalRExtensions
    {
       builder
          .Services
-         .AddSignalR()
+         .AddSignalR(o => o.AddFilter<SignalRExceptionFilter>())
          .AddMessagePackProtocol();
 
       return builder;
@@ -21,7 +23,7 @@ public static class SignalRExtensions
    {
       builder
          .Services
-         .AddSignalR()
+         .AddSignalR(o => o.AddFilter<SignalRExceptionFilter>())
          .AddMessagePackProtocol()
          .AddStackExchangeRedis(builder.Configuration.GetRedisUrl(),
             options =>
