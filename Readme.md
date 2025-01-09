@@ -130,7 +130,7 @@ AssemblyRegistry.Add(typeof(Program).Assembly);
 builder
    .ConfigureWithPandaVault()
    .AddSerilog()
-   .AddResponseCrafter(NamingConvention.ToSnakeCase)
+   .AddResponseCrafter(NamingConvention.ToUpperSnakeCase)
    .AddOpenApi()
    .AddOpenTelemetry()
    .AddMapMinimalApis(AssemblyRegistry.ToArray())
@@ -404,6 +404,9 @@ The package includes extension methods to simplify common validation scenarios:
 - String Validations:
     - IsValidJson(): Validates that a string is a valid JSON.
     - IsXssSanitized(): Validates that a string is sanitized against XSS attacks.
+    - IsEmail(): Validates that a string is a valid email address. Native one is not working correctly.
+    - IsPhoneNumber(): Validates that a string is a valid phone number. Format requires area code to be in `()`.
+    - IsEmailOrPhoneNumber(): Validates that a string is either a valid email address or a valid phone number.
 
 ## Cors
 
