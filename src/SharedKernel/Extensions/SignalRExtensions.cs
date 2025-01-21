@@ -2,36 +2,41 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using ResponseCrafter.ExceptionHandlers.SignalR;
+using SharedKernel.Logging;
 using StackExchange.Redis;
 
 namespace SharedKernel.Extensions;
 
 public static class SignalRExtensions
 {
-   
    public static WebApplicationBuilder AddSignalR(this WebApplicationBuilder builder)
    {
-      builder
-         .Services
-         .AddSignalR(o => o.AddFilter<SignalRExceptionFilter>())
-         .AddMessagePackProtocol();
+      builder.AddSignalRWithFiltersAndMessagePack();
+      return builder;
+   }
+
+   public static WebApplicationBuilder AddDistributedSignalR(this WebApplicationBuilder builder,
+      string redisChannelName)
+   {
+      builder.AddSignalRWithFiltersAndMessagePack()
+             .AddStackExchangeRedis(builder.Configuration.GetRedisUrl(),
+                options =>
+                {
+                   options.Configuration.ChannelPrefix = RedisChannel.Literal("FinHub:SignalR:");
+                });
+
 
       return builder;
    }
-   
-   public static WebApplicationBuilder AddDistributedSignalR(this WebApplicationBuilder builder, string redisChannelName)
+
+   private static ISignalRServerBuilder AddSignalRWithFiltersAndMessagePack(this WebApplicationBuilder builder)
    {
-      builder
-         .Services
-         .AddSignalR(o => o.AddFilter<SignalRExceptionFilter>())
-         .AddMessagePackProtocol()
-         .AddStackExchangeRedis(builder.Configuration.GetRedisUrl(),
-            options =>
-            {
-               options.Configuration.ChannelPrefix = RedisChannel.Literal("FinHub:SignalR:");
-            });
-
-
-      return builder;
+      return builder.Services
+                    .AddSignalR(o =>
+                    {
+                       o.AddFilter<SignalRExceptionFilter>();
+                       o.AddFilter<SignalRLoggingHubFilter>();
+                    })
+                    .AddMessagePackProtocol();
    }
 }
