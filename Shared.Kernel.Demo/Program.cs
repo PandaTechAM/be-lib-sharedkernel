@@ -29,13 +29,23 @@ builder
    //.AddDistributedSignalR("DistributedSignalR") // or .AddSignalR()
    .MapDefaultTimeZone()
    .AddCors()
+   .AddOutboundLoggingHandler()
    .AddHealthChecks();
+
+
+builder.Services
+       .AddHttpClient("RandomApiClient",
+          client =>
+          {
+             client.BaseAddress = new Uri("http://localhost");
+          })
+       .AddOutboundLoggingHandler();
 
 
 var app = builder.Build();
 
 app
-   .UseRequestResponseLogging()
+   .UseRequestLogging()
    .UseResponseCrafter()
    .UseCors()
    .MapMinimalApis()
@@ -49,6 +59,17 @@ app
 
 app.MapPost("/params", ([AsParameters] TestTypes testTypes) => TypedResults.Ok(testTypes));
 app.MapPost("/body", ([FromBody] TestTypes testTypes) => TypedResults.Ok(testTypes));
+app.MapGet("/hello", () => TypedResults.Ok("Hello World!"));
+
+app.MapGet("/get-data",
+   async (IHttpClientFactory httpClientFactory) =>
+   {
+      var httpClient = httpClientFactory.CreateClient("RandomApiClient");
+      httpClient.DefaultRequestHeaders.Add("auth", "hardcoded-auth-value");
+      var response = await httpClient.GetFromJsonAsync<object>("hello");
+
+      return response;
+   });
 
 
 app.LogStartSuccess();

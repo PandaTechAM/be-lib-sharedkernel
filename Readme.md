@@ -147,7 +147,7 @@ builder
 var app = builder.Build();
 
 app
-   .UseRequestResponseLogging()
+   .UseRequestLogging()
    .UseResponseCrafter()
    .UseCors()
    .MapMinimalApis()
@@ -253,7 +253,8 @@ Add the following configuration to your `appsettings.json` file:
 Based on the above configuration, the UI will be accessible at the following URLs:
 
 - **Swagger (all documents):** [http://localhost/swagger](http://localhost/swagger)
-- **Swagger (external document only):** [http://localhost/swagger/integration-v1](http://localhost/swagger/integration-v1)
+- **Swagger (external document only):
+  ** [http://localhost/swagger/integration-v1](http://localhost/swagger/integration-v1)
 - **Scalar (admin document):** [http://localhost/scalar/admin-v1](http://localhost/scalar/admin-v1)
 - **Scalar (integration document):** [http://localhost/scalar/integration-v1](http://localhost/scalar/integration-v1)
 
@@ -266,9 +267,8 @@ Based on the above configuration, the UI will be accessible at the following URL
   Development, Production).
 - **Elastic Common Schema Formatting:** Logs are formatted using the Elastic Common Schema (ECS) for compatibility with
   Elasticsearch.
-- **Request and Response Logging Middleware:** Middleware that logs incoming requests and outgoing responses while
-  redacting
-  sensitive information.
+- **Request Logging Middleware:** Middleware that logs incoming requests and outgoing responses while redacting
+  sensitive information and 5kb exceeding properties.
 - **Log Filtering:** Excludes unwanted logs from Hangfire Dashboard, Swagger, and outbox database commands.
 - **Distributed:** Designed to work with distributed systems and microservices.
 
@@ -285,7 +285,7 @@ In your middleware pipeline, add the request and response logging middleware:
 
 ```csharp
 var app = builder.Build();
-app.UseRequestResponseLogging();
+app.UseRequestLogging();
 ```
 
 In your `appsettings.{Environment}.json` configure `Serilog`.
@@ -337,11 +337,38 @@ builder.LogStartAttempt();
 // Configure services
 var app = builder.Build();
 // Configure middleware
-app.UseRequestResponseLogging();
+app.UseRequestLogging();
 // Other middleware
 app.LogStartSuccess();
 app.Run();
 ```
+
+### Outbound Logging with HttpClient
+
+In addition to the `RequestLoggingMiddleware` for inbound requests, you can now log **outbound** HTTP calls via an
+`OutboundLoggingHandler`. This handler captures request and response data (including headers and bodies), automatically
+redacting sensitive information (e.g., passwords, tokens).
+
+#### Usage
+
+1. **Register the handler** in your `WebApplicationBuilder`:
+   ```csharp
+   builder.AddOutboundLoggingHandler();
+   ```
+2. **Attach** the handler to any HttpClient registration:
+    ```csharp
+    builder.Services
+       .AddHttpClient("RandomApiClient", client =>
+       {
+           client.BaseAddress = new Uri("http://localhost");
+       })
+       .AddOutboundLoggingHandler();
+    ```
+3. **Check logs:** Outbound requests and responses are now logged with redacted headers and bodies, just like inbound
+   traffic.
+
+> Note: The same redaction rules apply to inbound and outbound calls. Update RedactionHelper if you need to modify the
+> behavior (e.g., adding new sensitive keywords).
 
 ## MediatR and FluentValidation Integration
 
@@ -543,7 +570,8 @@ Integrate OpenTelemetry for observability, including metrics, traces, and loggin
     - Health Metrics: `url/above-board/prometheus/health`
 
 3. OTLP Configuration:
-   To configure the OTLP exporter, ensure the following entries are present in your appsettings{Environment}.json or as environment variables:
+   To configure the OTLP exporter, ensure the following entries are present in your appsettings{Environment}.json or as
+   environment variables:
     ```json
     {
         "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317"
