@@ -26,7 +26,7 @@ This package currently supports:
 - **SignalR Extensions** for adding simple SignalR or distributed SignalR backed with Redis.
 - **OpenTelemetry**: Metrics, traces, and logs with Prometheus support.
 - **Health Checks**: Startup validation and endpoints for monitoring.
-- Various **Extensions and Utilities**, including enumerable, string, and queryable extensions.
+- Various **Extensions and Utilities**, including enumerable, string, dictionary and queryable extensions.
 
 ## Prerequisites
 
@@ -613,6 +613,8 @@ This package includes various extensions and utilities to aid development:
 - **Enumerable Extensions:** Additional LINQ methods for collections.
 - **Host Environment Extensions:** Methods to simplify environment checks (e.g., `IsLocal()`, `IsQa()`).
 - **Queryable Extensions:** Extensions for IQueryable, such as conditional `WhereIf`.
+- **Dictionary Extensions:** Utility methods for dictionary manipulation in a performant way like `GetOrAdd` and
+  `TryUpdate`.
 - **String Extensions:** Utility methods for string manipulation.
 - **Time Zone Extensions:** Methods to handle default time zones within your application. Use `.MapDefaultTimeZone()`,
   which
