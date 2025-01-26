@@ -138,8 +138,9 @@ builder
    .AddMediatrWithBehaviors(AssemblyRegistry.ToArray())
    .AddResilienceDefaultPipeline()
    .MapDefaultTimeZone()
-   .AddRedis(KeyPrefix.AssemblyNamePrefix)
-   .AddDistributedSignalR("DistributedSignalR") // or .AddSignalR()
+   .AddDistributedFusionCache("redis://localhost:6379",
+      builder.Environment.GetShortEnvironmentName() + "_" + "app_name") // or .AddFusionCache(...)
+   .AddDistributedSignalR("redis://localhost:6379","app_name:") // or .AddSignalR()
    .AddCors()
    .AddHealthChecks();
 
@@ -621,6 +622,7 @@ This package includes various extensions and utilities to aid development:
   retrieves DefaultTimeZone from `appsettings.json` and sets it as the default time zone.
 - **UrlBuilder:** A utility for building URLs with query parameters.
 - **Language ISO Code Helper:** Validate, query, and retrieve information about ISO language codes.
+- **FusionCache Extensions:** Simplify the configuration of in memory or distributed caching with Redis.
 
 ### Related NuGet Packages
 
@@ -628,7 +630,6 @@ This package includes various extensions and utilities to aid development:
 - **Pandatech.FluentMinimalApiMapper:** Simplifies mapping in minimal APIs.
 - **Pandatech.RegexBox:** A collection of useful regular expressions.
 - **Pandatech.ResponseCrafter:** A utility for crafting consistent API responses.
-- **Pandatech.DistributedCache:** A distributed cache provider for Redis.
 
 ## License
 
