@@ -16,13 +16,14 @@ public static class SignalRExtensions
    }
 
    public static WebApplicationBuilder AddDistributedSignalR(this WebApplicationBuilder builder,
+      string redisUrl,
       string redisChannelName)
    {
       builder.AddSignalRWithFiltersAndMessagePack()
-             .AddStackExchangeRedis(builder.Configuration.GetRedisUrl(),
+             .AddStackExchangeRedis(redisUrl,
                 options =>
                 {
-                   options.Configuration.ChannelPrefix = RedisChannel.Literal("FinHub:SignalR:");
+                   options.Configuration.ChannelPrefix = RedisChannel.Literal(redisChannelName);
                 });
 
 

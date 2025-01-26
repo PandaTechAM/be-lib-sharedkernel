@@ -1,3 +1,4 @@
+using DistributedCache.Options;
 using FluentMinimalApiMapper;
 using Microsoft.AspNetCore.Mvc;
 using SharedKernel.Demo2;
@@ -25,8 +26,9 @@ builder
    .AddControllers(AssemblyRegistry.ToArray())
    .AddMediatrWithBehaviors(AssemblyRegistry.ToArray())
    .AddResilienceDefaultPipeline()
-   // .AddRedis(KeyPrefix.AssemblyNamePrefix)
-   //.AddDistributedSignalR("DistributedSignalR") // or .AddSignalR()
+   .AddDistributedFusionCache("redis://localhost:6379",
+      builder.Environment.GetShortEnvironmentName() + "_" + "app_name") // or .AddFusionCache(...)
+   .AddDistributedSignalR("redis://localhost:6379","app_name:") // or .AddSignalR()
    .MapDefaultTimeZone()
    .AddCors()
    .AddOutboundLoggingHandler()

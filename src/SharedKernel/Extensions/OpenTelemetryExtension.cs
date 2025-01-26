@@ -27,17 +27,20 @@ public static class OpenTelemetryExtension
              .WithMetrics(metrics =>
              {
                 metrics.AddRuntimeInstrumentation()
+                       .AddFusionCacheInstrumentation()
                        .AddAspNetCoreInstrumentation()
                        .AddHttpClientInstrumentation()
                        .AddPrometheusExporter();
              })
              .WithTracing(tracing =>
              {
-                tracing.AddAspNetCoreInstrumentation()
-                       .AddHttpClientInstrumentation()
-                       .AddEntityFrameworkCoreInstrumentation();
+                tracing
+                   .AddFusionCacheInstrumentation()
+                   .AddAspNetCoreInstrumentation()
+                   .AddHttpClientInstrumentation()
+                   .AddEntityFrameworkCoreInstrumentation();
              });
-      
+
       var otlpEnabled = !string.IsNullOrEmpty(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
 
       if (!otlpEnabled)
