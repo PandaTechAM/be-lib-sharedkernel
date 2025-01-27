@@ -27,7 +27,7 @@ public static class OpenTelemetryExtension
              .WithMetrics(metrics =>
              {
                 metrics.AddRuntimeInstrumentation()
-                       .AddFusionCacheInstrumentation()
+                     //  .AddFusionCacheInstrumentation()
                        .AddAspNetCoreInstrumentation()
                        .AddHttpClientInstrumentation()
                        .AddPrometheusExporter();
@@ -35,7 +35,7 @@ public static class OpenTelemetryExtension
              .WithTracing(tracing =>
              {
                 tracing
-                   .AddFusionCacheInstrumentation()
+               //    .AddFusionCacheInstrumentation()
                    .AddAspNetCoreInstrumentation()
                    .AddHttpClientInstrumentation()
                    .AddEntityFrameworkCoreInstrumentation();
