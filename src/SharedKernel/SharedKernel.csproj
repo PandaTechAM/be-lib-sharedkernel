@@ -8,7 +8,7 @@
         <PackageReadmeFile>Readme.md</PackageReadmeFile>
         <Authors>Pandatech</Authors>
         <Copyright>MIT</Copyright>
-        <Version>1.2.8</Version>
+        <Version>1.2.9</Version>
         <PackageId>Pandatech.SharedKernel</PackageId>
         <Title>Pandatech Shared Kernel Library</Title>
         <PackageTags>Pandatech, shared kernel, library, OpenAPI, Swagger, utilities, scalar</PackageTags>
@@ -52,7 +52,7 @@
         <PackageReference Include="Pandatech.FluentMinimalApiMapper" Version="2.0.2" />
         <PackageReference Include="Pandatech.PandaVaultClient" Version="4.0.4" />
         <PackageReference Include="Pandatech.RegexBox" Version="3.0.1" />
-        <PackageReference Include="Pandatech.ResponseCrafter" Version="5.1.7" />
+        <PackageReference Include="Pandatech.ResponseCrafter" Version="5.1.8" />
         <PackageReference Include="Scalar.AspNetCore" Version="2.0.14" />
         <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
         <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="7.2.0" />
