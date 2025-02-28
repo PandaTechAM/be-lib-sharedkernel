@@ -27,10 +27,10 @@ builder
    .AddControllers(AssemblyRegistry.ToArray())
    .AddMediatrWithBehaviors(AssemblyRegistry.ToArray())
    .AddResilienceDefaultPipeline()
-   .AddDistributedSignalR("redis://localhost:6379", "app_name:") // or .AddSignalR()
+   .AddDistributedSignalR("localhost:6379", "app_name:") // or .AddSignalR()
    .AddDistributedCache(o =>
    {
-      o.RedisConnectionString = "redis://localhost:6379";
+      o.RedisConnectionString = "localhost:6379";
       o.ChannelPrefix = "app_name:";
    })
    .MapDefaultTimeZone()

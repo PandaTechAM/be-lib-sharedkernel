@@ -9,9 +9,22 @@ internal sealed class RequestLoggingMiddleware(
    RequestDelegate next,
    ILogger<RequestLoggingMiddleware> logger)
 {
+   private static readonly HashSet<string> PathsToIgnore =
+   [
+      "/openapi",
+      "/above-board"
+   ];
+
    public async Task InvokeAsync(HttpContext context)
    {
       if (HttpMethods.IsOptions(context.Request.Method))
+      {
+         await next(context);
+         return;
+      }
+
+      if (context.Request.Path.HasValue &&
+          PathsToIgnore.Any(p => context.Request.Path.StartsWithSegments(p)))
       {
          await next(context);
          return;
