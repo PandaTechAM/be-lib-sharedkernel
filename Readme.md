@@ -633,6 +633,7 @@ This package includes various extensions and utilities to aid development:
 - **Pandatech.RegexBox:** A collection of useful regular expressions.
 - **Pandatech.ResponseCrafter:** A utility for crafting consistent API responses.
 - **Pandatech.DistributedCache:** A distributed cache provider for Redis.
+- **Pandatech.FileExporter:** A utility for exporting files.
 
 ## License
 
