@@ -1,10 +1,13 @@
-﻿using Elastic.CommonSchema.Serilog;
+﻿using System.Diagnostics;
+using Elastic.CommonSchema.Serilog;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
+using Serilog.Formatting;
+using Serilog.Formatting.Compact;
 using Serilog.Sinks.Grafana.Loki;
 using SharedKernel.Extensions;
 
@@ -70,46 +73,31 @@ public static class SerilogExtensions
          loggerConfig.WriteTo.Async(a => a.Console());
       }
 
-      switch (logBackend)
+      if (logBackend != LogBackend.None)
       {
-         case LogBackend.None:
-            break;
-
-         case LogBackend.ElasticSearch:
-            loggerConfig.WriteToEcsFileAsync(builder);
-            break;
-
-         case LogBackend.Loki:
-            loggerConfig.WriteToLokiAsync(builder);
-            break;
-         default:
-            throw new ArgumentOutOfRangeException(nameof(logBackend), logBackend, null);
+         loggerConfig.WriteToFileAsync(builder, logBackend);
       }
 
       return loggerConfig;
    }
 
-   private static LoggerConfiguration WriteToEcsFileAsync(this LoggerConfiguration loggerConfig,
-      WebApplicationBuilder builder)
+   private static LoggerConfiguration WriteToFileAsync(this LoggerConfiguration loggerConfig,
+      WebApplicationBuilder builder,
+      LogBackend logBackend)
    {
-      return loggerConfig.WriteTo.Async(a =>
-         a.File(
-            new EcsTextFormatter(),
-            builder.GetLogsPath(),
-            rollingInterval: RollingInterval.Day
-         )
-      );
-   }
+      // Choose the formatter based on the selected log backend
+      ITextFormatter formatter = logBackend switch
+      {
+         LogBackend.ElasticSearch => new EcsTextFormatter(),
+         LogBackend.Loki => new LokiJsonTextFormatter(),
+         LogBackend.CompactJson => new CompactJsonFormatter(),
+         _ => new CompactJsonFormatter() // Fallback
+      };
 
-   private static LoggerConfiguration WriteToLokiAsync(this LoggerConfiguration loggerConfig,
-      WebApplicationBuilder builder)
-   {
       return loggerConfig.WriteTo.Async(a =>
-         a.File(
-            new LokiJsonTextFormatter(),
+         a.File(formatter,
             builder.GetLogsPath(),
-            rollingInterval: RollingInterval.Day
-         )
+            rollingInterval: RollingInterval.Day)
       );
    }
 
@@ -155,9 +143,7 @@ public static class SerilogExtensions
    private static bool ShouldExcludeMassTransitHealthCheckLogs(this LogEvent logEvent)
    {
       var message = logEvent.RenderMessage();
-      return message.Contains("Health check masstransit-bus", StringComparison.OrdinalIgnoreCase)
-             && message.Contains("Unhealthy", StringComparison.OrdinalIgnoreCase)
-             && message.Contains("Not ready: not started", StringComparison.OrdinalIgnoreCase);
+      return message.StartsWith("Health check masstransit-bus with status Unhealthy completed after");
    }
 
    #endregion

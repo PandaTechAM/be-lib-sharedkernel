@@ -18,7 +18,7 @@ By leveraging this shared kernel, we aim to:
 This package currently supports:
 
 - **OpenAPI Configuration** with SwaggerUI and Scalar.
-- **Logging** with Serilog (including ECS or Loki JSON file output, plus automatic log cleanup).
+- **Logging** with Serilog (including ECS, Loki and compact JSON file output, plus automatic log cleanup).
 - **MediatR and FluentValidation** configurations.
 - **Cors Configuration** with easy configuration options.
 - **Resilience Pipelines** for `HttpClient` operations.
@@ -270,7 +270,8 @@ Based on the above configuration, the UI will be accessible at the following URL
 - **Log Backend Option** Choose between:
     - `LogBackend.None` (disables file logging completely),
     - `LogBackend.ElasticSearch` (ECS formatter to file), or
-    - `LogBackend.Loki` (Loki formatter to file).
+    - `LogBackend.Loki` (Loki formatter to file), or
+    - `LogBackend.CompactJson` (compact JSON format to file).
 - **Environment-Specific Configuration:**
     - **Local:** Logs to console.
     - **Production:** Logs to file (in ECS or Loki format depending on the backend).
@@ -289,7 +290,7 @@ Based on the above configuration, the UI will be accessible at the following URL
 
 Use the `AddSerilog` extension when building your `WebApplicationBuilder`. You can specify:
 
-- `logBackend`: One of `None`, `ElasticSearch` (ECS file format), or `Loki` (Loki JSON file format).
+- `logBackend`: One of `None`, `ElasticSearch` (ECS file format), `Loki` (Loki JSON file format) or `CompactJson`.
 - `daysToRetain`: Number of days to keep log files. Older files are automatically removed by the background hosted
   service.
 
