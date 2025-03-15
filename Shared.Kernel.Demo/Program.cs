@@ -19,7 +19,7 @@ AssemblyRegistry.Add(typeof(Program).Assembly);
 
 builder
    // .ConfigureWithPandaVault()
-   .AddSerilog()
+   .AddSerilog(LogBackend.Loki)
    .AddResponseCrafter(NamingConvention.ToSnakeCase)
    .AddOpenApi()
    .AddOpenTelemetry()
@@ -37,6 +37,7 @@ builder
    .AddCors()
    .AddOutboundLoggingHandler()
    .AddHealthChecks();
+
 
 
 builder.Services
