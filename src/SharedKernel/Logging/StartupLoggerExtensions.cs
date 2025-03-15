@@ -13,7 +13,7 @@ public static class StartupLoggerExtensions
       var now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
 
       Console.ForegroundColor = ConsoleColor.DarkYellow;
-      Console.WriteLine("============================================================");
+      Console.WriteLine("===============================================================");
       Console.ResetColor();
 
       Console.WriteLine("APPLICATION START ATTEMPT");
@@ -24,7 +24,7 @@ public static class StartupLoggerExtensions
       Console.WriteLine($"Machine Name : {Environment.MachineName}");
 
       Console.ForegroundColor = ConsoleColor.DarkYellow;
-      Console.WriteLine("============================================================");
+      Console.WriteLine("===============================================================");
       Console.ResetColor();
 
       return builder;
@@ -37,7 +37,7 @@ public static class StartupLoggerExtensions
       var now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
 
       Console.ForegroundColor = ConsoleColor.DarkGreen;
-      Console.WriteLine("\n============================================================");
+      Console.WriteLine("\n===============================================================");
       Console.ResetColor();
 
       Console.WriteLine("APPLICATION START SUCCESS");
@@ -45,7 +45,7 @@ public static class StartupLoggerExtensions
       Console.WriteLine($"Initialization    : {deltaInSeconds} seconds");
 
       Console.ForegroundColor = ConsoleColor.DarkGreen;
-      Console.WriteLine("============================================================");
+      Console.WriteLine("===============================================================");
       Console.ResetColor();
 
       return app;
@@ -57,7 +57,7 @@ public static class StartupLoggerExtensions
       var now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
 
       Console.ForegroundColor = ConsoleColor.DarkYellow;
-      Console.WriteLine("\n============================================================");
+      Console.WriteLine("\n===============================================================");
       Console.ResetColor();
 
       Console.WriteLine("MODULE REGISTRATION SUCCESS");
@@ -65,7 +65,7 @@ public static class StartupLoggerExtensions
       Console.WriteLine($"Module Name : {moduleName}");
 
       Console.ForegroundColor = ConsoleColor.DarkYellow;
-      Console.WriteLine("============================================================");
+      Console.WriteLine("===============================================================");
       Console.ResetColor();
 
       return builder;
@@ -76,7 +76,7 @@ public static class StartupLoggerExtensions
       var now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
 
       Console.ForegroundColor = ConsoleColor.DarkYellow;
-      Console.WriteLine("\n============================================================");
+      Console.WriteLine("\n===============================================================");
       Console.ResetColor();
 
       Console.WriteLine("MODULE USE SUCCESS");
@@ -84,7 +84,7 @@ public static class StartupLoggerExtensions
       Console.WriteLine($"Module Name : {moduleName}");
 
       Console.ForegroundColor = ConsoleColor.DarkYellow;
-      Console.WriteLine("============================================================");
+      Console.WriteLine("===============================================================");
       Console.ResetColor();
 
       return app;
