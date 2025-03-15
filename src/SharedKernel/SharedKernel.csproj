@@ -8,13 +8,13 @@
         <PackageReadmeFile>Readme.md</PackageReadmeFile>
         <Authors>Pandatech</Authors>
         <Copyright>MIT</Copyright>
-        <Version>1.2.13</Version>
+        <Version>1.3.0</Version>
         <PackageId>Pandatech.SharedKernel</PackageId>
         <Title>Pandatech Shared Kernel Library</Title>
         <PackageTags>Pandatech, shared kernel, library, OpenAPI, Swagger, utilities, scalar</PackageTags>
         <Description>Pandatech.SharedKernel provides centralized configurations, utilities, and extensions for ASP.NET Core projects. For more information refere to readme.md document.</Description>
         <RepositoryUrl>https://github.com/PandaTechAM/be-lib-sharedkernel</RepositoryUrl>
-        <PackageReleaseNotes>nuget updates</PackageReleaseNotes>
+        <PackageReleaseNotes>Logging upgrade</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
@@ -54,8 +54,10 @@
         <PackageReference Include="Pandatech.PandaVaultClient" Version="4.0.4" />
         <PackageReference Include="Pandatech.RegexBox" Version="3.0.1" />
         <PackageReference Include="Pandatech.ResponseCrafter" Version="5.1.8" />
-        <PackageReference Include="Scalar.AspNetCore" Version="2.0.29" />
+        <PackageReference Include="Scalar.AspNetCore" Version="2.0.34" />
         <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+        <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
+        <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="8.3.0" />
         <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="7.3.1" />
     </ItemGroup>
 

@@ -18,7 +18,7 @@ By leveraging this shared kernel, we aim to:
 This package currently supports:
 
 - **OpenAPI Configuration** with SwaggerUI and Scalar.
-- **Logging** with Serilog.
+- **Logging** with Serilog (including ECS or Loki JSON file output, plus automatic log cleanup).
 - **MediatR and FluentValidation** configurations.
 - **Cors Configuration** with easy configuration options.
 - **Resilience Pipelines** for `HttpClient` operations.
@@ -129,7 +129,7 @@ AssemblyRegistry.Add(typeof(Program).Assembly);
 
 builder
    .ConfigureWithPandaVault()
-   .AddSerilog()
+   .AddSerilog(LogBackend.Loki)
    .AddResponseCrafter(NamingConvention.ToUpperSnakeCase)
    .AddOpenApi()
    .AddOpenTelemetry()
@@ -267,33 +267,46 @@ Based on the above configuration, the UI will be accessible at the following URL
 ### Key Features
 
 - **Serilog Integration:** Simplified setup for structured logging using Serilog.
-- **Environment-Specific Configuration:** Logs are written to the console and/or files based on the environment (Local,
-  Development, Production).
-- **Elastic Common Schema Formatting:** Logs are formatted using the Elastic Common Schema (ECS) for compatibility with
-  Elasticsearch.
-- **Request Logging Middleware:** Middleware that logs incoming requests and outgoing responses while redacting
-  sensitive information and 5kb exceeding properties.
-- **Log Filtering:** Excludes unwanted logs from Hangfire Dashboard, Swagger, and outbox database commands.
-- **Distributed:** Designed to work with distributed systems and microservices.
+- **Log Backend Option** Choose between:
+    - `LogBackend.None` (disables file logging completely),
+    - `LogBackend.ElasticSearch` (ECS formatter to file), or
+    - `LogBackend.Loki` (Loki formatter to file).
+- **Environment-Specific Configuration:**
+    - **Local:** Logs to console.
+    - **Production:** Logs to file (in ECS or Loki format depending on the backend).
+    - **Other Environments:** Logs to both console and file.
+- **Automatic Log Cleanup:** Log files are automatically cleaned up based on the configured retention period.
+- **Log File Location:** Logs are stored in a persistent path defined in your configuration, organized by repository
+  name and environment, under the `logs` directory.
+- **Filtering:** Excludes unwanted logs from Hangfire Dashboard, Swagger, outbox DB commands, and MassTransit health
+  checks.
+- **Request Logging:** Middleware that logs incoming requests and outgoing responses while redacting sensitive
+  information and large payloads.
+- **Outbound Logging Handler:** For capturing outbound `HttpClient` requests (including headers and bodies) with the
+  same redaction rules.
 
 ### Adding Logging to Your Project
 
-To enable Serilog logging in your project, add the following code:
+Use the `AddSerilog` extension when building your `WebApplicationBuilder`. You can specify:
 
-```csharp
-var builder = WebApplication.CreateBuilder(args);
-builder.AddSerilog();
-```
+- `logBackend`: One of `None`, `ElasticSearch` (ECS file format), or `Loki` (Loki JSON file format).
+- `daysToRetain`: Number of days to keep log files. Older files are automatically removed by the background hosted
+  service.
 
 In your middleware pipeline, add the request and response logging middleware:
 
 ```csharp
+var builder = WebApplication.CreateBuilder(args);
+
+// Example: logs in Loki JSON format, keep logs for 14 days. (default = 7 days)
+builder.AddSerilog(logBackend: LogBackend.Loki, daysToRetain: 14);
+
 var app = builder.Build();
 app.UseRequestLogging();
 ```
 
-In your `appsettings.{Environment}.json` configure `Serilog`.
-Example:
+Configure minimal Serilog settings in your environment JSON files as needed, for example in
+`appsettings.{Environment}.json`:
 
 ```json
 {
@@ -313,16 +326,28 @@ Example:
 }
 ```
 
-### Work Specifics
+### Log Cleanup
 
-- Environment-Specific Logging:
-    - Local Environment: Logs are written to the console.
-    - Production: Logs are written to a file.
-    - Other Environments: Logs are written to both the console and a file.
-- Log File Location: Logs are stored in a persistent path defined in your configuration, organized by repository name
-  and environment.
-- Sensitive Data Redaction: The middleware automatically redacts sensitive information such as passwords, secrets,
-  tokens, and authentication details from headers and bodies.
+When you call `builder.AddSerilog(..., daysToRetain: X)`, a `LogCleanupHostedService` is automatically registered. This
+hosted service runs periodically to delete log files older than the specified retention period.
+
+### Usage Notes
+
+- **No Direct Sinks to External Systems:** By default, logs are written to local files with ECS or Loki JSON format. You
+  can
+  later push these files to external systems (e.g., via Filebeat, Logstash, Promtail, or any specialized agent).
+- **Optional Enrichment:** You can pass a `Dictionary<string, string>` to `AddSerilog` to add extra log properties
+  globally:
+    ```csharp
+    builder.AddSerilog(
+        logBackend: LogBackend.Loki,
+        valueByNameRepeatedLog: new Dictionary<string, string>
+        {
+            {"ServiceName", "MyService"},
+            {"ServiceVersion", "1.0.0"}
+         }
+    );    
+    ```
 
 ### Startup Logging
 

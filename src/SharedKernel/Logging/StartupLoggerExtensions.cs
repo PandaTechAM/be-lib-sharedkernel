@@ -1,6 +1,6 @@
 using System.Globalization;
-using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
+using SharedKernel.Extensions;
 
 namespace SharedKernel.Logging;
 
@@ -11,53 +11,82 @@ public static class StartupLoggerExtensions
    public static WebApplicationBuilder LogStartAttempt(this WebApplicationBuilder builder)
    {
       var now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
-      Console.WriteLine(JsonSerializer.Serialize(new
-      {
-         Timestamp = now,
-         Event = "ApplicationStartAttempt",
-         Application = builder.Environment.ApplicationName,
-         Environment = builder.Environment.EnvironmentName
-      }));
+
+      Console.ForegroundColor = ConsoleColor.DarkYellow;
+      Console.WriteLine("============================================================");
+      Console.ResetColor();
+
+      Console.WriteLine("APPLICATION START ATTEMPT");
+      Console.WriteLine($"Timestamp   : {now}");
+      Console.WriteLine($"Application : {builder.Environment.ApplicationName}");
+      Console.WriteLine($"Environment : {builder.Environment.EnvironmentName}");
+      Console.WriteLine($"OS Version  : {Environment.OSVersion}");
+      Console.WriteLine($"Machine Name : {Environment.MachineName}");
+
+      Console.ForegroundColor = ConsoleColor.DarkYellow;
+      Console.WriteLine("============================================================");
+      Console.ResetColor();
+
       return builder;
    }
 
    public static WebApplication LogStartSuccess(this WebApplication app)
    {
-      var delta = System.Diagnostics.Stopwatch.GetElapsedTime(Stopwatch)
-                        .TotalMilliseconds;
+      var delta = System.Diagnostics.Stopwatch.GetElapsedTime(Stopwatch).TotalMilliseconds;
       var deltaInSeconds = Math.Round(delta / 1000, 2);
       var now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
-      Console.WriteLine(JsonSerializer.Serialize(new
-      {
-         Timestamp = now,
-         Event = "ApplicationStartSuccess",
-         InitializationTime = $"{deltaInSeconds} seconds"
-      }));
+
+      Console.ForegroundColor = ConsoleColor.DarkGreen;
+      Console.WriteLine("\n============================================================");
+      Console.ResetColor();
+
+      Console.WriteLine("APPLICATION START SUCCESS");
+      Console.WriteLine($"Timestamp         : {now}");
+      Console.WriteLine($"Initialization    : {deltaInSeconds} seconds");
+
+      Console.ForegroundColor = ConsoleColor.DarkGreen;
+      Console.WriteLine("============================================================");
+      Console.ResetColor();
+
       return app;
    }
 
-   public static WebApplicationBuilder LogModuleRegistrationSuccess(this WebApplicationBuilder builder,
-      string moduleName)
+   public static WebApplicationBuilder LogModuleRegistrationSuccess(
+       this WebApplicationBuilder builder, string moduleName)
    {
       var now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
-      Console.WriteLine(JsonSerializer.Serialize(new
-      {
-         Timestamp = now,
-         Event = "ModuleRegistrationSuccess",
-         Module = moduleName
-      }));
+
+      Console.ForegroundColor = ConsoleColor.DarkYellow;
+      Console.WriteLine("\n============================================================");
+      Console.ResetColor();
+
+      Console.WriteLine("MODULE REGISTRATION SUCCESS");
+      Console.WriteLine($"Timestamp   : {now}");
+      Console.WriteLine($"Module Name : {moduleName}");
+
+      Console.ForegroundColor = ConsoleColor.DarkYellow;
+      Console.WriteLine("============================================================");
+      Console.ResetColor();
+
       return builder;
    }
 
    public static WebApplication LogModuleUseSuccess(this WebApplication app, string moduleName)
    {
       var now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
-      Console.WriteLine(JsonSerializer.Serialize(new
-      {
-         Timestamp = now,
-         Event = "ModuleUseSuccess",
-         Module = moduleName
-      }));
+
+      Console.ForegroundColor = ConsoleColor.DarkYellow;
+      Console.WriteLine("\n============================================================");
+      Console.ResetColor();
+
+      Console.WriteLine("MODULE USE SUCCESS");
+      Console.WriteLine($"Timestamp   : {now}");
+      Console.WriteLine($"Module Name : {moduleName}");
+
+      Console.ForegroundColor = ConsoleColor.DarkYellow;
+      Console.WriteLine("============================================================");
+      Console.ResetColor();
+
       return app;
    }
 }
