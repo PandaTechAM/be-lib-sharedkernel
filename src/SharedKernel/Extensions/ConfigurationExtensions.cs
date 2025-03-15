@@ -8,8 +8,6 @@ internal static class ConfigurationExtensions
    private const string PersistentConfigurationPath = "PersistentStorage";
    private const string RepositoryNameConfigurationPath = "RepositoryName";
    private const string TimeZoneConfigurationPath = "DefaultTimeZone";
-   private const string RedisConfigurationPath = "Redis";
-   private const string LokiConfigurationPath = "Loki";
 
    internal static string GetAllowedCorsOrigins(this IConfiguration configuration)
    {
@@ -53,28 +51,5 @@ internal static class ConfigurationExtensions
       }
 
       return timeZone;
-   }
-
-   public static string GetRedisUrl(this IConfiguration configuration)
-   {
-      var redisConnectionString = configuration.GetConnectionString(RedisConfigurationPath);
-      if (redisConnectionString is null)
-      {
-         throw new InvalidOperationException("Redis connection string is not configured.");
-      }
-
-      return redisConnectionString;
-   }
-
-   public static string GetLokiUrl(this IConfiguration configuration)
-   {
-      var lokiUrl = configuration.GetConnectionString(LokiConfigurationPath);
-      
-      if (lokiUrl is null)
-      {
-         throw new InvalidOperationException("Loki URL is not configured.");
-      }
-
-      return lokiUrl;
    }
 }

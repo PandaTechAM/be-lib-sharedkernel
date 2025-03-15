@@ -155,9 +155,7 @@ public static class SerilogExtensions
    private static bool ShouldExcludeMassTransitHealthCheckLogs(this LogEvent logEvent)
    {
       var message = logEvent.RenderMessage();
-      return message.Contains("Health check masstransit-bus", StringComparison.OrdinalIgnoreCase)
-             && message.Contains("Unhealthy", StringComparison.OrdinalIgnoreCase)
-             && message.Contains("Not ready: not started", StringComparison.OrdinalIgnoreCase);
+      return message.StartsWith("Health check masstransit-bus with status Unhealthy completed after");
    }
 
    #endregion
