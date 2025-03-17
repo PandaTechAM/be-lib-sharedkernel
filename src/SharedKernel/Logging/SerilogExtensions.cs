@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using Elastic.CommonSchema.Serilog;
+﻿using Elastic.CommonSchema.Serilog;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -17,8 +16,9 @@ public static class SerilogExtensions
 {
    public static WebApplicationBuilder AddSerilog(this WebApplicationBuilder builder,
       LogBackend logBackend,
+      Dictionary<string, string>? logAdditionalProperties = null,
       int daysToRetain = 7,
-      Dictionary<string, string>? valueByNameRepeatedLog = null)
+      bool asyncSinks = false)
    {
       builder.Logging.ClearProviders();
 
@@ -26,13 +26,13 @@ public static class SerilogExtensions
                          .FilterOutUnwantedLogs()
                          .Enrich
                          .FromLogContext()
-                         .ConfigureDestinations(builder, logBackend)
+                         .ConfigureDestinations(builder, logBackend, asyncSinks)
                          .ReadFrom
                          .Configuration(builder.Configuration);
 
-      if (valueByNameRepeatedLog is not null)
+      if (logAdditionalProperties is not null)
       {
-         foreach (var (key, value) in valueByNameRepeatedLog)
+         foreach (var (key, value) in logAdditionalProperties)
          {
             loggerConfig.Enrich.WithProperty(key, value);
          }
@@ -60,30 +60,47 @@ public static class SerilogExtensions
 
    private static LoggerConfiguration ConfigureDestinations(this LoggerConfiguration loggerConfig,
       WebApplicationBuilder builder,
-      LogBackend logBackend)
+      LogBackend logBackend,
+      bool asyncSinks)
    {
       if (builder.Environment.IsLocal())
       {
-         loggerConfig.WriteTo.Async(a => a.Console());
+         loggerConfig.WriteToConsole(asyncSinks);
+
          return loggerConfig;
       }
 
       if (!builder.Environment.IsProduction())
       {
-         loggerConfig.WriteTo.Async(a => a.Console());
+         loggerConfig.WriteToConsole(asyncSinks);
       }
 
       if (logBackend != LogBackend.None)
       {
-         loggerConfig.WriteToFileAsync(builder, logBackend);
+         loggerConfig.WriteToFile(builder, logBackend, asyncSinks);
       }
 
       return loggerConfig;
    }
 
-   private static LoggerConfiguration WriteToFileAsync(this LoggerConfiguration loggerConfig,
+   private static LoggerConfiguration WriteToConsole(this LoggerConfiguration loggerConfig, bool useAsync)
+   {
+      if (useAsync)
+      {
+         loggerConfig.WriteTo.Async(a => a.Console());
+      }
+      else
+      {
+         loggerConfig.WriteTo.Console();
+      }
+
+      return loggerConfig;
+   }
+
+   private static LoggerConfiguration WriteToFile(this LoggerConfiguration loggerConfig,
       WebApplicationBuilder builder,
-      LogBackend logBackend)
+      LogBackend logBackend,
+      bool useAsync)
    {
       // Choose the formatter based on the selected log backend
       ITextFormatter formatter = logBackend switch
@@ -94,11 +111,18 @@ public static class SerilogExtensions
          _ => new CompactJsonFormatter() // Fallback
       };
 
-      return loggerConfig.WriteTo.Async(a =>
-         a.File(formatter,
-            builder.GetLogsPath(),
-            rollingInterval: RollingInterval.Day)
-      );
+      var logPath = builder.GetLogsPath();
+
+      if (useAsync)
+      {
+         return loggerConfig.WriteTo.Async(a =>
+            a.File(formatter,
+               logPath,
+               rollingInterval: RollingInterval.Day)
+         );
+      }
+
+      return loggerConfig.WriteTo.File(formatter, logPath, rollingInterval: RollingInterval.Day);
    }
 
    #region Filtering

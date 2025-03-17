@@ -297,14 +297,29 @@ Use the `AddSerilog` extension when building your `WebApplicationBuilder`. You c
 In your middleware pipeline, add the request and response logging middleware:
 
 ```csharp
-var builder = WebApplication.CreateBuilder(args);
+// 1) Synchronous logging with 7-day retention (default). 
+builder.AddSerilog(LogBackend.Loki);
 
-// Example: logs in Loki JSON format, keep logs for 14 days. (default = 7 days)
-builder.AddSerilog(logBackend: LogBackend.Loki, daysToRetain: 14);
-
-var app = builder.Build();
-app.UseRequestLogging();
+// 2) Asynchronous logging with 14-day retention and extra properties.
+//    Suitable for high-load (~1000+ RPS per pod) scenarios where slight risk of log loss is acceptable 
+//    in exchange for better performance.
+builder.AddSerilog(
+    logBackend: LogBackend.Loki,
+    logAdditionalProperties: new Dictionary<string, string>
+    {
+        ["ServiceName"] = "MyApp",
+        ["Environment"] = "Staging"
+    },
+    daysToRetain: 14,
+    asyncSinks: true
+);
 ```
+
+>- **Asynchronous Sinks (asyncSinks: true):** Recommended for very high-traffic environments (e.g., 1000+ requests per
+  second per pod) where performance is critical and the possibility of losing a small amount of log data (e.g., on
+  sudden process termination) is acceptable. <br><br>
+>- **Synchronous Sinks (asyncSinks: false):** Recommended if you can handle up to ~1000 requests per second per pod and must
+  retain every log entry without fail. This might incur slightly more overhead but ensures maximum reliability.
 
 Configure minimal Serilog settings in your environment JSON files as needed, for example in
 `appsettings.{Environment}.json`:
@@ -342,7 +357,7 @@ hosted service runs periodically to delete log files older than the specified re
     ```csharp
     builder.AddSerilog(
         logBackend: LogBackend.Loki,
-        valueByNameRepeatedLog: new Dictionary<string, string>
+        logAdditionalProperties: new Dictionary<string, string>
         {
             {"ServiceName", "MyService"},
             {"ServiceVersion", "1.0.0"}
