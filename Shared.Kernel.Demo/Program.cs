@@ -78,7 +78,6 @@ app.MapGet("/get-data",
       return response;
    });
 
-
 app.LogStartSuccess();
 app.Run();
 
