@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using Microsoft.AspNetCore.Builder;
 using SharedKernel.Extensions;
@@ -6,10 +7,11 @@ namespace SharedKernel.Logging;
 
 public static class StartupLoggerExtensions
 {
-   private static readonly long Stopwatch = System.Diagnostics.Stopwatch.GetTimestamp();
+   private static long? _startTimestamp = null;
 
    public static WebApplicationBuilder LogStartAttempt(this WebApplicationBuilder builder)
    {
+      _startTimestamp = Stopwatch.GetTimestamp();
       var now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
 
       Console.ForegroundColor = ConsoleColor.DarkYellow;
@@ -32,7 +34,8 @@ public static class StartupLoggerExtensions
 
    public static WebApplication LogStartSuccess(this WebApplication app)
    {
-      var delta = System.Diagnostics.Stopwatch.GetElapsedTime(Stopwatch).TotalMilliseconds;
+      var delta = Stopwatch.GetElapsedTime((long)_startTimestamp!)
+                           .TotalMilliseconds;
       var deltaInSeconds = Math.Round(delta / 1000, 2);
       var now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
 
@@ -51,8 +54,8 @@ public static class StartupLoggerExtensions
       return app;
    }
 
-   public static WebApplicationBuilder LogModuleRegistrationSuccess(
-       this WebApplicationBuilder builder, string moduleName)
+   public static WebApplicationBuilder LogModuleRegistrationSuccess(this WebApplicationBuilder builder,
+      string moduleName)
    {
       var now = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
 
