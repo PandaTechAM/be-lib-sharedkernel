@@ -34,13 +34,21 @@ internal static class UiExtensions
       return app;
    }
 
-   internal static WebApplication MapScalarUi(this WebApplication app)
+   internal static WebApplication MapScalarUi(this WebApplication app, OpenApiConfig openApiConfigConfiguration)
    {
       app.MapScalarApiReference(options =>
       {
          options.Theme = ScalarTheme.Kepler;
-
          options.Favicon = "/swagger-resources/favicon.svg";
+         
+         foreach (var document in openApiConfigConfiguration.Documents)
+         {
+            options.AddDocument(
+               document.GroupName,
+               document.Title,
+               document.GetEndpointUrl()
+            );
+         }
       });
       return app;
    }

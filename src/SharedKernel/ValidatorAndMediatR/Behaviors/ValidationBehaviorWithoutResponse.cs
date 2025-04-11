@@ -14,7 +14,7 @@ public class ValidationBehaviorWithoutResponse<TRequest, TResponse>(IEnumerable<
    {
       if (!validators.Any())
       {
-         return await next();
+         return await next(cancellationToken);
       }
 
       var context = new ValidationContext<TRequest>(request);
@@ -26,7 +26,7 @@ public class ValidationBehaviorWithoutResponse<TRequest, TResponse>(IEnumerable<
 
       if (failures.Count == 0)
       {
-         return await next();
+         return await next(cancellationToken);
       }
 
       var errors = failures.GroupBy(e => e.PropertyName, e => e.ErrorMessage)
