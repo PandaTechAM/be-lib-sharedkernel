@@ -55,7 +55,7 @@ public static class OpenApiExtensions
       app.MapOpenApi();
       app.MapSwaggerUiAssetEndpoint();
       app.MapSwaggerUi(openApiConfiguration);
-      app.MapScalarUi();
+      app.MapScalarUi(openApiConfiguration);
       return app;
    }
 
