@@ -8,7 +8,7 @@
         <PackageReadmeFile>Readme.md</PackageReadmeFile>
         <Authors>Pandatech</Authors>
         <Copyright>MIT</Copyright>
-        <Version>1.3.5</Version>
+        <Version>1.3.6</Version>
         <PackageId>Pandatech.SharedKernel</PackageId>
         <Title>Pandatech Shared Kernel Library</Title>
         <PackageTags>Pandatech, shared kernel, library, OpenAPI, Swagger, utilities, scalar</PackageTags>
@@ -47,7 +47,7 @@
         <PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.0.0-beta.12" />
         <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.11.1" />
         <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.11.1" />
-        <PackageReference Include="Pandatech.Crypto" Version="5.0.0" />
+        <PackageReference Include="Pandatech.Crypto" Version="5.0.1" />
         <PackageReference Include="Pandatech.DistributedCache" Version="4.0.7" />
         <PackageReference Include="PandaTech.FileExporter" Version="4.0.3" />
         <PackageReference Include="Pandatech.FluentMinimalApiMapper" Version="2.0.2" />
