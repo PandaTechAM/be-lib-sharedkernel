@@ -71,8 +71,7 @@ internal static class RedactionHelper
       }
       catch (JsonException)
       {
-         // If invalid JSON, do naive string-based redaction
-         return RedactSensitiveString(body);
+         return (Headers: "{}", Body: "[SKIPPED_NON_JSON]");
       }
    }
 
@@ -135,7 +134,9 @@ internal static class RedactionHelper
    private static string RedactSensitiveString(string? value)
    {
       if (string.IsNullOrWhiteSpace(value))
+      {
          return string.Empty;
+      }
 
       return SensitiveKeywords.Any(k => value.Contains(k, StringComparison.OrdinalIgnoreCase))
          ? "[REDACTED]"

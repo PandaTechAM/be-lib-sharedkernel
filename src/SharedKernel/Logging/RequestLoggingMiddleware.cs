@@ -15,6 +15,12 @@ internal sealed class RequestLoggingMiddleware(
       "/above-board"
    ];
 
+   private static readonly HashSet<string> JsonMediaTypes = new(StringComparer.OrdinalIgnoreCase)
+   {
+      "application/json",
+      "text/json"
+   };
+
    public async Task InvokeAsync(HttpContext context)
    {
       if (HttpMethods.IsOptions(context.Request.Method))
@@ -30,7 +36,12 @@ internal sealed class RequestLoggingMiddleware(
          return;
       }
 
-      var requestLog = await CaptureRequestAsync(context.Request);
+      var isJsonRequest = IsJson(context.Request.ContentType);
+      
+      var requestLog    = isJsonRequest
+         ? await CaptureRequestAsync(context.Request)
+         : (Headers: "{}", Body: "[SKIPPED_NON_JSON]");
+      
       var originalBodyStream = context.Response.Body;
 
       await using var responseBody = new MemoryStream();
@@ -46,7 +57,12 @@ internal sealed class RequestLoggingMiddleware(
       {
          var elapsedMs = Stopwatch.GetElapsedTime(stopwatch)
                                   .TotalMilliseconds;
-         var responseLog = await CaptureResponseAsync(context.Response);
+
+         var isJsonReply = IsJson(context.Response.ContentType);
+
+         var responseLog = isJsonReply
+            ? await CaptureResponseAsync(context.Response)
+            : (Headers: "{}", Body: "[SKIPPED_NON_JSON]");
 
          logger.LogInformation(
             "[Incoming Request] HTTP {Method} {Query} responded with {StatusCode} in {ElapsedMilliseconds}ms. " +
@@ -95,4 +111,9 @@ internal sealed class RequestLoggingMiddleware(
          JsonSerializer.Serialize(redactedBody)
       );
    }
+
+   private static bool IsJson(string? contentType) =>
+      !string.IsNullOrWhiteSpace(contentType) &&
+      (JsonMediaTypes.Any(contentType.StartsWith) ||
+       contentType.Contains("+json", StringComparison.OrdinalIgnoreCase));
 }
