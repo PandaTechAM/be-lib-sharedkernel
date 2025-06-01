@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using RegexBox;
+using SharedKernel.Helpers;
 
 namespace SharedKernel.Extensions;
 
@@ -56,7 +56,7 @@ public static class CorsExtensions
          result[i] = result[i]
             .Trim();
 
-         if (PandaValidator.IsUri(result[i], false))
+         if (ValidationHelper.IsUri(result[i], false))
          {
             continue;
          }

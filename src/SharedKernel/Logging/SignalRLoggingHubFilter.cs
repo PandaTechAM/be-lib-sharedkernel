@@ -10,69 +10,94 @@ internal sealed class SignalRLoggingHubFilter(ILogger<SignalRLoggingHubFilter> l
    public async ValueTask<object?> InvokeMethodAsync(HubInvocationContext invocationContext,
       Func<HubInvocationContext, ValueTask<object?>> next)
    {
-      var start = Stopwatch.GetTimestamp();
+      var startTimestamp = Stopwatch.GetTimestamp();
 
-      // Basic context info
       var hubName = invocationContext.Hub.GetType()
                                      .Name;
       var connectionId = invocationContext.Context.ConnectionId;
       var userId = invocationContext.Context.UserIdentifier;
       var methodName = invocationContext.HubMethodName;
 
-      // Redact arguments
       var serializedArgs = JsonSerializer.Serialize(invocationContext.HubMethodArguments);
       var redactedArgs = RedactionHelper.ParseAndRedactJson(serializedArgs);
 
-      object? result = null;
-      Exception? exception = null;
 
-      try
-      {
-         // Invoke the actual hub method
-         result = await next(invocationContext);
-      }
-      catch (Exception ex)
-      {
-         exception = ex;
-      }
+      var result = await next(invocationContext);
 
-      var elapsedMs = Stopwatch.GetElapsedTime(start)
+
+      var elapsedMs = Stopwatch.GetElapsedTime(startTimestamp)
                                .TotalMilliseconds;
 
-      if (exception is not null)
+      using (logger.BeginScope(new
+             {
+                Hub = hubName,
+                ConnId = connectionId,
+                UserId = userId,
+                Method = methodName
+             }))
       {
-         logger.LogError(exception,
-            "[SignalR] Hub {HubName}, ConnId {ConnectionId}, UserId {UserId} - Method {MethodName} threw an exception after {ElapsedMs}ms. " +
-            "Inbound Args: {Args}",
+         logger.LogInformation(
+            "[Incoming Message] SignalR {Hub}, ConnId={ConnId}, UserId={UserId}, Method={Method}, completed in {ElapsedMs}ms, Args={Args}",
             hubName,
             connectionId,
             userId,
             methodName,
             elapsedMs,
-            redactedArgs);
-         throw exception;
+            redactedArgs
+         );
       }
-
-      // Redact return value, if any
-      var redactedResult = string.Empty;
-      if (result is not null)
-      {
-         var serializedResult = JsonSerializer.Serialize(result);
-         var redactedObj = RedactionHelper.ParseAndRedactJson(serializedResult);
-         redactedResult = JsonSerializer.Serialize(redactedObj);
-      }
-
-      logger.LogInformation(
-         "[SignalR] Hub {HubName}, ConnId {ConnectionId}, UserId {UserId} - Method {MethodName} completed in {ElapsedMs}ms. " +
-         "Inbound Args: {Args}, Outbound Result: {Result}",
-         hubName,
-         connectionId,
-         userId,
-         methodName,
-         elapsedMs,
-         redactedArgs,
-         redactedResult);
 
       return result;
+   }
+
+   public async Task OnConnectedAsync(HubLifetimeContext context,
+      Func<HubLifetimeContext, Task> next)
+   {
+      var hubName = context.Hub.GetType()
+                           .Name;
+      var connectionId = context.Context.ConnectionId;
+      var userId = context.Context.UserIdentifier;
+
+      using (logger.BeginScope(new
+             {
+                Hub = hubName,
+                ConnId = connectionId,
+                UserId = userId
+             }))
+      {
+         logger.LogInformation("[Connected] SignalR {Hub}, ConnId={ConnId}, UserId={UserId} connected.",
+            hubName,
+            connectionId,
+            userId);
+      }
+
+      await next(context);
+   }
+
+   public async Task OnDisconnectedAsync(HubLifetimeContext context,
+      Exception? exception,
+      Func<HubLifetimeContext, Exception?, Task> next)
+   {
+      var hubName = context.Hub.GetType()
+                           .Name;
+      var connectionId = context.Context.ConnectionId;
+      var userId = context.Context.UserIdentifier;
+
+      using (logger.BeginScope(new
+             {
+                Hub = hubName,
+                ConnId = connectionId,
+                UserId = userId
+             }))
+      {
+         logger.LogInformation(
+            "[Disconnected] SignalR {Hub}, ConnId={ConnId}, UserId={UserId} disconnected gracefully.",
+            hubName,
+            connectionId,
+            userId
+         );
+      }
+
+      await next(context, exception);
    }
 }

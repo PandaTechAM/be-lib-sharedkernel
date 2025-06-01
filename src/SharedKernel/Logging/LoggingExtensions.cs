@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Events;
 
 namespace SharedKernel.Logging;
 
@@ -8,7 +9,7 @@ public static class LoggingExtensions
 {
    public static WebApplication UseRequestLogging(this WebApplication app)
    {
-      if (app.Logger.IsEnabled(LogLevel.Information))
+      if (Log.Logger.IsEnabled(LogEventLevel.Information))
       {
          app.UseMiddleware<RequestLoggingMiddleware>();
       }
@@ -18,14 +19,21 @@ public static class LoggingExtensions
 
    public static WebApplicationBuilder AddOutboundLoggingHandler(this WebApplicationBuilder builder)
    {
-      builder.Services.AddTransient<OutboundLoggingHandler>();
-      
+      if (Log.Logger.IsEnabled(LogEventLevel.Information))
+      {
+         builder.Services.AddTransient<OutboundLoggingHandler>();
+      }
+
       return builder;
    }
-   
+
    public static IHttpClientBuilder AddOutboundLoggingHandler(this IHttpClientBuilder builder)
    {
-      builder.AddHttpMessageHandler<OutboundLoggingHandler>();
+      if (Log.Logger.IsEnabled(LogEventLevel.Information))
+      {
+         builder.AddHttpMessageHandler<OutboundLoggingHandler>();
+      }
+
       return builder;
    }
 }

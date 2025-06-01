@@ -17,7 +17,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared.Kernel.Demo", "Shared.Kernel.Demo\Shared.Kernel.Demo.csproj", "{1CD76A30-4A74-4F54-AC0C-AEDD92408553}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedKernel.Demo", "SharedKernel.Demo\SharedKernel.Demo.csproj", "{1CD76A30-4A74-4F54-AC0C-AEDD92408553}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

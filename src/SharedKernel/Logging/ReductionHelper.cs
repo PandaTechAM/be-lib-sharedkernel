@@ -14,7 +14,18 @@ internal static class RedactionHelper
       "secret",
       "token",
       "cookie",
-      "auth"
+      "auth",
+      "notboundcard",
+      "pan",
+      "cvv",
+      "cvc",
+      "cardholder",
+      "bindingid",
+      "ssn",
+      "tin",
+      "iban",
+      "swift",
+      "bankaccount",
    };
 
    // -------------------------------------------------
@@ -112,14 +123,29 @@ internal static class RedactionHelper
             // Omit large arrays
             case JsonValueKind.Array when propVal.GetRawText()
                                                  .Length > MaxPropertyLength:
-               masked[propName] = "[OMITTED_DUE_TO_SIZE]";
+            {
+               var actualSize = propVal.GetRawText()
+                                       .Length;
+               const int maxKb = MaxPropertyLength / 1024;
+
+               var actualKb = actualSize / 1024;
+               masked[propName] = $"[OMITTED: max {maxKb}KB, actual {actualKb}KB]";
                break;
+            }
             case JsonValueKind.String:
             {
                var s = propVal.GetString() ?? string.Empty;
-               masked[propName] = s.Length > MaxPropertyLength
-                  ? "[OMITTED_DUE_TO_SIZE]"
-                  : RedactSensitiveString(s);
+               if (s.Length > MaxPropertyLength)
+               {
+                  const int maxKb = MaxPropertyLength / 1024;
+                  var actualKb = s.Length / 1024;
+                  masked[propName] = $"[OMITTED: max {maxKb}KB, actual {actualKb}KB]";
+               }
+               else
+               {
+                  masked[propName] = RedactSensitiveString(s);
+               }
+
                break;
             }
             default:

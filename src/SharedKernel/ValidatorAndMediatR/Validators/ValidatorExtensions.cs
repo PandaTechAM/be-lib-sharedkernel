@@ -1,6 +1,6 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Http;
-using RegexBox;
+using SharedKernel.Helpers;
 
 namespace SharedKernel.ValidatorAndMediatR.Validators;
 
@@ -8,20 +8,20 @@ public static class ValidatorExtensions
 {
    public static IRuleBuilderOptions<T, string?> IsEmail<T>(this IRuleBuilder<T, string?> ruleBuilder)
    {
-      return ruleBuilder.Must(x => x is null || PandaValidator.IsEmail(x))
+      return ruleBuilder.Must(x => x is null || ValidationHelper.IsEmail(x))
                         .WithMessage("email_format_is_not_valid");
    }
 
    public static IRuleBuilderOptions<T, string?> IsPhoneNumber<T>(this IRuleBuilder<T, string?> ruleBuilder)
    {
-      return ruleBuilder.Must(x => x is null || PandaValidator.IsPandaFormattedPhoneNumber(x))
+      return ruleBuilder.Must(x => x is null || ValidationHelper.IsPandaFormattedPhoneNumber(x))
                         .WithMessage("phone_number_format_is_not_valid");
    }
 
    public static IRuleBuilderOptions<T, string?> IsEmailOrPhoneNumber<T>(this IRuleBuilder<T, string?> ruleBuilder)
    {
       return ruleBuilder
-             .Must(x => x is null || PandaValidator.IsPandaFormattedPhoneNumber(x) || PandaValidator.IsEmail(x))
+             .Must(x => x is null || ValidationHelper.IsPandaFormattedPhoneNumber(x) || ValidationHelper.IsEmail(x))
              .WithMessage("phone_number_or_email_format_is_not_valid");
    }
 

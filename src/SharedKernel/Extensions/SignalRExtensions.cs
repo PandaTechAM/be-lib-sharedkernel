@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using ResponseCrafter.ExceptionHandlers.SignalR;
+using Serilog;
+using Serilog.Events;
 using SharedKernel.Logging;
 using StackExchange.Redis;
 
@@ -35,8 +37,12 @@ public static class SignalRExtensions
       return builder.Services
                     .AddSignalR(o =>
                     {
+                       if (Log.Logger.IsEnabled(LogEventLevel.Information))
+                       {
+                          o.AddFilter<SignalRLoggingHubFilter>();
+                       }
+
                        o.AddFilter<SignalRExceptionFilter>();
-                       o.AddFilter<SignalRLoggingHubFilter>();
                     })
                     .AddMessagePackProtocol();
    }
