@@ -26,6 +26,7 @@ This package currently supports:
 - **SignalR Extensions** for adding simple SignalR or distributed SignalR backed with Redis.
 - **OpenTelemetry**: Metrics, traces, and logs with Prometheus support.
 - **Health Checks**: Startup validation and endpoints for monitoring.
+- **ValidationHelper**: A collection of regex-based validators for common data formats.
 - Various **Extensions and Utilities**, including enumerable, string, dictionary and queryable extensions.
 
 ## Prerequisites
@@ -315,11 +316,12 @@ builder.AddSerilog(
 );
 ```
 
->- **Asynchronous Sinks (asyncSinks: true):** Recommended for very high-traffic environments (e.g., 1000+ requests per
-  second per pod) where performance is critical and the possibility of losing a small amount of log data (e.g., on
-  sudden process termination) is acceptable. <br><br>
->- **Synchronous Sinks (asyncSinks: false):** Recommended if you can handle up to ~1000 requests per second per pod and must
-  retain every log entry without fail. This might incur slightly more overhead but ensures maximum reliability.
+> - **Asynchronous Sinks (asyncSinks: true):** Recommended for very high-traffic environments (e.g., 1000+ requests per
+    second per pod) where performance is critical and the possibility of losing a small amount of log data (e.g., on
+    sudden process termination) is acceptable. <br><br>
+>- **Synchronous Sinks (asyncSinks: false):** Recommended if you can handle up to ~1000 requests per second per pod and
+   must
+   retain every log entry without fail. This might incur slightly more overhead but ensures maximum reliability.
 
 Configure minimal Serilog settings in your environment JSON files as needed, for example in
 `appsettings.{Environment}.json`:
@@ -651,6 +653,68 @@ app.MapHealthCheckEndpoints(); // Map health check routes
 app.Run();
 ```
 
+## ValidationHelper
+
+The `ValidationHelper` class is a highly performant and robust C# class designed to simplify complex regex validations
+for
+various data formats. With 100% test coverage and a focus on security through a 50ms regex execution timeout, it's an
+ideal solution for applications requiring reliable and efficient data validation.
+
+```csharp
+using Pandatech.RegexBox;
+
+// URI validation
+bool isValidUri = ValidationHelper.IsUri("http://example.com", allowNonSecure: false);
+
+// US Social Security Number validation
+bool isValidSsnUs = ValidationHelper.IsUsSocialSecurityNumber("123-45-6789");
+
+// Email validation
+bool isValidEmail = ValidationHelper.IsEmail("user@example.com");
+
+// Username validation
+bool isValidUsername = ValidationHelper.IsUsername("user123");
+
+// Armenian Social Security Number validation
+bool isValidSsnAm = ValidationHelper.IsArmeniaSocialSecurityNumber("12345678912");
+
+//ArmenianIDCard validation
+bool isValidArmenianIdCard = ValidationHelper.IsArmeniaIdCard("AN1234567");
+
+// Armenian Passport validation
+bool isValidArmenianPassport = ValidationHelper.IsArmeniaPassport("AN1234567");
+
+// Armenian Tax code validation
+bool isValidArmenianTaxCode = ValidationHelper.IsArmeniaTaxCode("12345678");
+
+// Panda Formatted Phone Number validation
+bool isValidPhoneNumber = ValidationHelper.IsPandaFormattedPhoneNumber("(374)94810553");
+
+// Armenian State Registration Number validation
+bool isValidArmenianStateRegistrationNumber = ValidationHelper.IsArmeniaStateRegistryNumber("123.456.78");
+
+// Panda formatted phone number validation
+
+bool isValidPandaFormattedPhoneNumber = ValidationHelper.IsPandaFormattedPhoneNumber("(374)94810553");
+
+// Guid validation
+bool isValidGuid = ValidationHelper.IsGuid("12345678-1234-1234-1234-123456789012");
+
+// IPv4 validation
+bool isValidIpv4 = ValidationHelper.IsIPv4("192.168.1.1");
+
+// IPv6 validation
+bool isValidIpv6 = ValidationHelper.IsIPv6("2001:0db8:85a3:0000:0000:8a2e:0370:7334");
+
+// Any IP validation
+bool isValidIp = ValidationHelper.IsIpAddress("192.168.1.1");
+
+// Json validation
+bool isValidJson = ValidationHelper.IsJson("{\"name\":\"John\", \"age\":30}");
+
+// and many more...
+```
+
 ## Additional Extensions and NuGet Packages
 
 This package includes various extensions and utilities to aid development:
@@ -671,7 +735,6 @@ This package includes various extensions and utilities to aid development:
 
 - **Pandatech.Crypto:** Provides cryptographic utilities.
 - **Pandatech.FluentMinimalApiMapper:** Simplifies mapping in minimal APIs.
-- **Pandatech.RegexBox:** A collection of useful regular expressions.
 - **Pandatech.ResponseCrafter:** A utility for crafting consistent API responses.
 - **Pandatech.DistributedCache:** A distributed cache provider for Redis.
 - **Pandatech.FileExporter:** A utility for exporting files.

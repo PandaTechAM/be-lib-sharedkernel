@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.OpenApi;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using RegexBox;
+using SharedKernel.Helpers;
 using SharedKernel.OpenApi.Options;
 
 namespace SharedKernel.OpenApi;
@@ -78,12 +78,12 @@ public static class OpenApiExtensions
          throw new InvalidOperationException("Contact Name is required in OpenApi configuration.");
       }
 
-      if (!PandaValidator.IsUri(openApiConfiguration.Contact.Url))
+      if (!ValidationHelper.IsUri(openApiConfiguration.Contact.Url))
       {
          throw new InvalidOperationException("Contact URL must be a valid URL in OpenApi configuration.");
       }
 
-      if (!PandaValidator.IsEmail(openApiConfiguration.Contact.Email))
+      if (!ValidationHelper.IsEmail(openApiConfiguration.Contact.Email))
       {
          throw new InvalidOperationException("Contact Email is required in OpenApi configuration.");
       }

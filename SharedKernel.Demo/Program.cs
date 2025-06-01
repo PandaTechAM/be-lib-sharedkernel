@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using SharedKernel.Demo2;
 using ResponseCrafter.Enums;
 using ResponseCrafter.Extensions;
+using SharedKernel.Demo;
 using SharedKernel.Extensions;
 using SharedKernel.Helpers;
 using SharedKernel.Logging;
@@ -77,6 +78,8 @@ app.MapGet("/get-data",
 
       return response;
    });
+
+app.MapHub<MessageHub>("/hub");
 
 app.LogStartSuccess();
 app.Run();
