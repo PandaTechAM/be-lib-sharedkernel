@@ -76,7 +76,8 @@ internal sealed class RequestLoggingMiddleware(
             requestLog.Body,
             responseLog.Headers,
             responseLog.Body);
-
+         
+         responseBody.Seek(0, SeekOrigin.Begin);
          await responseBody.CopyToAsync(originalBodyStream);
       }
    }
