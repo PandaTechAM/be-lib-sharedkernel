@@ -2,6 +2,7 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using SharedKernel.Logging.Helpers;
 
 namespace SharedKernel.Logging;
 
@@ -10,36 +11,39 @@ internal sealed class SignalRLoggingHubFilter(ILogger<SignalRLoggingHubFilter> l
    public async ValueTask<object?> InvokeMethodAsync(HubInvocationContext invocationContext,
       Func<HubInvocationContext, ValueTask<object?>> next)
    {
-      var startTimestamp = Stopwatch.GetTimestamp();
+      var start = Stopwatch.GetTimestamp();
 
+      // capture context
       var hubName = invocationContext.Hub.GetType()
                                      .Name;
-      var connectionId = invocationContext.Context.ConnectionId;
+      var connId = invocationContext.Context.ConnectionId;
       var userId = invocationContext.Context.UserIdentifier;
       var methodName = invocationContext.HubMethodName;
 
+      // serialize + redact
       var serializedArgs = JsonSerializer.Serialize(invocationContext.HubMethodArguments);
-      var redactedArgs = RedactionHelper.ParseAndRedactJson(serializedArgs);
+      var redactedObj = RedactionHelper.RedactBody("application/json", serializedArgs);
+      var redactedArgs = JsonSerializer.Serialize(redactedObj);
 
-
+      // invoke the actual method
       var result = await next(invocationContext);
 
-
-      var elapsedMs = Stopwatch.GetElapsedTime(startTimestamp)
+      var elapsedMs = Stopwatch.GetElapsedTime(start)
                                .TotalMilliseconds;
 
       using (logger.BeginScope(new
              {
                 Hub = hubName,
-                ConnId = connectionId,
+                ConnId = connId,
                 UserId = userId,
                 Method = methodName
              }))
       {
          logger.LogInformation(
-            "[Incoming Message] SignalR {Hub}, ConnId={ConnId}, UserId={UserId}, Method={Method}, completed in {ElapsedMs}ms, Args={Args}",
+            "[Incoming Message] SignalR {Hub}, ConnId={ConnId}, UserId={UserId}, Method={Method}, " +
+            "completed in {ElapsedMs}ms, Args={Args}",
             hubName,
-            connectionId,
+            connId,
             userId,
             methodName,
             elapsedMs,
