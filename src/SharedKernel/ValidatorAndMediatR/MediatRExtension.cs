@@ -12,10 +12,11 @@ public static class MediatrExtension
    public static WebApplicationBuilder AddMediatrWithBehaviors(this WebApplicationBuilder builder,
       Assembly[] assemblies)
    {
-      builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(assemblies));
-      builder.Services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviorWithoutResponse<,>));
-      builder.Services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviorWithResponse<,>));
-      builder.Services.AddValidatorsFromAssemblies(assemblies, includeInternalTypes: true);
+      builder.Services
+             .AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(assemblies))
+             .AddValidatorsFromAssemblies(assemblies, includeInternalTypes: true)
+             .AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+
       return builder;
    }
 }
