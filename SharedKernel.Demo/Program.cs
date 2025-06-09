@@ -1,6 +1,7 @@
 using DistributedCache.Extensions;
 using DistributedCache.Options;
 using FluentMinimalApiMapper;
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Mvc;
 using SharedKernel.Demo2;
 using ResponseCrafter.Enums;
@@ -39,18 +40,24 @@ builder
    .AddOutboundLoggingHandler()
    .AddHealthChecks();
 
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+   options.SerializerOptions.PropertyNamingPolicy = null;
+});
 
 
 builder.Services
        .AddHttpClient("RandomApiClient",
           client =>
           {
+             client.DefaultRequestHeaders.Add("RequestCustomHeader", "CustomValue");
              client.BaseAddress = new Uri("http://localhost");
           })
        .AddOutboundLoggingHandler();
 
 
 var app = builder.Build();
+
 
 app
    .UseRequestLogging()
@@ -65,18 +72,53 @@ app
    .MapControllers();
 
 
+app.MapPost("/receive-file", ([FromForm] IFormFile file) => TypedResults.Ok())
+   .DisableAntiforgery();
+
 app.MapPost("/params", ([AsParameters] TestTypes testTypes) => TypedResults.Ok(testTypes));
-app.MapPost("/body", ([FromBody] TestTypes testTypes) => TypedResults.Ok(testTypes));
-app.MapGet("/hello", () => TypedResults.Ok("Hello World!"));
+
+app.MapPost("/body",
+   ([FromBody] TestTypes testTypes, HttpContext httpContext) =>
+   {
+      httpContext.Response.ContentType = "application/json";
+      httpContext.Response.Headers.Append("Custom-Header-Response", "CustomValue");
+
+      return TypedResults.Ok(testTypes);
+   });
 
 app.MapGet("/get-data",
    async (IHttpClientFactory httpClientFactory) =>
    {
       var httpClient = httpClientFactory.CreateClient("RandomApiClient");
       httpClient.DefaultRequestHeaders.Add("auth", "hardcoded-auth-value");
-      var response = await httpClient.GetFromJsonAsync<object>("hello");
 
-      return response;
+      var body = new TestTypes
+      {
+         AnimalType = AnimalType.Cat,
+         JustText = "Hello from Get Data",
+         JustNumber = 100
+      };
+      var content = new StringContent(System.Text.Json.JsonSerializer.Serialize(body),
+         System.Text.Encoding.UTF8,
+         "application/json");
+
+      var response = await httpClient.PostAsync("body", content);
+
+      if (!response.IsSuccessStatusCode)
+      {
+         throw new Exception("Something went wrong");
+      }
+
+      var responseBody = await response.Content.ReadAsStringAsync();
+
+      var testTypes = System.Text.Json.JsonSerializer.Deserialize<TestTypes>(responseBody);
+
+      if (testTypes == null)
+      {
+         throw new Exception("Failed to get data from external API");
+      }
+
+      return TypedResults.Ok(testTypes);
    });
 
 app.MapHub<MessageHub>("/hub");
