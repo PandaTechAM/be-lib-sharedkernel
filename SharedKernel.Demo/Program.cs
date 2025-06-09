@@ -1,7 +1,7 @@
 using DistributedCache.Extensions;
-using DistributedCache.Options;
 using FluentMinimalApiMapper;
-using Microsoft.AspNetCore.HttpLogging;
+using FluentValidation;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using SharedKernel.Demo2;
 using ResponseCrafter.Enums;
@@ -40,6 +40,7 @@ builder
    .AddOutboundLoggingHandler()
    .AddHealthChecks();
 
+
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
    options.SerializerOptions.PropertyNamingPolicy = null;
@@ -71,6 +72,11 @@ app
    .UseOpenApi()
    .MapControllers();
 
+app.MapPost("user", async ([FromBody] UserCommand user, ISender sender) =>
+{
+   await sender.Send(user);
+   return Results.Ok();
+});
 
 app.MapPost("/receive-file", ([FromForm] IFormFile file) => TypedResults.Ok())
    .DisableAntiforgery();
@@ -140,5 +146,39 @@ namespace SharedKernel.Demo2
       Dog,
       Cat,
       Fish
+   }
+}
+
+public record UserCommand(string Name, string Email) : ICommand<string>;
+
+public class UserCommandHandler : ICommandHandler<UserCommand, string>
+{
+   public Task<string> Handle(UserCommand request, CancellationToken cancellationToken)
+   {
+      return Task.FromResult($"User {request.Name} with email {request.Email} created successfully.");
+   }
+}
+
+public class User
+{
+   public string Name { get; set; } = string.Empty;
+   public string Email { get; set; } = string.Empty;
+}
+
+public class UserValidator : AbstractValidator<UserCommand>
+{
+   public UserValidator()
+   {
+      RuleFor(x => x.Name)
+         .NotEmpty()
+         .WithMessage("Name is required.")
+         .MaximumLength(100)
+         .WithMessage("Name cannot exceed 100 characters.");
+
+      RuleFor(x => x.Email)
+         .NotEmpty()
+         .WithMessage("Email is required.")
+         .EmailAddress()
+         .WithMessage("Invalid email format.");
    }
 }

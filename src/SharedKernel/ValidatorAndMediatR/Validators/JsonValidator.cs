@@ -1,6 +1,6 @@
-﻿using System.Text.Json;
-using FluentValidation;
+﻿using FluentValidation;
 using FluentValidation.Validators;
+using SharedKernel.Helpers;
 
 namespace SharedKernel.ValidatorAndMediatR.Validators;
 
@@ -15,16 +15,14 @@ public class JsonValidator<T> : PropertyValidator<T, string>
          return true;
       }
 
-      try
+      var isJson = ValidationHelper.IsJson(value);
+      if (isJson)
       {
-         JsonDocument.Parse(value);
          return true;
       }
-      catch (JsonException)
-      {
-         context.AddFailure("The input is not valid JSON.");
-         return false;
-      }
+
+      context.AddFailure("The input is not valid JSON.");
+      return false;
    }
 
    protected override string GetDefaultMessageTemplate(string errorCode)

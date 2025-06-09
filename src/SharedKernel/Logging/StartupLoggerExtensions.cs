@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
 using Microsoft.AspNetCore.Builder;
-using SharedKernel.Extensions;
 
 namespace SharedKernel.Logging;
 
