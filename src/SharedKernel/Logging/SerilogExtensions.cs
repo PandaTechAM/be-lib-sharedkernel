@@ -125,11 +125,11 @@ public static class SerilogExtensions
       return loggerConfig.WriteTo.File(formatter, logPath, rollingInterval: RollingInterval.Day);
    }
 
-   #region Filtering
-
    private static LoggerConfiguration FilterOutUnwantedLogs(this LoggerConfiguration loggerConfig)
    {
       return loggerConfig
+             .Filter
+             .ByExcluding(e => e.ShouldExcludeAboveBoardGetLogs()) 
              .Filter
              .ByExcluding(e => e.ShouldExcludeHangfireDashboardLogs())
              .Filter
@@ -138,6 +138,20 @@ public static class SerilogExtensions
              .ByExcluding(e => e.ShouldExcludeSwaggerLogs())
              .Filter
              .ByExcluding(e => e.ShouldExcludeMassTransitHealthCheckLogs());
+   }
+   
+   private static bool ShouldExcludeAboveBoardGetLogs(this LogEvent logEvent)
+   {
+      var path = logEvent.Properties.TryGetValue("RequestPath", out var p) && p is ScalarValue sv
+         ? sv.Value?.ToString()
+         : null;
+      
+      var method = logEvent.Properties.TryGetValue("RequestMethod", out var m) && m is ScalarValue mv
+         ? mv.Value?.ToString()
+         : null;
+
+      return string.Equals(method, "GET", StringComparison.OrdinalIgnoreCase)
+             && path?.StartsWith("/above-board", StringComparison.OrdinalIgnoreCase) == true;
    }
 
    private static bool ShouldExcludeHangfireDashboardLogs(this LogEvent logEvent)
@@ -170,10 +184,6 @@ public static class SerilogExtensions
       return message.StartsWith("Health check masstransit-bus with status Unhealthy completed after");
    }
 
-   #endregion
-
-   #region File Path Helper
-
    private static string GetLogsPath(this WebApplicationBuilder builder)
    {
       var persistencePath = builder.Configuration.GetPersistentPath();
@@ -185,5 +195,4 @@ public static class SerilogExtensions
       return Path.Combine(persistencePath, repoName, envName, "logs", fileName);
    }
 
-   #endregion
 }

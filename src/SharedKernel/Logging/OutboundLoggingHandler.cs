@@ -29,11 +29,11 @@ internal sealed class OutboundLoggingHandler(ILogger<OutboundLoggingHandler> log
          response.Content.Headers.ContentType?.MediaType);
 
       logger.LogInformation(
-         "[Outbound Call] HTTP {Method} to {Uri} responded with {StatusCode} in {ElapsedMs}ms. " +
+         "[Outbound Call] HTTP {Method} {Uri} responded with {StatusCode} in {ElapsedMs}ms. " +
          "Request Headers: {RequestHeaders}, Request Body: {RequestBody}, " +
          "Response Headers: {ResponseHeaders}, Response Body: {ResponseBody}",
          request.Method,
-         request.RequestUri,
+         request.RequestUri?.ToString(),
          (int)response.StatusCode,
          elapsed,
          reqHeaders,
