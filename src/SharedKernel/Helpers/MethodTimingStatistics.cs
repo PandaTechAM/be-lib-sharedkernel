@@ -107,7 +107,7 @@ public class MethodTimingStatistics
       if (seconds < 60)
       {
          var wholeSeconds = (int)seconds;
-         var remainderMs = milliseconds - (wholeSeconds * 1000.0);
+         var remainderMs = milliseconds - wholeSeconds * 1000.0;
          return $"{wholeSeconds}s {remainderMs:F3}ms";
       }
 

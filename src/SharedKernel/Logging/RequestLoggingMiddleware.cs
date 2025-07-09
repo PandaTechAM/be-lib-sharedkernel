@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Logging;
 using SharedKernel.Logging.Helpers;
 
@@ -52,11 +53,11 @@ internal sealed class RequestLoggingMiddleware(
             await responseBody.CopyToAsync(originalBody);
 
             logger.LogInformation(
-                "[Incoming Request] HTTP {Method} {Query} responded with {StatusCode} in {ElapsedMilliseconds}ms. " +
+                "[Incoming Request] HTTP {Method} {Url} responded with {StatusCode} in {ElapsedMilliseconds}ms. " +
                 "Request Headers: {RequestHeaders}, Request Body: {RequestBody}, " +
                 "Response Headers: {ResponseHeaders}, Response Body: {ResponseBody}",
                 context.Request.Method,
-                context.Request.QueryString,
+                context.Request.GetDisplayUrl(),
                 context.Response.StatusCode,
                 elapsed,
                 reqHeaders,
