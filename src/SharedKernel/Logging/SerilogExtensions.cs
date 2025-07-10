@@ -116,10 +116,11 @@ public static class SerilogExtensions
       if (useAsync)
       {
          return loggerConfig.WriteTo.Async(a =>
-            a.File(formatter,
-               logPath,
-               rollingInterval: RollingInterval.Day)
-         );
+               a.File(formatter,
+                  logPath,
+                  rollingInterval: RollingInterval.Day),
+            blockWhenFull: true,
+            bufferSize: 20_000);
       }
 
       return loggerConfig.WriteTo.File(formatter, logPath, rollingInterval: RollingInterval.Day);
@@ -129,59 +130,26 @@ public static class SerilogExtensions
    {
       return loggerConfig
              .Filter
-             .ByExcluding(e => e.ShouldExcludeAboveBoardGetLogs()) 
+             .ByExcluding(e => e.ExcludeOutboxAndMassTransit())
              .Filter
-             .ByExcluding(e => e.ShouldExcludeHangfireDashboardLogs())
-             .Filter
-             .ByExcluding(e => e.ShouldExcludeOutboxDbCommandLogs())
-             .Filter
-             .ByExcluding(e => e.ShouldExcludeSwaggerLogs())
-             .Filter
-             .ByExcluding(e => e.ShouldExcludeMassTransitHealthCheckLogs());
-   }
-   
-   private static bool ShouldExcludeAboveBoardGetLogs(this LogEvent logEvent)
-   {
-      var path = logEvent.Properties.TryGetValue("RequestPath", out var p) && p is ScalarValue sv
-         ? sv.Value?.ToString()
-         : null;
-      
-      var method = logEvent.Properties.TryGetValue("RequestMethod", out var m) && m is ScalarValue mv
-         ? mv.Value?.ToString()
-         : null;
-
-      return string.Equals(method, "GET", StringComparison.OrdinalIgnoreCase)
-             && path?.StartsWith("/above-board", StringComparison.OrdinalIgnoreCase) == true;
+             .ByExcluding(evt =>
+             {
+                if (!evt.Properties.TryGetValue("RequestPath", out var p) || p is not ScalarValue sv)
+                   return false;
+                var path = sv.Value as string ?? "";
+                return path.StartsWith("/swagger")
+                       || path.StartsWith("/hangfire")
+                       || path.Contains("/above-board")
+                       || path.Contains("localhost/auth/is-authenticated.json?api-version=v2");
+             });
    }
 
-   private static bool ShouldExcludeHangfireDashboardLogs(this LogEvent logEvent)
-   {
-      return logEvent.Properties.TryGetValue("RequestPath", out var requestPathValue)
-             && requestPathValue is ScalarValue requestPath
-             && requestPath.Value
-                           ?.ToString()
-                           ?.Contains("/hangfire") == true;
-   }
-
-   private static bool ShouldExcludeOutboxDbCommandLogs(this LogEvent logEvent)
+   private static bool ExcludeOutboxAndMassTransit(this LogEvent logEvent)
    {
       var message = logEvent.RenderMessage();
-      return message.Contains("outbox_messages", StringComparison.OrdinalIgnoreCase);
-   }
-
-   private static bool ShouldExcludeSwaggerLogs(this LogEvent logEvent)
-   {
-      return logEvent.Properties.TryGetValue("RequestPath", out var requestPathValue)
-             && requestPathValue is ScalarValue requestPath
-             && requestPath.Value
-                           ?.ToString()
-                           ?.Contains("/swagger") == true;
-   }
-
-   private static bool ShouldExcludeMassTransitHealthCheckLogs(this LogEvent logEvent)
-   {
-      var message = logEvent.RenderMessage();
-      return message.StartsWith("Health check masstransit-bus with status Unhealthy completed after");
+      return message.Contains("outbox_messages", StringComparison.OrdinalIgnoreCase) || message.StartsWith(
+         "Health check masstransit-bus with status Unhealthy completed after",
+         StringComparison.OrdinalIgnoreCase);
    }
 
    private static string GetLogsPath(this WebApplicationBuilder builder)
@@ -194,5 +162,4 @@ public static class SerilogExtensions
       var fileName = $"logs-{instanceId}-.json";
       return Path.Combine(persistencePath, repoName, envName, "logs", fileName);
    }
-
 }
