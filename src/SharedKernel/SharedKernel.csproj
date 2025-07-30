@@ -8,13 +8,13 @@
         <PackageReadmeFile>Readme.md</PackageReadmeFile>
         <Authors>Pandatech</Authors>
         <Copyright>MIT</Copyright>
-        <Version>1.5.2</Version>
+        <Version>1.5.3</Version>
         <PackageId>Pandatech.SharedKernel</PackageId>
         <Title>Pandatech Shared Kernel Library</Title>
         <PackageTags>Pandatech, shared kernel, library, OpenAPI, Swagger, utilities, scalar</PackageTags>
         <Description>Pandatech.SharedKernel provides centralized configurations, utilities, and extensions for ASP.NET Core projects. For more information refere to readme.md document.</Description>
         <RepositoryUrl>https://github.com/PandaTechAM/be-lib-sharedkernel</RepositoryUrl>
-        <PackageReleaseNotes>Logging performance boost</PackageReleaseNotes>
+        <PackageReleaseNotes>ResponseCrafter update</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
@@ -52,7 +52,7 @@
         <PackageReference Include="PandaTech.FileExporter" Version="4.0.6" />
         <PackageReference Include="Pandatech.FluentMinimalApiMapper" Version="2.0.3" />
         <PackageReference Include="Pandatech.PandaVaultClient" Version="4.0.5" />
-        <PackageReference Include="Pandatech.ResponseCrafter" Version="5.1.10" />
+        <PackageReference Include="Pandatech.ResponseCrafter" Version="5.1.11" />
         <PackageReference Include="Scalar.AspNetCore" Version="2.5.6" />
         <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
         <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
