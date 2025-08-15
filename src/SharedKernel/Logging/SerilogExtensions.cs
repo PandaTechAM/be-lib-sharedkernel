@@ -44,7 +44,7 @@ public static class SerilogExtensions
 
       builder.Host.UseSerilog();
 
-      if (daysToRetain <= 0 || logBackend == LogBackend.None)
+      if (daysToRetain <= 0 || logBackend == LogBackend.None || builder.Environment.IsLocal())
       {
          return builder;
       }

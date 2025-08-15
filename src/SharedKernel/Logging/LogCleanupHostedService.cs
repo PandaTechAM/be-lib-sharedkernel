@@ -11,13 +11,20 @@ public class LogCleanupHostedService(string logsDirectory, TimeSpan retentionPer
       {
          try
          {
-            var files = Directory.EnumerateFiles(logsDirectory, "logs-*.json", SearchOption.TopDirectoryOnly);
-            foreach (var file in files)
+            if (!Directory.Exists(logsDirectory))
             {
-               var creationTime = File.GetCreationTime(file);
-               if (DateTime.UtcNow - creationTime > retentionPeriod)
+               Log.Logger.Information("Logs directory does not exist yet: {Directory}", logsDirectory);
+            }
+            else
+            {
+               var files = Directory.EnumerateFiles(logsDirectory, "logs-*.json", SearchOption.TopDirectoryOnly);
+               foreach (var file in files)
                {
-                  File.Delete(file);
+                  var creationTime = File.GetCreationTime(file);
+                  if (DateTime.UtcNow - creationTime > retentionPeriod)
+                  {
+                     File.Delete(file);
+                  }
                }
             }
          }

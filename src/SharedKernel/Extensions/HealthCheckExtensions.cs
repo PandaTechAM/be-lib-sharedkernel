@@ -13,39 +13,21 @@ public static class HealthCheckExtensions
 {
    public static WebApplication EnsureHealthy(this WebApplication app)
    {
-      var healthCheckService = app.Services.GetRequiredService<HealthCheckService>();
-      
-      var report = healthCheckService.CheckHealthAsync()
-                                     .Result;
+      var svc = app.Services.GetRequiredService<HealthCheckService>();
 
-      // "masstransit-bus" entry is only becoming healthy after app.run
-      var relevantEntries = report
-                            .Entries
-                            .Where(e => e.Key != "masstransit-bus")
-                            .ToList();
+      // Skip MassTransit during preflight
+      var report = svc.CheckHealthAsync(r => r.Name != "masstransit-bus")
+                      .GetAwaiter()
+                      .GetResult();
 
-      // Determine overall status based on filtered entries
-      var overallStatus = relevantEntries.Exists(e => e.Value.Status == HealthStatus.Unhealthy)
-         ? HealthStatus.Unhealthy
-         : HealthStatus.Healthy;
+      var failures = report.Entries
+                           .Where(e => e.Value.Status != HealthStatus.Healthy)
+                           .Select(e => $"{e.Key}: {e.Value.Status}")
+                           .ToList();
 
-      if (overallStatus != HealthStatus.Unhealthy)
-      {
-         return app;
-      }
-
-      var unhealthyChecks = relevantEntries
-                            .Where(e => e.Value.Status != HealthStatus.Healthy)
-                            .Select(e => $"{e.Key}: {e.Value.Status}")
-                            .ToList();
-
-      if (unhealthyChecks.Count == 0)
-      {
-         return app;
-      }
-
-      var message = $"Unhealthy services detected: {string.Join(", ", unhealthyChecks)}";
-      throw new ServiceUnavailableException(message);
+      return failures.Count > 0
+         ? throw new ServiceUnavailableException($"Unhealthy services detected: {string.Join(", ", failures)}")
+         : app;
    }
 
    public static WebApplicationBuilder AddHealthChecks(this WebApplicationBuilder builder)
