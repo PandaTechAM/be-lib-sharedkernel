@@ -274,7 +274,7 @@ Based on the above configuration, the UI will be accessible at the following URL
     - `LogBackend.Loki` (Loki formatter to file), or
     - `LogBackend.CompactJson` (compact JSON format to file).
 - **Environment-Specific Configuration:**
-    - **Local:** Logs to console.
+    - **Local:** Only logs to console even if you choose `LogBackend.Any`.
     - **Production:** Logs to file (in ECS or Loki format depending on the backend).
     - **Other Environments:** Logs to both console and file.
 - **Automatic Log Cleanup:** Log files are automatically cleaned up based on the configured retention period.
