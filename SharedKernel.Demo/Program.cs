@@ -35,6 +35,7 @@ builder
       o.RedisConnectionString = "localhost:6379";
       o.ChannelPrefix = "app_name:";
    })
+   .AddMassTransit(AssemblyRegistry.ToArray())
    .MapDefaultTimeZone()
    .AddCors()
    .AddOutboundLoggingHandler()
