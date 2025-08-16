@@ -8,13 +8,13 @@
         <PackageReadmeFile>Readme.md</PackageReadmeFile>
         <Authors>Pandatech</Authors>
         <Copyright>MIT</Copyright>
-        <Version>1.5.4</Version>
+        <Version>1.5.5</Version>
         <PackageId>Pandatech.SharedKernel</PackageId>
         <Title>Pandatech Shared Kernel Library</Title>
         <PackageTags>Pandatech, shared kernel, library, OpenAPI, Swagger, utilities, scalar</PackageTags>
         <Description>Pandatech.SharedKernel provides centralized configurations, utilities, and extensions for ASP.NET Core projects. For more information refere to readme.md document.</Description>
         <RepositoryUrl>https://github.com/PandaTechAM/be-lib-sharedkernel</RepositoryUrl>
-        <PackageReleaseNotes>Nuget updates, performance tweaks and etc.</PackageReleaseNotes>
+        <PackageReleaseNotes>Nuget updates</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
@@ -48,7 +48,7 @@
         <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.12.0" />
         <PackageReference Include="Pandatech.Crypto" Version="5.0.3" />
         <PackageReference Include="Pandatech.DistributedCache" Version="4.0.9" />
-        <PackageReference Include="PandaTech.FileExporter" Version="4.0.7" />
+        <PackageReference Include="PandaTech.FileExporter" Version="4.1.1" />
         <PackageReference Include="Pandatech.FluentMinimalApiMapper" Version="2.0.4" />
         <PackageReference Include="Pandatech.PandaVaultClient" Version="4.0.6" />
         <PackageReference Include="Pandatech.ResponseCrafter" Version="5.2.0" />
