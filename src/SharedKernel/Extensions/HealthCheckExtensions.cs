@@ -21,7 +21,7 @@ public static class HealthCheckExtensions
                       .GetResult();
 
       var failures = report.Entries
-                           .Where(e => e.Value.Status != HealthStatus.Healthy)
+                           .Where(e => e.Value.Status == HealthStatus.Unhealthy)
                            .Select(e => $"{e.Key}: {e.Value.Status}")
                            .ToList();
 
