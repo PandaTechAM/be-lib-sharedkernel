@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Serilog.Events;
 
-namespace SharedKernel.Logging;
+namespace SharedKernel.Logging.Middleware;
 
 public static class LoggingExtensions
 {

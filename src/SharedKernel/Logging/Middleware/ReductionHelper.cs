@@ -1,54 +1,28 @@
-﻿using System.Text.Json;
-using System.Web;
+﻿using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 
-namespace SharedKernel.Logging.Helpers;
+namespace SharedKernel.Logging.Middleware;
 
 internal static class RedactionHelper
 {
-   private const int MaxPropertyLength = 1024 * 5; // 5 KB
-
-   private static readonly HashSet<string> SensitiveKeywords = new(StringComparer.OrdinalIgnoreCase)
-   {
-      "pwd",
-      "pass",
-      "secret",
-      "token",
-      "cookie",
-      "auth",
-      "pan",
-      "cvv",
-      "cvc",
-      "cardholder",
-      "bindingid",
-      "ssn",
-      "tin",
-      "iban",
-      "swift",
-      "bankaccount",
-      "notboundcard"
-   };
-
    public static Dictionary<string, string> RedactHeaders(IHeaderDictionary headers) =>
       headers.ToDictionary(
          h => h.Key,
-         h => SensitiveKeywords.Any(k => h.Key.IndexOf(k, StringComparison.OrdinalIgnoreCase) >= 0)
+         h => LoggingOptions.SensitiveKeywords.Any(k => h.Key.Contains(k, StringComparison.OrdinalIgnoreCase))
             ? "[REDACTED]"
-            : h.Value.ToString()!);
+            : h.Value.ToString());
 
    public static Dictionary<string, string> RedactHeaders(Dictionary<string, IEnumerable<string>> headers) =>
       headers.ToDictionary(
          kvp => kvp.Key,
-         kvp => SensitiveKeywords.Any(k => kvp.Key.Contains(k, StringComparison.OrdinalIgnoreCase))
+         kvp => LoggingOptions.SensitiveKeywords.Any(k => kvp.Key.Contains(k, StringComparison.OrdinalIgnoreCase))
             ? "[REDACTED]"
             : string.Join(";", kvp.Value));
 
    public static object RedactBody(string? mediaType, string raw)
    {
-      if (string.IsNullOrWhiteSpace(raw))
-      {
-         return string.Empty;
-      }
+      if (string.IsNullOrWhiteSpace(raw)) return string.Empty;
 
       if (IsJsonMediaType(mediaType))
       {
@@ -64,19 +38,16 @@ internal static class RedactionHelper
       }
 
       if (mediaType?.Equals("application/x-www-form-urlencoded", StringComparison.OrdinalIgnoreCase) == true)
-
       {
-         var nvc = HttpUtility.ParseQueryString(raw);
+         var nvc = System.Web.HttpUtility.ParseQueryString(raw);
          var keys = nvc.AllKeys;
 
          var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
          foreach (var k in keys)
          {
-            if (string.IsNullOrEmpty(k))
-               continue;
-
+            if (string.IsNullOrEmpty(k)) continue;
             var v = nvc[k] ?? string.Empty;
-            dict[k] = SensitiveKeywords.Any(s =>
+            dict[k] = LoggingOptions.SensitiveKeywords.Any(s =>
                k.Contains(s, StringComparison.OrdinalIgnoreCase) ||
                v.Contains(s, StringComparison.OrdinalIgnoreCase))
                ? "[REDACTED]"
@@ -86,16 +57,15 @@ internal static class RedactionHelper
          return dict;
       }
 
-      if (raw.Length <= MaxPropertyLength)
+      var rawBytes = Encoding.UTF8.GetByteCount(raw);
+      if (rawBytes <= LoggingOptions.RedactionMaxPropertyBytes)
       {
-         return SensitiveKeywords.Any(s => raw.Contains(s, StringComparison.OrdinalIgnoreCase))
+         return LoggingOptions.SensitiveKeywords.Any(s => raw.Contains(s, StringComparison.OrdinalIgnoreCase))
             ? "[REDACTED]"
             : raw;
       }
 
-      var maxKb = MaxPropertyLength / 1024;
-      var actualKb = raw.Length / 1024;
-      return $"[OMITTED: max {maxKb}KB, actual {actualKb}KB]";
+      return HttpLogHelper.BuildOmittedBodyMessage("exceeds-limit", rawBytes, mediaType, LoggingOptions.RedactionMaxPropertyBytes);
    }
 
    private static bool IsJsonMediaType(string? mediaType) =>
@@ -109,7 +79,7 @@ internal static class RedactionHelper
          JsonValueKind.Object => el.EnumerateObject()
                                    .ToDictionary(
                                       p => p.Name,
-                                      p => SensitiveKeywords.Any(k =>
+                                      p => LoggingOptions.SensitiveKeywords.Any(k =>
                                          p.Name.Contains(k, StringComparison.OrdinalIgnoreCase))
                                          ? "[REDACTED]"
                                          : RedactElement(p.Value)),
@@ -122,15 +92,14 @@ internal static class RedactionHelper
 
    private static string RedactString(string value)
    {
-      if (value.Length <= MaxPropertyLength)
+      var bytes = Encoding.UTF8.GetByteCount(value);
+      if (bytes <= LoggingOptions.RedactionMaxPropertyBytes)
       {
-         return SensitiveKeywords.Any(s => value.Contains(s, StringComparison.OrdinalIgnoreCase))
+         return LoggingOptions.SensitiveKeywords.Any(s => value.Contains(s, StringComparison.OrdinalIgnoreCase))
             ? "[REDACTED]"
             : value;
       }
 
-      const int maxKb = MaxPropertyLength / 1024;
-      var actualKb = value.Length / 1024;
-      return $"[OMITTED: max {maxKb}KB, actual {actualKb}KB]";
+      return HttpLogHelper.BuildOmittedBodyMessage("exceeds-limit", bytes, null, LoggingOptions.RedactionMaxPropertyBytes);
    }
 }

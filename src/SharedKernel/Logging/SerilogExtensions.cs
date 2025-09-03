@@ -1,4 +1,5 @@
-﻿using Elastic.CommonSchema.Serilog;
+﻿using Elastic.CommonSchema;
+using Elastic.CommonSchema.Serilog;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -9,6 +10,7 @@ using Serilog.Formatting;
 using Serilog.Formatting.Compact;
 using Serilog.Sinks.Grafana.Loki;
 using SharedKernel.Extensions;
+using Log = Serilog.Log;
 
 namespace SharedKernel.Logging;
 
@@ -39,8 +41,6 @@ public static class SerilogExtensions
       }
 
       Log.Logger = loggerConfig.CreateLogger();
-      builder.Logging.AddSerilog(Log.Logger);
-      builder.Services.AddSingleton(Log.Logger);
 
       builder.Host.UseSerilog();
 
@@ -102,10 +102,23 @@ public static class SerilogExtensions
       LogBackend logBackend,
       bool useAsync)
    {
+      var ecsConfig = new EcsTextFormatterConfiguration
+      {
+         IncludeHost = false,
+         IncludeProcess = false,
+         IncludeUser = false,
+
+         // Last-chance mutator: remove agent.*
+         MapCustom = (doc, _) =>
+         {
+            doc.Agent = null;
+            return doc;
+         }
+      };
       // Choose the formatter based on the selected log backend
       ITextFormatter formatter = logBackend switch
       {
-         LogBackend.ElasticSearch => new EcsTextFormatter(),
+         LogBackend.ElasticSearch => new EcsTextFormatter(ecsConfig),
          LogBackend.Loki => new LokiJsonTextFormatter(),
          LogBackend.CompactJson => new CompactJsonFormatter(),
          _ => new CompactJsonFormatter() // Fallback
@@ -120,7 +133,7 @@ public static class SerilogExtensions
                   logPath,
                   rollingInterval: RollingInterval.Day),
             blockWhenFull: true,
-            bufferSize: 20_000);
+            bufferSize: 10_000);
       }
 
       return loggerConfig.WriteTo.File(formatter, logPath, rollingInterval: RollingInterval.Day);
@@ -130,27 +143,60 @@ public static class SerilogExtensions
    {
       return loggerConfig
              .Filter
-             .ByExcluding(e => e.ExcludeOutboxAndMassTransit())
+             .ByExcluding(IsEfOutboxQuery)
              .Filter
-             .ByExcluding(evt =>
-             {
-                if (!evt.Properties.TryGetValue("RequestPath", out var p) || p is not ScalarValue sv)
-                   return false;
-                var path = sv.Value as string ?? "";
-                return path.StartsWith("/swagger")
-                       || path.StartsWith("/hangfire")
-                       || path.Contains("/above-board")
-                       || path.Contains("localhost/auth/is-authenticated.json?api-version=v2");
-             });
+             .ByExcluding(ShouldDropByPath);
    }
 
-   private static bool ExcludeOutboxAndMassTransit(this LogEvent logEvent)
+   private static bool ShouldDropByPath(LogEvent evt)
    {
-      var message = logEvent.RenderMessage();
-      return message.Contains("outbox_messages", StringComparison.OrdinalIgnoreCase) || message.StartsWith(
-         "Health check masstransit-bus with status Unhealthy completed after",
-         StringComparison.OrdinalIgnoreCase);
+      // Try Url first (absolute), then RequestPath, then Path
+      var raw = GetScalar(evt, "Url") ?? GetScalar(evt, "RequestPath") ?? GetScalar(evt, "Path");
+
+      if (string.IsNullOrEmpty(raw))
+      {
+         return false;
+      }
+
+      // If it's a full URL, extract the path
+      var path = raw;
+      if (Uri.TryCreate(raw, UriKind.Absolute, out var uri))
+      {
+         path = uri.AbsolutePath;
+      }
+
+      // Case-insensitive match on path fragments you want to drop
+      return path.Contains("/swagger", StringComparison.OrdinalIgnoreCase)
+             || path.Contains("/hangfire", StringComparison.OrdinalIgnoreCase)
+             || path.Contains("/above-board", StringComparison.OrdinalIgnoreCase)
+             || path.Contains("is-authenticated.json?api-version=v2", StringComparison.OrdinalIgnoreCase);
+
+      static string? GetScalar(LogEvent e, string name) =>
+         e.Properties.TryGetValue(name, out var v) && v is ScalarValue sv && sv.Value is string s ? s : null;
    }
+
+   private static bool IsEfOutboxQuery(LogEvent evt)
+   {
+      // Only EF Core command category
+      if (!(evt.Properties.TryGetValue("SourceContext", out var sc) &&
+            sc is ScalarValue sv && sv.Value is string src &&
+            src.Contains("Microsoft.EntityFrameworkCore.Database.Command", StringComparison.OrdinalIgnoreCase)))
+      {
+         return false;
+      }
+
+      var sql = Get(evt, "commandText") ?? Get(evt, "CommandText");
+
+      return !string.IsNullOrEmpty(sql) &&
+             // Match table references, regardless of quoting/schema
+             // e.g. outbox_messages, "outbox_messages", [outbox_messages], public.outbox_messages
+             sql.Contains("outbox_messages", StringComparison.OrdinalIgnoreCase);
+
+      // Grab the structured SQL (EF logs it as 'commandText'; some sinks rename to 'CommandText')
+      static string? Get(LogEvent e, string name) =>
+         e.Properties.TryGetValue(name, out var v) && v is ScalarValue s && s.Value is string str ? str : null;
+   }
+
 
    private static string GetLogsPath(this WebApplicationBuilder builder)
    {

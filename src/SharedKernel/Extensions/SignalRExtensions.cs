@@ -5,6 +5,7 @@ using ResponseCrafter.ExceptionHandlers.SignalR;
 using Serilog;
 using Serilog.Events;
 using SharedKernel.Logging;
+using SharedKernel.Logging.Middleware;
 using StackExchange.Redis;
 
 namespace SharedKernel.Extensions;
