@@ -2,9 +2,8 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using SharedKernel.Logging.Helpers;
 
-namespace SharedKernel.Logging;
+namespace SharedKernel.Logging.Middleware;
 
 internal sealed class SignalRLoggingHubFilter(ILogger<SignalRLoggingHubFilter> logger) : IHubFilter
 {

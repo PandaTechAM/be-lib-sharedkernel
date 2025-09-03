@@ -3,13 +3,15 @@ using FluentMinimalApiMapper;
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using SharedKernel.Demo2;
+using Microsoft.EntityFrameworkCore;
 using ResponseCrafter.Enums;
 using ResponseCrafter.Extensions;
 using SharedKernel.Demo;
+using SharedKernel.Demo.Context;
 using SharedKernel.Extensions;
 using SharedKernel.Helpers;
 using SharedKernel.Logging;
+using SharedKernel.Logging.Middleware;
 using SharedKernel.OpenApi;
 using SharedKernel.Resilience;
 using SharedKernel.ValidatorAndMediatR;
@@ -21,7 +23,7 @@ AssemblyRegistry.Add(typeof(Program).Assembly);
 
 builder
    // .ConfigureWithPandaVault()
-   .AddSerilog(LogBackend.Loki)
+   .AddSerilog(LogBackend.ElasticSearch)
    .AddResponseCrafter(NamingConvention.ToSnakeCase)
    .AddOpenApi()
    .AddOpenTelemetry()
@@ -57,6 +59,7 @@ builder.Services
           })
        .AddOutboundLoggingHandler();
 
+builder.UseSqlLiteInMemory();
 
 var app = builder.Build();
 
@@ -73,11 +76,25 @@ app
    .UseOpenApi()
    .MapControllers();
 
-app.MapPost("user", async ([FromBody] UserCommand user, ISender sender) =>
-{
-   await sender.Send(user);
-   return Results.Ok();
-});
+app.CreateInMemoryDb();
+
+
+app.MapGet("/outbox-count",
+   async (InMemoryContext db) =>
+   {
+      var cnt = await db.OutboxMessages.CountAsync();
+      return TypedResults.Ok(new
+      {
+         count = cnt
+      });
+   });
+
+app.MapPost("user",
+   async ([FromBody] UserCommand user, ISender sender) =>
+   {
+      await sender.Send(user);
+      return Results.Ok();
+   });
 
 app.MapPost("/receive-file", ([FromForm] IFormFile file) => TypedResults.Ok())
    .DisableAntiforgery();
@@ -133,7 +150,7 @@ app.MapHub<MessageHub>("/hub");
 app.LogStartSuccess();
 app.Run();
 
-namespace SharedKernel.Demo2
+namespace SharedKernel.Demo
 {
    public class TestTypes
    {
@@ -148,38 +165,38 @@ namespace SharedKernel.Demo2
       Cat,
       Fish
    }
-}
 
-public record UserCommand(string Name, string Email) : ICommand<string>;
+   public record UserCommand(string Name, string Email) : ICommand<string>;
 
-public class UserCommandHandler : ICommandHandler<UserCommand, string>
-{
-   public Task<string> Handle(UserCommand request, CancellationToken cancellationToken)
+   public class UserCommandHandler : ICommandHandler<UserCommand, string>
    {
-      return Task.FromResult($"User {request.Name} with email {request.Email} created successfully.");
+      public Task<string> Handle(UserCommand request, CancellationToken cancellationToken)
+      {
+         return Task.FromResult($"User {request.Name} with email {request.Email} created successfully.");
+      }
    }
-}
 
-public class User
-{
-   public string Name { get; set; } = string.Empty;
-   public string Email { get; set; } = string.Empty;
-}
-
-public class UserValidator : AbstractValidator<UserCommand>
-{
-   public UserValidator()
+   public class User
    {
-      RuleFor(x => x.Name)
-         .NotEmpty()
-         .WithMessage("Name is required.")
-         .MaximumLength(100)
-         .WithMessage("Name cannot exceed 100 characters.");
+      public string Name { get; set; } = string.Empty;
+      public string Email { get; set; } = string.Empty;
+   }
 
-      RuleFor(x => x.Email)
-         .NotEmpty()
-         .WithMessage("Email is required.")
-         .EmailAddress()
-         .WithMessage("Invalid email format.");
+   public class UserValidator : AbstractValidator<UserCommand>
+   {
+      public UserValidator()
+      {
+         RuleFor(x => x.Name)
+            .NotEmpty()
+            .WithMessage("Name is required.")
+            .MaximumLength(100)
+            .WithMessage("Name cannot exceed 100 characters.");
+
+         RuleFor(x => x.Email)
+            .NotEmpty()
+            .WithMessage("Email is required.")
+            .EmailAddress()
+            .WithMessage("Invalid email format.");
+      }
    }
 }
