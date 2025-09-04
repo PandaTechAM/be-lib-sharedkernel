@@ -30,23 +30,23 @@ internal sealed class SignalRLoggingHubFilter(ILogger<SignalRLoggingHubFilter> l
       var elapsedMs = Stopwatch.GetElapsedTime(start)
                                .TotalMilliseconds;
 
-      using (logger.BeginScope(new
-             {
-                Hub = hubName,
-                ConnId = connId,
-                UserId = userId,
-                Method = methodName
-             }))
+      var scope = new Dictionary<string, object?>
+      {
+         ["Args"] = redactedArgs,
+         ["Hub"] = hubName,
+         ["ConnId"] = connId,
+         ["UserId"] = userId,
+         ["ElapsedMs"] = elapsedMs,
+         ["Kind"] = "SignalR"
+      };
+
+      using (logger.BeginScope(scope))
       {
          logger.LogInformation(
-            "[Incoming Message] SignalR {Hub}, ConnId={ConnId}, UserId={UserId}, Method={Method}, " +
-            "completed in {ElapsedMs}ms, Args={Args}",
+            "[SignalR] {Hub}.{Method} completed in {ElapsedMilliseconds}ms",
             hubName,
-            connId,
-            userId,
             methodName,
-            elapsedMs,
-            redactedArgs
+            elapsedMs
          );
       }
 
