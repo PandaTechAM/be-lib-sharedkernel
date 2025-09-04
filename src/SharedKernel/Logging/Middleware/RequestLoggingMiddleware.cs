@@ -1,18 +1,13 @@
 ﻿using System.Diagnostics;
-using System.Text.Json;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Logging;
 
 namespace SharedKernel.Logging.Middleware;
 
-internal sealed class RequestLoggingMiddleware(
-   RequestDelegate next,
-   ILogger<RequestLoggingMiddleware> logger)
+internal sealed class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger)
 {
    public async Task InvokeAsync(HttpContext context)
    {
-      // preserve original behavior: ignore OPTIONS and listed prefixes
       if (HttpMethods.IsOptions(context.Request.Method) ||
           (context.Request.Path.HasValue &&
            LoggingOptions.PathsToIgnore.Any(p => context.Request.Path.StartsWithSegments(p))))
@@ -21,19 +16,58 @@ internal sealed class RequestLoggingMiddleware(
          return;
       }
 
-      // enable request buffering and capture
-      context.Request.EnableBuffering();
-      var (reqHeaders, reqBody) = await HttpLogHelper.CaptureAsync(
-         context.Request.Body,
-         context.Request.Headers,
-         context.Request.ContentType);
+      var normReqCt = MediaTypeUtil.Normalize(context.Request.ContentType);
+      var reqLen = context.Request.ContentLength;
+      var isFormLike =
+         string.Equals(normReqCt, "application/x-www-form-urlencoded", StringComparison.OrdinalIgnoreCase) ||
+         string.Equals(normReqCt, "multipart/form-data", StringComparison.OrdinalIgnoreCase);
 
-      await using var responseBuffer =
-         new Microsoft.AspNetCore.WebUtilities.FileBufferingWriteStream(
-            bufferLimit: LoggingOptions.ResponseBufferLimitBytes);
+      var looksEmpty =
+         reqLen == 0 ||
+         (!reqLen.HasValue && string.IsNullOrWhiteSpace(normReqCt) &&
+          !context.Request.Headers.ContainsKey("Transfer-Encoding"));
+
+      object reqHeaders = RedactionHelper.RedactHeaders(context.Request.Headers);
+      object reqBody;
+
+      if (looksEmpty)
+      {
+         reqBody = new Dictionary<string, object?>();
+      }
+      else if (isFormLike)
+      {
+         if (reqLen is null or > LoggingOptions.RequestResponseBodyMaxBytes)
+         {
+            reqBody = LogFormatting.Omitted("form-large-or-unknown",
+               reqLen,
+               normReqCt,
+               LoggingOptions.RequestResponseBodyMaxBytes);
+         }
+         else
+         {
+            var form = await context.Request.ReadFormAsync(context.RequestAborted);
+            reqBody = RedactionHelper.RedactFormFields(form);
+         }
+      }
+      else if (MediaTypeUtil.IsTextLike(normReqCt) && reqLen is <= LoggingOptions.RequestResponseBodyMaxBytes)
+      {
+         context.Request.EnableBuffering();
+         (reqHeaders, reqBody) = await HttpLogHelper.CaptureAsync(
+            context.Request.Body,
+            context.Request.Headers,
+            normReqCt);
+      }
+      else
+      {
+         reqBody = LogFormatting.Omitted("non-text-or-large",
+            reqLen,
+            normReqCt,
+            LoggingOptions.RequestResponseBodyMaxBytes);
+      }
 
       var originalBody = context.Response.Body;
-      context.Response.Body = responseBuffer;
+      var tee = new CappedResponseBodyStream(originalBody, LoggingOptions.RequestResponseBodyMaxBytes);
+      context.Response.Body = tee;
 
       var sw = Stopwatch.GetTimestamp();
       try
@@ -45,42 +79,31 @@ internal sealed class RequestLoggingMiddleware(
          var elapsed = Stopwatch.GetElapsedTime(sw)
                                 .TotalMilliseconds;
 
-         var resContentType = context.Response.ContentType;
-         var isText = HttpLogHelper.IsTextLike(resContentType);
-         var bufferedLen = responseBuffer.Length;
+         var resCt = MediaTypeUtil.Normalize(context.Response.ContentType);
+         var isText = HttpLogHelper.IsTextLike(resCt);
 
-         string resHeaders, resBody;
+         object resHeaders = RedactionHelper.RedactHeaders(context.Response.Headers);
+         object resBody;
 
-         if (isText && bufferedLen <= LoggingOptions.RequestResponseBodyMaxBytes)
+         if (tee.TotalWritten == 0)
          {
-            using var ms = new MemoryStream(capacity: (int)Math.Min(bufferedLen, int.MaxValue));
-            await responseBuffer.DrainBufferAsync(ms, context.RequestAborted);
-
-            ms.Position = 0;
+            resBody = new Dictionary<string, object?>();
+         }
+         else if (isText && tee.TotalWritten <= LoggingOptions.RequestResponseBodyMaxBytes)
+         {
+            using var ms = new MemoryStream(tee.Captured.ToArray());
             (resHeaders, resBody) = await HttpLogHelper.CaptureAsync(
                ms,
                context.Response.Headers,
-               resContentType);
-
-            ms.Position = 0;
-            await ms.CopyToAsync(originalBody, context.RequestAborted);
+               resCt);
          }
          else
          {
-            resHeaders = JsonSerializer.Serialize(RedactionHelper.RedactHeaders(context.Response.Headers));
-            var reason = !isText
-               ? "non-text"
-               : bufferedLen > LoggingOptions.RequestResponseBodyMaxBytes
-                  ? "exceeds-limit"
-                  : "unknown-length";
-
-            resBody = JsonSerializer.Serialize(
-               HttpLogHelper.BuildOmittedBodyMessage(reason,
-                  bufferedLen,
-                  resContentType,
-                  LoggingOptions.RequestResponseBodyMaxBytes));
-
-            await responseBuffer.DrainBufferAsync(originalBody, context.RequestAborted);
+            var reason = isText ? "exceeds-limit" : "non-text";
+            resBody = LogFormatting.Omitted(reason,
+               tee.TotalWritten,
+               resCt,
+               LoggingOptions.RequestResponseBodyMaxBytes);
          }
 
          context.Response.Body = originalBody;
@@ -102,14 +125,12 @@ internal sealed class RequestLoggingMiddleware(
 
          using (logger.BeginScope(scope))
          {
-            // Distinct, human-readable prefix so it's unmistakably yours in Kibana
             logger.LogInformation(
                "[HTTP IN] {Method} {Path} -> {StatusCode} in {ElapsedMilliseconds}ms",
                context.Request.Method,
                context.Request.Path.Value,
                context.Response.StatusCode,
-               elapsed
-            );
+               elapsed);
          }
       }
    }

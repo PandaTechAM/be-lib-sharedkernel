@@ -1,16 +1,17 @@
-﻿using System.Text.Json;
-
-namespace SharedKernel.Logging.Middleware;
+﻿namespace SharedKernel.Logging.Middleware;
 
 internal static class LogFormatting
 {
-   public static string Json(object? o) => JsonSerializer.Serialize(o);
-
-   public static string Omitted(string reason, long? lenBytes, string? mediaType, int thresholdBytes)
+   public static object Omitted(string reason, long? lengthBytes, string? mediaType, int thresholdBytes)
    {
-      var thresholdKb = thresholdBytes / 1024;
-      var len = lenBytes.HasValue ? $"{lenBytes.Value}B (~{lenBytes.Value / 1024}KB)" : "unknown";
-      var ct = string.IsNullOrWhiteSpace(mediaType) ? "unknown" : mediaType;
-      return $"[OMITTED] reason={reason}; length={len}; threshold={thresholdKb}KB; contentType={ct}";
+      int? sizeKb = lengthBytes.HasValue ? (int)Math.Round(lengthBytes.Value / 1024d) : null;
+      return new Dictionary<string, object?>
+      {
+         ["omitted"] = true,
+         ["reason"] = reason,
+         ["sizeKb"] = sizeKb,
+         ["thresholdKb"] = thresholdBytes / 1024,
+         ["contentType"] = MediaTypeUtil.Normalize(mediaType)
+      };
    }
 }

@@ -89,13 +89,6 @@ app.MapGet("/outbox-count",
       });
    });
 
-app.MapPost("user",
-   async ([FromBody] UserCommand user, ISender sender) =>
-   {
-      await sender.Send(user);
-      return Results.Ok();
-   });
-
 app.MapPost("/receive-file", ([FromForm] IFormFile file) => TypedResults.Ok())
    .DisableAntiforgery();
 
@@ -106,41 +99,6 @@ app.MapPost("/body",
    {
       httpContext.Response.ContentType = "application/json";
       httpContext.Response.Headers.Append("Custom-Header-Response", "CustomValue");
-
-      return TypedResults.Ok(testTypes);
-   });
-
-app.MapGet("/get-data",
-   async (IHttpClientFactory httpClientFactory) =>
-   {
-      var httpClient = httpClientFactory.CreateClient("RandomApiClient");
-      httpClient.DefaultRequestHeaders.Add("auth", "hardcoded-auth-value");
-
-      var body = new TestTypes
-      {
-         AnimalType = AnimalType.Cat,
-         JustText = "Hello from Get Data",
-         JustNumber = 100
-      };
-      var content = new StringContent(System.Text.Json.JsonSerializer.Serialize(body),
-         System.Text.Encoding.UTF8,
-         "application/json");
-
-      var response = await httpClient.PostAsync("body?barev=5", content);
-
-      if (!response.IsSuccessStatusCode)
-      {
-         throw new Exception("Something went wrong");
-      }
-
-      var responseBody = await response.Content.ReadAsStringAsync();
-
-      var testTypes = System.Text.Json.JsonSerializer.Deserialize<TestTypes>(responseBody);
-
-      if (testTypes == null)
-      {
-         throw new Exception("Failed to get data from external API");
-      }
 
       return TypedResults.Ok(testTypes);
    });
@@ -164,39 +122,5 @@ namespace SharedKernel.Demo
       Dog,
       Cat,
       Fish
-   }
-
-   public record UserCommand(string Name, string Email) : ICommand<string>;
-
-   public class UserCommandHandler : ICommandHandler<UserCommand, string>
-   {
-      public Task<string> Handle(UserCommand request, CancellationToken cancellationToken)
-      {
-         return Task.FromResult($"User {request.Name} with email {request.Email} created successfully.");
-      }
-   }
-
-   public class User
-   {
-      public string Name { get; set; } = string.Empty;
-      public string Email { get; set; } = string.Empty;
-   }
-
-   public class UserValidator : AbstractValidator<UserCommand>
-   {
-      public UserValidator()
-      {
-         RuleFor(x => x.Name)
-            .NotEmpty()
-            .WithMessage("Name is required.")
-            .MaximumLength(100)
-            .WithMessage("Name cannot exceed 100 characters.");
-
-         RuleFor(x => x.Email)
-            .NotEmpty()
-            .WithMessage("Email is required.")
-            .EmailAddress()
-            .WithMessage("Invalid email format.");
-      }
    }
 }
