@@ -1,71 +1,94 @@
 ﻿using System.Text;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Net.Http.Headers;
 
 namespace SharedKernel.Logging.Middleware;
 
 internal static class HttpLogHelper
 {
-   // defaults; can be overridden via Configure(options)
-
-   public static async Task<(string Headers, string Body)> CaptureAsync(Stream bodyStream,
+   public static async Task<(object Headers, object Body)> CaptureAsync(Stream bodyStream,
       IHeaderDictionary headers,
-      string? mediaType)
+      string? contentType)
    {
-      var hdrs = RedactionHelper.RedactHeaders(headers);
+      var redactedHeaders = RedactionHelper.RedactHeaders(headers);
 
-      if (!IsTextLike(mediaType))
+      var textLike = MediaTypeUtil.IsTextLike(contentType);
+      var hasContentLength = headers.ContainsKey(HeaderNames.ContentLength);
+      var len = GetContentLengthOrNull(headers);
+      var hasChunked = headers.TryGetValue(HeaderNames.TransferEncoding, out _);
+
+      if ((hasContentLength && len == 0) ||
+          (!hasContentLength && !hasChunked && string.IsNullOrWhiteSpace(contentType)))
       {
-         long? len = null;
-         if (headers.TryGetValue("Content-Length", out var clVal) &&
-             long.TryParse(clVal.ToString(), out var cl))
-            len = cl;
+         return (redactedHeaders, new Dictionary<string, object?>());
+      }
 
-         return (LogFormatting.Json(hdrs),
-            LogFormatting.Json(BuildOmittedBodyMessage("non-text",
-               len,
-               mediaType,
-               LoggingOptions.RequestResponseBodyMaxBytes)));
+      if (!textLike)
+      {
+         return (redactedHeaders, LogFormatting.Omitted(
+            reason: "non-text",
+            lengthBytes: len,
+            mediaType: MediaTypeUtil.Normalize(contentType),
+            thresholdBytes: LoggingOptions.RequestResponseBodyMaxBytes));
       }
 
       var (raw, truncated) = await ReadLimitedAsync(bodyStream, LoggingOptions.RequestResponseBodyMaxBytes);
-
       if (truncated)
-         return (LogFormatting.Json(hdrs),
-            LogFormatting.Json($"[OMITTED: body exceeds {LoggingOptions.RequestResponseBodyMaxBytes / 1024}KB]"));
-
-      var body = RedactionHelper.RedactBody(mediaType, raw);
-      return (LogFormatting.Json(hdrs), LogFormatting.Json(body));
-   }
-
-   public static async Task<(string Headers, string Body)> CaptureAsync(Dictionary<string, IEnumerable<string>> headers,
-      Func<Task<string>> rawReader,
-      string? mediaType)
-   {
-      var hdrs = RedactionHelper.RedactHeaders(headers);
-
-      if (!IsTextLike(mediaType))
-         return (LogFormatting.Json(hdrs), LogFormatting.Json(string.Empty));
-
-      var raw = await rawReader();
-      if (Utf8ByteCount(raw) > LoggingOptions.RequestResponseBodyMaxBytes)
       {
-         return (LogFormatting.Json(hdrs),
-            LogFormatting.Json($"[OMITTED: body exceeds {LoggingOptions.RequestResponseBodyMaxBytes / 1024}KB]"));
+         return (redactedHeaders, LogFormatting.Omitted(
+            reason: "exceeds-limit",
+            lengthBytes: LoggingOptions.RequestResponseBodyMaxBytes,
+            mediaType: MediaTypeUtil.Normalize(contentType),
+            thresholdBytes: LoggingOptions.RequestResponseBodyMaxBytes));
       }
 
-      var body = RedactionHelper.RedactBody(mediaType, raw);
-      return (LogFormatting.Json(hdrs), LogFormatting.Json(body));
+      var body = RedactionHelper.RedactBody(contentType, raw);
+      return (redactedHeaders, body);
+   }
+
+   public static async Task<(object Headers, object Body)> CaptureAsync(Dictionary<string, IEnumerable<string>> headers,
+      Func<Task<string>> rawReader,
+      string? contentType)
+   {
+      var redactedHeaders = RedactionHelper.RedactHeaders(headers);
+
+      if (!MediaTypeUtil.IsTextLike(contentType))
+      {
+         return (redactedHeaders, new Dictionary<string, object?>());
+      }
+
+      var raw = await rawReader();
+
+      if (Utf8ByteCount(raw) > LoggingOptions.RequestResponseBodyMaxBytes)
+      {
+         return (redactedHeaders, LogFormatting.Omitted(
+            reason: "exceeds-limit",
+            lengthBytes: Utf8ByteCount(raw),
+            mediaType: MediaTypeUtil.Normalize(contentType),
+            thresholdBytes: LoggingOptions.RequestResponseBodyMaxBytes));
+      }
+
+      var body = RedactionHelper.RedactBody(contentType, raw);
+      return (redactedHeaders, body);
    }
 
    public static Dictionary<string, IEnumerable<string>> CreateHeadersDictionary(HttpRequestMessage req)
    {
       var dict = new Dictionary<string, IEnumerable<string>>(StringComparer.OrdinalIgnoreCase);
-      foreach (var h in req.Headers) dict[h.Key] = h.Value;
+      foreach (var h in req.Headers)
+      {
+         dict[h.Key] = h.Value;
+      }
 
       var contentHeaders = req.Content?.Headers;
+
       if (contentHeaders != null)
+      {
          foreach (var h in contentHeaders)
+         {
             dict[h.Key] = h.Value;
+         }
+      }
 
       return dict;
    }
@@ -74,21 +97,30 @@ internal static class HttpLogHelper
    {
       var dict = new Dictionary<string, IEnumerable<string>>(StringComparer.OrdinalIgnoreCase);
       foreach (var h in res.Headers) dict[h.Key] = h.Value;
-      foreach (var h in res.Content.Headers) dict[h.Key] = h.Value;
+
+      var ch = res.Content?.Headers;
+      if (ch != null)
+      {
+         foreach (var h in ch)
+         {
+            dict[h.Key] = h.Value;
+         }
+      }
+
       return dict;
    }
 
-   internal static string BuildOmittedBodyMessage(string reason,
-      long? lengthBytes,
-      string? mediaType,
-      int thresholdBytes) =>
-      LogFormatting.Omitted(reason, lengthBytes, mediaType, thresholdBytes);
+   internal static bool IsTextLike(string? mediaType) => MediaTypeUtil.IsTextLike(mediaType);
 
-   internal static bool IsTextLike(string? mediaType)
+   private static long? GetContentLengthOrNull(IHeaderDictionary headers)
    {
-      if (string.IsNullOrWhiteSpace(mediaType)) return false;
-      return LoggingOptions.TextLikeMediaPrefixes.Any(m => mediaType.StartsWith(m, StringComparison.OrdinalIgnoreCase))
-             || mediaType.EndsWith("+json", StringComparison.OrdinalIgnoreCase);
+      if (headers.TryGetValue("Content-Length", out var clVal) &&
+          long.TryParse(clVal.ToString(), out var cl))
+      {
+         return cl;
+      }
+
+      return null;
    }
 
    private static async Task<(string text, bool truncated)> ReadLimitedAsync(Stream s, int maxBytes)

@@ -28,7 +28,7 @@ public static class LoggingOptions
       "bankaccount",
       "notboundcard"
    };
-   
+
 
    // was HttpLogHelper.TextLikeMedia
    public static readonly string[] TextLikeMediaPrefixes =
@@ -42,6 +42,8 @@ public static class LoggingOptions
    public static readonly HashSet<string> PathsToIgnore = new(StringComparer.OrdinalIgnoreCase)
    {
       "/openapi",
-      "/above-board"
+      "/above-board",
+      "/favicon.ico",
+      "/swagger"
    };
 }

@@ -20,9 +20,8 @@ internal sealed class SignalRLoggingHubFilter(ILogger<SignalRLoggingHubFilter> l
       var methodName = invocationContext.HubMethodName;
 
       // serialize + redact
-      var serializedArgs = JsonSerializer.Serialize(invocationContext.HubMethodArguments);
-      var redactedObj = RedactionHelper.RedactBody("application/json", serializedArgs);
-      var redactedArgs = JsonSerializer.Serialize(redactedObj);
+      var rawArgsJson = JsonSerializer.Serialize(invocationContext.HubMethodArguments);
+      var redactedArgsObj = RedactionHelper.RedactBody("application/json", rawArgsJson);
 
       // invoke the actual method
       var result = await next(invocationContext);
@@ -32,7 +31,7 @@ internal sealed class SignalRLoggingHubFilter(ILogger<SignalRLoggingHubFilter> l
 
       var scope = new Dictionary<string, object?>
       {
-         ["Args"] = redactedArgs,
+         ["Args"] = redactedArgsObj,
          ["Hub"] = hubName,
          ["ConnId"] = connId,
          ["UserId"] = userId,

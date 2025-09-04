@@ -1,11 +1,15 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace SharedKernel.Logging.Middleware;
 
 internal static class RedactionHelper
 {
+   // ------- Headers -------
+
    public static Dictionary<string, string> RedactHeaders(IHeaderDictionary headers) =>
       headers.ToDictionary(
          h => h.Key,
@@ -20,11 +24,17 @@ internal static class RedactionHelper
             ? "[REDACTED]"
             : string.Join(";", kvp.Value));
 
-   public static object RedactBody(string? mediaType, string raw)
-   {
-      if (string.IsNullOrWhiteSpace(raw)) return string.Empty;
+   // ------- Bodies (JSON, x-www-form-urlencoded, text fallback) -------
 
-      if (IsJsonMediaType(mediaType))
+   public static object RedactBody(string? contentType, string raw)
+   {
+      if (string.IsNullOrWhiteSpace(raw))
+      {
+         return new Dictionary<string, object?>();
+      }
+
+      // JSON (including +json)
+      if (MediaTypeUtil.IsJson(contentType))
       {
          try
          {
@@ -33,45 +43,108 @@ internal static class RedactionHelper
          }
          catch (JsonException)
          {
-            return "[INVALID_JSON]";
+            return new Dictionary<string, object?> { ["invalidJson"] = true };
          }
       }
 
-      if (mediaType?.Equals("application/x-www-form-urlencoded", StringComparison.OrdinalIgnoreCase) == true)
+      // application/x-www-form-urlencoded
+      if (string.Equals(MediaTypeUtil.Normalize(contentType),
+             "application/x-www-form-urlencoded",
+             StringComparison.OrdinalIgnoreCase))
       {
-         var nvc = System.Web.HttpUtility.ParseQueryString(raw);
-         var keys = nvc.AllKeys;
-
          var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-         foreach (var k in keys)
+         var parsed = QueryHelpers.ParseQuery("?" + raw);
+         foreach (var kvp in parsed)
          {
-            if (string.IsNullOrEmpty(k)) continue;
-            var v = nvc[k] ?? string.Empty;
-            dict[k] = LoggingOptions.SensitiveKeywords.Any(s =>
-               k.Contains(s, StringComparison.OrdinalIgnoreCase) ||
-               v.Contains(s, StringComparison.OrdinalIgnoreCase))
-               ? "[REDACTED]"
-               : v;
+            var k = kvp.Key;
+
+            if (string.IsNullOrEmpty(k))
+            {
+               continue;
+            }
+
+            var joined = string.Join(";", kvp.Value.ToArray());
+            dict[k] = RedactFormValue(k, joined);
          }
 
          return dict;
       }
 
       var rawBytes = Encoding.UTF8.GetByteCount(raw);
-      if (rawBytes <= LoggingOptions.RedactionMaxPropertyBytes)
+
+      if (rawBytes > LoggingOptions.RedactionMaxPropertyBytes)
       {
-         return LoggingOptions.SensitiveKeywords.Any(s => raw.Contains(s, StringComparison.OrdinalIgnoreCase))
-            ? "[REDACTED]"
-            : raw;
+         return new Dictionary<string, object?>
+         {
+            ["text"] = $"[OMITTED: exceeds-limit ~{rawBytes / 1024}KB]"
+         };
       }
 
-      return HttpLogHelper.BuildOmittedBodyMessage("exceeds-limit", rawBytes, mediaType, LoggingOptions.RedactionMaxPropertyBytes);
+      var val = LoggingOptions.SensitiveKeywords.Any(s => raw.Contains(s, StringComparison.OrdinalIgnoreCase))
+         ? "[REDACTED]"
+         : raw;
+
+      return new Dictionary<string, object?>
+      {
+         ["text"] = val
+      };
    }
 
-   private static bool IsJsonMediaType(string? mediaType) =>
-      !string.IsNullOrWhiteSpace(mediaType)
-      && (mediaType.EndsWith("/json", StringComparison.OrdinalIgnoreCase)
-          || mediaType.EndsWith("+json", StringComparison.OrdinalIgnoreCase));
+   // ------- Forms (fields only; add file placeholders) -------
+
+   public static Dictionary<string, string> RedactFormFields(IFormCollection form)
+   {
+      var fields = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+      // text fields
+      foreach (var kvp in form)
+      {
+         var raw = string.Join(";", kvp.Value.ToArray());
+         fields[kvp.Key] = RedactFormValue(kvp.Key, raw);
+      }
+
+      // file placeholders
+      if (form.Files.Count <= 0)
+      {
+         return fields;
+      }
+
+      var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+      var sizes = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+
+      foreach (var f in form.Files)
+      {
+         var key = f.Name;
+         counts.TryGetValue(key, out var c);
+         counts[key] = c + 1;
+
+         sizes.TryGetValue(key, out var b);
+         sizes[key] = b + f.Length;
+      }
+
+      foreach (var key in counts.Keys)
+      {
+         var count = counts[key];
+         var sizeKb = (int)Math.Round(sizes[key] / 1024d);
+
+         var place = count == 1
+            ? $"[OMITTED: file {sizeKb}KB]"
+            : $"[OMITTED: {count} files {sizeKb}KB]";
+
+         if (fields.TryGetValue(key, out var existing) && !string.IsNullOrWhiteSpace(existing))
+         {
+            fields[key] = $"{existing}; {place}";
+         }
+         else
+         {
+            fields[key] = place;
+         }
+      }
+
+      return fields;
+   }
+
+   // ------- Helpers -------
 
    private static object RedactElement(JsonElement el) =>
       el.ValueKind switch
@@ -87,6 +160,13 @@ internal static class RedactionHelper
                                   .Select(RedactElement)
                                   .ToArray(),
          JsonValueKind.String => RedactString(el.GetString()!),
+         JsonValueKind.Number => el.TryGetInt64(out var i) ? i :
+            el.TryGetDouble(out var d) ? d :
+            decimal.TryParse(el.GetRawText(), NumberStyles.Any, CultureInfo.InvariantCulture, out var m) ? m :
+            el.GetRawText(),
+         JsonValueKind.True => true,
+         JsonValueKind.False => false,
+         JsonValueKind.Null => null!,
          _ => el.GetRawText()
       };
 
@@ -100,6 +180,20 @@ internal static class RedactionHelper
             : value;
       }
 
-      return HttpLogHelper.BuildOmittedBodyMessage("exceeds-limit", bytes, null, LoggingOptions.RedactionMaxPropertyBytes);
+      return $"[OMITTED: exceeds-limit ~{bytes / 1024}KB]";
+   }
+
+   internal static string RedactFormValue(string key, string value)
+   {
+      if (LoggingOptions.SensitiveKeywords.Any(k =>
+             key.Contains(k, StringComparison.OrdinalIgnoreCase) ||
+             value.Contains(k, StringComparison.OrdinalIgnoreCase)))
+      {
+         return "[REDACTED]";
+      }
+
+      var bytes = Encoding.UTF8.GetByteCount(value);
+
+      return bytes > LoggingOptions.RedactionMaxPropertyBytes ? $"[OMITTED: exceeds-limit ~{bytes / 1024}KB]" : value;
    }
 }
