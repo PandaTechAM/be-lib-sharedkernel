@@ -75,19 +75,37 @@ internal sealed class OutboundLoggingHandler(ILogger<OutboundLoggingHandler> log
             resMedia);
       }
 
-      logger.LogInformation(
-         "[Outbound Call] HTTP {Method} {Uri} responded with {StatusCode} in {ElapsedMs}ms. " +
-         "Request Headers: {RequestHeaders}, Request Body: {RequestBody}, " +
-         "Response Headers: {ResponseHeaders}, Response Body: {ResponseBody}",
-         request.Method,
-         request.RequestUri?.ToString(),
-         (int)response.StatusCode,
-         elapsed,
-         reqHeaders,
-         reqBody,
-         resHeaders,
-         resBody);
+      var hostPath = request.RequestUri is null
+         ? ""
+         : request.RequestUri.GetLeftPart(UriPartial.Path); // message: path only (no query)
 
-      return response;
+      var scope = new Dictionary<string, object?>
+      {
+         ["RequestHeaders"] = reqHeaders,
+         ["RequestBody"] = reqBody,
+         ["ResponseHeaders"] = resHeaders,
+         ["ResponseBody"] = resBody,
+         ["ElapsedMs"] = elapsed,
+         ["Kind"] = "HttpOut"
+      };
+
+      var query = request.RequestUri?.Query;
+      if (!string.IsNullOrEmpty(query))
+      {
+         scope["Query"] = query;
+      }
+
+      using (logger.BeginScope(scope))
+      {
+         logger.LogInformation(
+            "[HTTP OUT] {Method} {HostPath} -> {StatusCode} in {ElapsedMilliseconds}ms",
+            request.Method,
+            hostPath,
+            (int)response.StatusCode,
+            elapsed
+         );
+
+         return response;
+      }
    }
 }

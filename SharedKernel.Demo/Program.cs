@@ -126,7 +126,7 @@ app.MapGet("/get-data",
          System.Text.Encoding.UTF8,
          "application/json");
 
-      var response = await httpClient.PostAsync("body", content);
+      var response = await httpClient.PostAsync("body?barev=5", content);
 
       if (!response.IsSuccessStatusCode)
       {

@@ -1,4 +1,5 @@
-﻿using Elastic.CommonSchema;
+﻿using System.Globalization;
+using Elastic.CommonSchema;
 using Elastic.CommonSchema.Serilog;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -104,18 +105,37 @@ public static class SerilogExtensions
    {
       var ecsConfig = new EcsTextFormatterConfiguration
       {
+         MessageFormatProvider = CultureInfo.InvariantCulture,
          IncludeHost = false,
          IncludeProcess = false,
          IncludeUser = false,
 
-         // Last-chance mutator: remove agent.*
          MapCustom = (doc, _) =>
          {
             doc.Agent = null;
+
+            if (doc.Labels is { Count: > 0 })
+            {
+               doc.Labels.Remove("MessageTemplate");
+            }
+
+            if (doc.Event != null)
+            {
+               var dur = doc.Event.Duration;
+               doc.Event = new Event
+               {
+                  Duration = dur
+               };
+            }
+
+            if (doc.Service != null)
+            {
+               doc.Service.Type = null;
+            }
+
             return doc;
          }
       };
-      // Choose the formatter based on the selected log backend
       ITextFormatter formatter = logBackend switch
       {
          LogBackend.ElasticSearch => new EcsTextFormatter(ecsConfig),
@@ -150,29 +170,17 @@ public static class SerilogExtensions
 
    private static bool ShouldDropByPath(LogEvent evt)
    {
-      // Try Url first (absolute), then RequestPath, then Path
-      var raw = GetScalar(evt, "Url") ?? GetScalar(evt, "RequestPath") ?? GetScalar(evt, "Path");
-
-      if (string.IsNullOrEmpty(raw))
+      if (!evt.Properties.TryGetValue("RequestPath", out var p) || p is not ScalarValue sv)
       {
          return false;
       }
 
-      // If it's a full URL, extract the path
-      var path = raw;
-      if (Uri.TryCreate(raw, UriKind.Absolute, out var uri))
-      {
-         path = uri.AbsolutePath;
-      }
+      var path = sv.Value as string ?? "";
 
-      // Case-insensitive match on path fragments you want to drop
-      return path.Contains("/swagger", StringComparison.OrdinalIgnoreCase)
-             || path.Contains("/hangfire", StringComparison.OrdinalIgnoreCase)
-             || path.Contains("/above-board", StringComparison.OrdinalIgnoreCase)
-             || path.Contains("is-authenticated.json?api-version=v2", StringComparison.OrdinalIgnoreCase);
-
-      static string? GetScalar(LogEvent e, string name) =>
-         e.Properties.TryGetValue(name, out var v) && v is ScalarValue sv && sv.Value is string s ? s : null;
+      return path.StartsWith("/swagger")
+             || path.StartsWith("/hangfire")
+             || path.Contains("/above-board")
+             || path.Contains("localhost/auth/is-authenticated.json?api-version=v2");
    }
 
    private static bool IsEfOutboxQuery(LogEvent evt)

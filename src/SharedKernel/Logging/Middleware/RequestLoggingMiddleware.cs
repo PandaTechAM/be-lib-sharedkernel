@@ -29,7 +29,8 @@ internal sealed class RequestLoggingMiddleware(
          context.Request.ContentType);
 
       await using var responseBuffer =
-         new Microsoft.AspNetCore.WebUtilities.FileBufferingWriteStream(bufferLimit: LoggingOptions.ResponseBufferLimitBytes);
+         new Microsoft.AspNetCore.WebUtilities.FileBufferingWriteStream(
+            bufferLimit: LoggingOptions.ResponseBufferLimitBytes);
 
       var originalBody = context.Response.Body;
       context.Response.Body = responseBuffer;
@@ -84,18 +85,32 @@ internal sealed class RequestLoggingMiddleware(
 
          context.Response.Body = originalBody;
 
-         logger.LogInformation(
-            "[Incoming Request] HTTP {Method} {Url} responded with {StatusCode} in {ElapsedMilliseconds}ms. " +
-            "Request Headers: {RequestHeaders}, Request Body: {RequestBody}, " +
-            "Response Headers: {ResponseHeaders}, Response Body: {ResponseBody}",
-            context.Request.Method,
-            context.Request.GetDisplayUrl(),
-            context.Response.StatusCode,
-            elapsed,
-            reqHeaders,
-            reqBody,
-            resHeaders,
-            resBody);
+         var scope = new Dictionary<string, object?>
+         {
+            ["RequestHeaders"] = reqHeaders,
+            ["RequestBody"] = reqBody,
+            ["ResponseHeaders"] = resHeaders,
+            ["ResponseBody"] = resBody,
+            ["ElapsedMs"] = elapsed,
+            ["Kind"] = "HttpIn"
+         };
+
+         if (context.Request.QueryString.HasValue)
+         {
+            scope["Query"] = context.Request.QueryString.Value;
+         }
+
+         using (logger.BeginScope(scope))
+         {
+            // Distinct, human-readable prefix so it's unmistakably yours in Kibana
+            logger.LogInformation(
+               "[HTTP IN] {Method} {Path} -> {StatusCode} in {ElapsedMilliseconds}ms",
+               context.Request.Method,
+               context.Request.Path.Value,
+               context.Response.StatusCode,
+               elapsed
+            );
+         }
       }
    }
 }
