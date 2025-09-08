@@ -737,6 +737,7 @@ This package includes various extensions and utilities to aid development:
 - **Pandatech.FluentMinimalApiMapper:** Simplifies mapping in minimal APIs.
 - **Pandatech.ResponseCrafter:** A utility for crafting consistent API responses.
 - **Pandatech.DistributedCache:** A distributed cache provider for Redis.
+- **PandaTech.FluentImporter:** Fluent API for importing data.
 - **Pandatech.FileExporter:** A utility for exporting files.
 
 ## License

@@ -49,9 +49,10 @@
         <PackageReference Include="Pandatech.Crypto" Version="6.0.0" />
         <PackageReference Include="Pandatech.DistributedCache" Version="4.0.9" />
         <PackageReference Include="PandaTech.FileExporter" Version="4.1.2" />
+        <PackageReference Include="PandaTech.FluentImporter" Version="3.0.6" />
         <PackageReference Include="Pandatech.FluentMinimalApiMapper" Version="2.0.4" />
         <PackageReference Include="Pandatech.PandaVaultClient" Version="4.0.6" />
-        <PackageReference Include="Pandatech.ResponseCrafter" Version="5.2.0" />
+        <PackageReference Include="Pandatech.ResponseCrafter" Version="5.2.1" />
         <PackageReference Include="Scalar.AspNetCore" Version="2.7.2" />
         <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
         <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
