@@ -5,12 +5,14 @@ namespace SharedKernel.Tests;
 public class PhoneUtilTests
 {
    [Theory]
+   [InlineData("0037493910593", "+37493910593")]
    [InlineData("+37493910593", "+37493910593")]
    [InlineData("37493910593", "+37493910593")]
    [InlineData("093910593", "+37493910593")]
    [InlineData("93910593", "+37493910593")]
    [InlineData("(374)93910593", "+37493910593")]
    // tolerant separators
+   [InlineData("00 374 93 910-593", "+37493910593")]
    [InlineData("+374 93 910 593", "+37493910593")]
    [InlineData("374-93-910-593", "+37493910593")]
    [InlineData("(374) 93 910 593", "+37493910593")]
@@ -24,6 +26,10 @@ public class PhoneUtilTests
    [Theory]
    [InlineData("+12025550199")] // foreign
    [InlineData("441234567890")] // foreign
+   [InlineData("+7123-4567-901")] // Russian 1
+   [InlineData("+71234567901")] // Russian 2
+   [InlineData("+7 123 4567 901")] // Russian 2
+   [InlineData("+7-123-4567-901")] // Russian 3
    [InlineData("+++37493910593")] // invalid
    [InlineData("37493A10593")] // invalid char
    [InlineData("(374)1234567")] // only 7 digits after prefix

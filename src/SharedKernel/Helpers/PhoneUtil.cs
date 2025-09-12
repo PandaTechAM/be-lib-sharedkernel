@@ -14,7 +14,6 @@ public static class PhoneUtil
 
       var s = input.Trim();
 
-      // Special-case exact "(374)" prefix
       if (s.StartsWith("(374)", StringComparison.Ordinal))
       {
          var rest = DigitsOnly(s.AsSpan(5));
@@ -28,7 +27,6 @@ public static class PhoneUtil
          return false;
       }
 
-      // General tolerant parse: allow spaces, dashes, dots, parentheses; '+' only at start
       var sb = new StringBuilder(s.Length);
       for (var i = 0; i < s.Length; i++)
       {
@@ -58,6 +56,8 @@ public static class PhoneUtil
       ReadOnlySpan<char> last8;
 
       var plusAtStart = s[0] == '+';
+      var doubleZeroAtStart = s.StartsWith("00", StringComparison.Ordinal);
+
       if (plusAtStart)
       {
          if (span.Length == 11 && span.StartsWith("374".AsSpan()))
@@ -72,20 +72,36 @@ public static class PhoneUtil
       }
       else
       {
-         switch (span.Length)
+         // Handle "00" international prefix for Armenia: "00374" + 8 digits => total 13 digits
+         if (doubleZeroAtStart && span.Length == 13 && span.StartsWith("00374".AsSpan()))
          {
-            case 11 when span.StartsWith("374".AsSpan()):
-               last8 = span[3..];
-               break;
-            case 9 when span[0] == '0':
-               last8 = span[1..];
-               break;
-            case 8:
-               last8 = span;
-               break;
-            default:
-               formatted = input;
-               return false;
+            last8 = span[5..]; // skip "00" + "374"
+         }
+         else
+         {
+            switch (span.Length)
+            {
+               case 11 when span.StartsWith("374".AsSpan()):
+               {
+                  last8 = span[3..];
+                  break;
+               }
+               case 9 when span[0] == '0':
+               {
+                  last8 = span[1..];
+                  break;
+               }
+               case 8:
+               {
+                  last8 = span;
+                  break;
+               }
+               default:
+               {
+                  formatted = input;
+                  return false;
+               }
+            }
          }
       }
 
