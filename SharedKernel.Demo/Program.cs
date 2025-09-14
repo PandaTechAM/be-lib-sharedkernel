@@ -1,7 +1,5 @@
 using DistributedCache.Extensions;
 using FluentMinimalApiMapper;
-using FluentValidation;
-using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ResponseCrafter.Enums;
@@ -12,6 +10,7 @@ using SharedKernel.Extensions;
 using SharedKernel.Helpers;
 using SharedKernel.Logging;
 using SharedKernel.Logging.Middleware;
+using SharedKernel.Maintenance;
 using SharedKernel.OpenApi;
 using SharedKernel.Resilience;
 using SharedKernel.ValidatorAndMediatR;
@@ -26,16 +25,17 @@ builder
    .AddSerilog(LogBackend.ElasticSearch)
    .AddResponseCrafter(NamingConvention.ToSnakeCase)
    .AddOpenApi()
+   .AddMaintenanceMode()
    .AddOpenTelemetry()
    .AddMinimalApis(AssemblyRegistry.ToArray())
    .AddControllers(AssemblyRegistry.ToArray())
    .AddMediatrWithBehaviors(AssemblyRegistry.ToArray())
    .AddResilienceDefaultPipeline()
-   .AddDistributedSignalR("localhost:6379", "app_name:") // or .AddSignalR()
+   .AddDistributedSignalR("localhost:6379", "app_name") // or .AddSignalR()
    .AddDistributedCache(o =>
    {
       o.RedisConnectionString = "localhost:6379";
-      o.ChannelPrefix = "app_name:";
+      o.ChannelPrefix = "app_name";
    })
    .AddMassTransit(AssemblyRegistry.ToArray())
    .MapDefaultTimeZone()
@@ -66,6 +66,7 @@ var app = builder.Build();
 
 app
    .UseRequestLogging()
+   .UseMaintenanceMode()
    .UseResponseCrafter()
    .UseCors()
    .MapMinimalApis()
@@ -77,6 +78,8 @@ app
    .MapControllers();
 
 app.CreateInMemoryDb();
+
+app.MapMaintenanceEndpoint();
 
 
 app.MapGet("/outbox-count",

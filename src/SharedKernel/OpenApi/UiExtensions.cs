@@ -40,7 +40,7 @@ internal static class UiExtensions
       {
          options.Theme = ScalarTheme.Kepler;
          options.Favicon = "/swagger-resources/favicon.svg";
-         
+
          foreach (var document in openApiConfigConfiguration.Documents)
          {
             options.AddDocument(

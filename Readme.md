@@ -27,6 +27,8 @@ This package currently supports:
 - **OpenTelemetry**: Metrics, traces, and logs with Prometheus support.
 - **Health Checks**: Startup validation and endpoints for monitoring.
 - **ValidationHelper**: A collection of regex-based validators for common data formats.
+- **Maintenance Mode**: Global switch with three modes (`Disabled`, `EnabledForClients`, `EnabledForAll`); clients = all
+  routes except `/api/admin/*`.
 - Various **Extensions and Utilities**, including enumerable, string, dictionary and queryable extensions.
 
 ## Prerequisites
@@ -144,6 +146,7 @@ builder
       o.RedisConnectionString = "redis://localhost:6379";
       o.ChannelPrefix = "app_name:";
    })
+   .AddMaintenanceMode() // Works only with DistributedCache
    .AddDistributedSignalR("redis://localhost:6379","app_name:") // or .AddSignalR()
    .AddCors()
    .AddHealthChecks();
@@ -153,6 +156,7 @@ var app = builder.Build();
 
 app
    .UseRequestLogging()
+   .UseMaintenanceMode() //(place early)
    .UseResponseCrafter()
    .UseCors()
    .MapMinimalApis()
@@ -633,6 +637,17 @@ Integrate OpenTelemetry for observability, including metrics, traces, and loggin
     - OTLP exporter
     - EF Core telemetry
 
+## Maintenance Mode
+
+- **Modes**
+    - `Disabled`: normal operation.
+    - `EnabledForClients`: only `/api/admin/*` or `/hub/admin/*` allowed
+    - `EnabledForAll`: everything blocked except `/above-board/*` and `OPTIONS`.
+- **Security**: use your own auth (recommended). If you don’t have auth yet, you can pass a shared secret to
+  `MapMaintenanceEndpoint(basePath, querySecret)`.
+
+> Currently, this feature requires a Pandatech.DistributedCache to work correctly.
+
 ## HealthChecks
 
 - **Startup Validation:** `app.EnsureHealthy()` performs a health check at startup and terminates the application if it
@@ -730,6 +745,7 @@ This package includes various extensions and utilities to aid development:
   retrieves DefaultTimeZone from `appsettings.json` and sets it as the default time zone.
 - **UrlBuilder:** A utility for building URLs with query parameters.
 - **Language ISO Code Helper:** Validate, query, and retrieve information about ISO language codes.
+- **PhoneUtil class** Utility class for phone number formatting.
 
 ### Related NuGet Packages
 

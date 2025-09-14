@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Text.Json;
 using FluentMinimalApiMapper;
 using Microsoft.AspNetCore.Mvc;
 
@@ -83,7 +84,7 @@ public class LoggingTestEndpoints : IEndpoint
          });
 
       grp.MapGet("/no-content-type",
-         async (HttpContext ctx) =>
+         async ctx =>
          {
             await ctx.Response.Body.WriteAsync(Encoding.UTF8.GetBytes("raw body with no content-type"));
          });
@@ -104,12 +105,16 @@ public class LoggingTestEndpoints : IEndpoint
          () =>
          {
             var sb = new StringBuilder();
-            for (var i = 0; i < 20_000; i++) sb.Append('x');
+            for (var i = 0; i < 20_000; i++)
+            {
+               sb.Append('x');
+            }
+
             return Results.Text(sb.ToString(), "text/plain", Encoding.UTF8);
          });
 
       grp.MapPost("/echo-with-headers",
-         ([FromBody] SharedKernel.Demo.TestTypes payload, HttpResponse res) =>
+         ([FromBody] TestTypes payload, HttpResponse res) =>
          {
             res.Headers["Custom-Header-Response"] = "CustomValue";
             res.ContentType = "application/json; charset=utf-8";
@@ -117,10 +122,10 @@ public class LoggingTestEndpoints : IEndpoint
          });
 
       grp.MapGet("/ping", () => Results.Text("pong", "text/plain"));
-      
+
 
       grp.MapGet("/invalid-json",
-         async (HttpContext ctx) =>
+         async ctx =>
          {
             ctx.Response.StatusCode = StatusCodes.Status200OK;
             ctx.Response.ContentType = "application/json";
@@ -134,27 +139,31 @@ public class LoggingTestEndpoints : IEndpoint
             var httpClient = httpClientFactory.CreateClient("RandomApiClient");
             httpClient.DefaultRequestHeaders.Add("auth", "hardcoded-auth-value");
 
-            var body = new SharedKernel.Demo.TestTypes
+            var body = new TestTypes
             {
                AnimalType = AnimalType.Cat,
                JustText = "Hello from Get Data",
                JustNumber = 100
             };
 
-            var content = new StringContent(System.Text.Json.JsonSerializer.Serialize(body),
-               System.Text.Encoding.UTF8,
+            var content = new StringContent(JsonSerializer.Serialize(body),
+               Encoding.UTF8,
                "application/json");
 
             var response = await httpClient.PostAsync("tests/echo-with-headers?barev=5", content);
 
             if (!response.IsSuccessStatusCode)
+            {
                throw new Exception("Something went wrong");
+            }
 
             var responseBody = await response.Content.ReadAsStringAsync();
-            var testTypes = System.Text.Json.JsonSerializer.Deserialize<SharedKernel.Demo.TestTypes>(responseBody);
+            var testTypes = JsonSerializer.Deserialize<TestTypes>(responseBody);
 
             if (testTypes == null)
+            {
                throw new Exception("Failed to get data from external API");
+            }
 
             return TypedResults.Ok(testTypes);
          });
