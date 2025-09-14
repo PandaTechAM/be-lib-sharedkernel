@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function () {
-    
+
     const faviconPath = "/swagger-resources/favicon.svg";
-    
+
     const existingLink = document.querySelector("link[rel*='icon']");
     if (existingLink) {
         existingLink.href = faviconPath;

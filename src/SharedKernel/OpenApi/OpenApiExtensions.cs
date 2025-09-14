@@ -14,7 +14,6 @@ public static class OpenApiExtensions
    public static WebApplicationBuilder AddOpenApi(this WebApplicationBuilder builder,
       Action<OpenApiOptions>? configureOptions = null)
    {
-
       var openApiConfiguration = builder.Configuration
                                         .GetSection("OpenApi")
                                         .Get<OpenApiConfig>();

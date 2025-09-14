@@ -10,19 +10,23 @@ internal static class RedactionHelper
 {
    // ------- Headers -------
 
-   public static Dictionary<string, string> RedactHeaders(IHeaderDictionary headers) =>
-      headers.ToDictionary(
+   public static Dictionary<string, string> RedactHeaders(IHeaderDictionary headers)
+   {
+      return headers.ToDictionary(
          h => h.Key,
          h => LoggingOptions.SensitiveKeywords.Any(k => h.Key.Contains(k, StringComparison.OrdinalIgnoreCase))
             ? "[REDACTED]"
             : h.Value.ToString());
+   }
 
-   public static Dictionary<string, string> RedactHeaders(Dictionary<string, IEnumerable<string>> headers) =>
-      headers.ToDictionary(
+   public static Dictionary<string, string> RedactHeaders(Dictionary<string, IEnumerable<string>> headers)
+   {
+      return headers.ToDictionary(
          kvp => kvp.Key,
          kvp => LoggingOptions.SensitiveKeywords.Any(k => kvp.Key.Contains(k, StringComparison.OrdinalIgnoreCase))
             ? "[REDACTED]"
             : string.Join(";", kvp.Value));
+   }
 
    // ------- Bodies (JSON, x-www-form-urlencoded, text fallback) -------
 
@@ -43,7 +47,10 @@ internal static class RedactionHelper
          }
          catch (JsonException)
          {
-            return new Dictionary<string, object?> { ["invalidJson"] = true };
+            return new Dictionary<string, object?>
+            {
+               ["invalidJson"] = true
+            };
          }
       }
 
@@ -146,8 +153,9 @@ internal static class RedactionHelper
 
    // ------- Helpers -------
 
-   private static object RedactElement(JsonElement el) =>
-      el.ValueKind switch
+   private static object RedactElement(JsonElement el)
+   {
+      return el.ValueKind switch
       {
          JsonValueKind.Object => el.EnumerateObject()
                                    .ToDictionary(
@@ -169,6 +177,7 @@ internal static class RedactionHelper
          JsonValueKind.Null => null!,
          _ => el.GetRawText()
       };
+   }
 
    private static string RedactString(string value)
    {

@@ -6,7 +6,7 @@ namespace SharedKernel.Logging;
 
 public static class StartupLoggerExtensions
 {
-   private static long? _startTimestamp = null;
+   private static long? _startTimestamp;
 
    public static WebApplicationBuilder LogStartAttempt(this WebApplicationBuilder builder)
    {

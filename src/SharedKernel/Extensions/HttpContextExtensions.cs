@@ -18,7 +18,7 @@ public static class HttpContextExtensions
    {
       contextAccessor.HttpContext?.Response.Headers.Append("X-Private-Endpoint", "1");
    }
-   
+
    public static void MarkAsPrivateEndpoint(this HttpContextAccessor contextAccessor)
    {
       contextAccessor.HttpContext?.Response.Headers.Append("X-Private-Endpoint", "1");

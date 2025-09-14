@@ -13,6 +13,6 @@ public class MessageHub : Hub
 
 public class SendMessageRequest : IHubArgument
 {
-   public required string InvocationId { get; set; }
    public required string Message { get; set; }
+   public required string InvocationId { get; set; }
 }

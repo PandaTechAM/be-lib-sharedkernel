@@ -45,7 +45,7 @@ internal static class RmqHealthCheckExtensions
                 var rmqConnectionString = builder.Configuration.GetConnectionString("RabbitMq")!;
                 var factory = new ConnectionFactory
                 {
-                   Uri = new Uri(rmqConnectionString),
+                   Uri = new Uri(rmqConnectionString)
                 };
                 return factory.CreateConnectionAsync()
                               .GetAwaiter()

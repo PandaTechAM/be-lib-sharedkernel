@@ -10,7 +10,8 @@ public static class ControllerExtensions
 {
    public static WebApplicationBuilder AddControllers(this WebApplicationBuilder builder, Assembly[] assemblies)
    {
-      var mvcBuilder = builder.Services.AddControllers(options => options.Conventions.Add(new ToLowerNamingConvention()));
+      var mvcBuilder =
+         builder.Services.AddControllers(options => options.Conventions.Add(new ToLowerNamingConvention()));
       foreach (var assembly in assemblies)
       {
          mvcBuilder.AddApplicationPart(assembly);

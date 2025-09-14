@@ -26,20 +26,20 @@ internal static class HttpLogHelper
       if (!textLike)
       {
          return (redactedHeaders, LogFormatting.Omitted(
-            reason: "non-text",
-            lengthBytes: len,
-            mediaType: MediaTypeUtil.Normalize(contentType),
-            thresholdBytes: LoggingOptions.RequestResponseBodyMaxBytes));
+            "non-text",
+            len,
+            MediaTypeUtil.Normalize(contentType),
+            LoggingOptions.RequestResponseBodyMaxBytes));
       }
 
       var (raw, truncated) = await ReadLimitedAsync(bodyStream, LoggingOptions.RequestResponseBodyMaxBytes);
       if (truncated)
       {
          return (redactedHeaders, LogFormatting.Omitted(
-            reason: "exceeds-limit",
-            lengthBytes: LoggingOptions.RequestResponseBodyMaxBytes,
-            mediaType: MediaTypeUtil.Normalize(contentType),
-            thresholdBytes: LoggingOptions.RequestResponseBodyMaxBytes));
+            "exceeds-limit",
+            LoggingOptions.RequestResponseBodyMaxBytes,
+            MediaTypeUtil.Normalize(contentType),
+            LoggingOptions.RequestResponseBodyMaxBytes));
       }
 
       var body = RedactionHelper.RedactBody(contentType, raw);
@@ -62,10 +62,10 @@ internal static class HttpLogHelper
       if (Utf8ByteCount(raw) > LoggingOptions.RequestResponseBodyMaxBytes)
       {
          return (redactedHeaders, LogFormatting.Omitted(
-            reason: "exceeds-limit",
-            lengthBytes: Utf8ByteCount(raw),
-            mediaType: MediaTypeUtil.Normalize(contentType),
-            thresholdBytes: LoggingOptions.RequestResponseBodyMaxBytes));
+            "exceeds-limit",
+            Utf8ByteCount(raw),
+            MediaTypeUtil.Normalize(contentType),
+            LoggingOptions.RequestResponseBodyMaxBytes));
       }
 
       var body = RedactionHelper.RedactBody(contentType, raw);
@@ -96,7 +96,10 @@ internal static class HttpLogHelper
    public static Dictionary<string, IEnumerable<string>> CreateHeadersDictionary(HttpResponseMessage res)
    {
       var dict = new Dictionary<string, IEnumerable<string>>(StringComparer.OrdinalIgnoreCase);
-      foreach (var h in res.Headers) dict[h.Key] = h.Value;
+      foreach (var h in res.Headers)
+      {
+         dict[h.Key] = h.Value;
+      }
 
       var ch = res.Content?.Headers;
       if (ch != null)
@@ -110,7 +113,10 @@ internal static class HttpLogHelper
       return dict;
    }
 
-   internal static bool IsTextLike(string? mediaType) => MediaTypeUtil.IsTextLike(mediaType);
+   internal static bool IsTextLike(string? mediaType)
+   {
+      return MediaTypeUtil.IsTextLike(mediaType);
+   }
 
    private static long? GetContentLengthOrNull(IHeaderDictionary headers)
    {
@@ -127,7 +133,7 @@ internal static class HttpLogHelper
    {
       s.Seek(0, SeekOrigin.Begin);
 
-      using var ms = new MemoryStream(capacity: maxBytes);
+      using var ms = new MemoryStream(maxBytes);
       var buf = new byte[Math.Min(8192, maxBytes)];
       var total = 0;
 
@@ -135,7 +141,11 @@ internal static class HttpLogHelper
       {
          var toRead = Math.Min(buf.Length, maxBytes - total);
          var read = await s.ReadAsync(buf.AsMemory(0, toRead));
-         if (read == 0) break;
+         if (read == 0)
+         {
+            break;
+         }
+
          await ms.WriteAsync(buf.AsMemory(0, read));
          total += read;
       }
@@ -148,7 +158,10 @@ internal static class HttpLogHelper
          if (read > 0)
          {
             truncated = true;
-            if (s.CanSeek) s.Seek(-read, SeekOrigin.Current);
+            if (s.CanSeek)
+            {
+               s.Seek(-read, SeekOrigin.Current);
+            }
          }
       }
 
@@ -156,5 +169,8 @@ internal static class HttpLogHelper
       return (Encoding.UTF8.GetString(ms.ToArray()), truncated);
    }
 
-   private static int Utf8ByteCount(string s) => Encoding.UTF8.GetByteCount(s);
+   private static int Utf8ByteCount(string s)
+   {
+      return Encoding.UTF8.GetByteCount(s);
+   }
 }

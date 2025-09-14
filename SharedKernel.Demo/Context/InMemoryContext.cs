@@ -7,10 +7,12 @@ public class InMemoryContext(DbContextOptions<InMemoryContext> options) : DbCont
 {
    public DbSet<OutboxMessage> OutboxMessages { get; set; }
 
-   protected override void OnModelCreating(ModelBuilder b) =>
+   protected override void OnModelCreating(ModelBuilder b)
+   {
       b.Entity<OutboxMessage>()
        .ToTable("outbox_messages")
        .HasKey(x => x.Id);
+   }
 }
 
 public class OutboxMessage

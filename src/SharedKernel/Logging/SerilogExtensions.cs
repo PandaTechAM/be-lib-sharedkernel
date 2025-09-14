@@ -201,8 +201,10 @@ public static class SerilogExtensions
              sql.Contains("outbox_messages", StringComparison.OrdinalIgnoreCase);
 
       // Grab the structured SQL (EF logs it as 'commandText'; some sinks rename to 'CommandText')
-      static string? Get(LogEvent e, string name) =>
-         e.Properties.TryGetValue(name, out var v) && v is ScalarValue s && s.Value is string str ? str : null;
+      static string? Get(LogEvent e, string name)
+      {
+         return e.Properties.TryGetValue(name, out var v) && v is ScalarValue s && s.Value is string str ? str : null;
+      }
    }
 
 

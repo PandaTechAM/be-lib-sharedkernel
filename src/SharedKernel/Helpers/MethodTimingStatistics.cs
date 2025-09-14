@@ -6,25 +6,27 @@ using Microsoft.Extensions.Logging;
 namespace SharedKernel.Helpers;
 
 /// <summary>
-/// Tracks and logs timing statistics of method executions for benchmarking.
+///    Tracks and logs timing statistics of method executions for benchmarking.
 /// </summary>
 /// <remarks>
-/// Not recommended for production usage. Use only for performance diagnostics or quick benchmarks.
+///    Not recommended for production usage. Use only for performance diagnostics or quick benchmarks.
 /// </remarks>
 public class MethodTimingStatistics
 {
+   private static readonly List<MethodTimingStatistics> CollectedStats = [];
    public required string MethodName { get; init; }
    private int InvocationCount { get; set; }
    private double TotalElapsedMilliseconds { get; set; }
    private double AverageElapsedMilliseconds { get; set; }
 
-   private static readonly List<MethodTimingStatistics> CollectedStats = [];
-
    /// <summary>
-   /// Updates or adds statistics for a particular method based on the start timestamp.
+   ///    Updates or adds statistics for a particular method based on the start timestamp.
    /// </summary>
    /// <param name="methodName">The name of the method being tracked.</param>
-   /// <param name="startTimestamp">A timestamp (via <see cref="Stopwatch.GetTimestamp"/>) captured before the method execution.</param>
+   /// <param name="startTimestamp">
+   ///    A timestamp (via <see cref="Stopwatch.GetTimestamp" />) captured before the method
+   ///    execution.
+   /// </param>
    public static void RecordExecution(string methodName, long startTimestamp)
    {
       var elapsedMs = Stopwatch.GetElapsedTime(startTimestamp)
@@ -51,9 +53,9 @@ public class MethodTimingStatistics
    }
 
    /// <summary>
-   /// Logs the accumulated statistics for all tracked methods.
+   ///    Logs the accumulated statistics for all tracked methods.
    /// </summary>
-   /// <param name="logger">An <see cref="ILogger"/> instance used for logging the statistics.</param>
+   /// <param name="logger">An <see cref="ILogger" /> instance used for logging the statistics.</param>
    public static void LogAll(ILogger logger)
    {
       foreach (var stat in CollectedStats)
@@ -71,7 +73,7 @@ public class MethodTimingStatistics
    }
 
    /// <summary>
-   /// Clears the statistics for a specific method or for all methods if none is specified.
+   ///    Clears the statistics for a specific method or for all methods if none is specified.
    /// </summary>
    /// <param name="methodName">Optional method name to clear; if null or empty, clears all statistics.</param>
    public static void ClearStatistics(string? methodName = null)
@@ -85,6 +87,7 @@ public class MethodTimingStatistics
          CollectedStats.Clear();
       }
    }
+
    private static string FormatDuration(double milliseconds)
    {
       switch (milliseconds)
