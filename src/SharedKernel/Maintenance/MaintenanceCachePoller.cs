@@ -3,6 +3,8 @@ using Microsoft.Extensions.Hosting;
 
 namespace SharedKernel.Maintenance;
 
+//This is for local cache entity to poll the maintenance mode from distributed cache
+//This should be removed then L1 + L2 cache is implemented in hybrid cache
 internal class MaintenanceCachePoller(HybridCache hybridCache, MaintenanceState state) : BackgroundService
 {
    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
