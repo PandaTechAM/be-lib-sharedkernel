@@ -473,18 +473,50 @@ handler. If validation fails, a `BadRequestException` is thrown with the validat
 
 ### FluentValidation Extensions
 
-The package includes extension methods to simplify common validation scenarios:
+We ship lightweight validators and presets for common scenarios, including file uploads and string checks.
+All file rules use name/extension checks only (simple + fast). Deep validation still happens inside your storage layer.
 
-- File Validations:
-    - HasMaxFileSize(maxFileSizeInMb): Validates that an uploaded file does not exceed the specified maximum size.
-    - FileTypeIsOneOf(allowedFileExtensions): Validates that the uploaded file has one of the allowed file
-      extensions.
-- String Validations:
-    - IsValidJson(): Validates that a string is a valid JSON.
-    - IsXssSanitized(): Validates that a string is sanitized against XSS attacks.
-    - IsEmail(): Validates that a string is a valid email address. Native one is not working correctly.
-    - IsPhoneNumber(): Validates that a string is a valid phone number. Format requires area code to be in `()`.
-    - IsEmailOrPhoneNumber(): Validates that a string is either a valid email address or a valid phone number.
+**File upload validators**
+
+**Single file (`IFormFile`)**
+
+```csharp
+RuleFor(x => x.Avatar)
+   .HasMaxSizeMb(6)                       // size cap in MB
+   .ExtensionIn(".jpg", ".jpeg", ".png"); // or use a preset set below
+
+```
+
+**File collection (`IFormFileCollection`)**
+
+```csharp
+RuleFor(x => x.Docs)
+   .MaxCount(10)                          // number of files
+   .EachHasMaxSizeMb(10)                  // per-file size cap (MB)
+   .EachExtensionIn(CommonFileSets.Documents)
+   .TotalSizeMaxMb(50);                   // sum of all files (MB)
+```
+
+**Presets**
+
+```csharp
+using SharedKernel.ValidatorAndMediatR.Validators.Files;
+
+CommonFileSets.Images               // .jpg, .jpeg, .png, .webp, .heic, .heif, .svg, .avif
+CommonFileSets.Documents            // .pdf, .txt, .csv, .json, .xml, .yaml, .yml, .md, .docx, .xlsx, .pptx, .odt, .ods, .odp
+CommonFileSets.ImagesAndAnimations  // Images + .gif
+CommonFileSets.ImagesAndDocuments   // Images + Documents
+```
+
+**String validators**
+
+```csharp
+RuleFor(x => x.Email).IsEmail();
+RuleFor(x => x.Phone).IsPhoneNumber();
+RuleFor(x => x.Contact).IsEmailOrPhoneNumber(); // alias: IsPhoneNumberOrEmail
+RuleFor(x => x.PayloadJson).IsValidJson();
+RuleFor(x => x.Content).IsXssSanitized();
+```
 
 ## Cors
 

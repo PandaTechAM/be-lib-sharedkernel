@@ -18,20 +18,17 @@ public class ValidationBehaviorWithResponse<TRequest, TResponse>(IEnumerable<IVa
       }
 
       var context = new ValidationContext<TRequest>(request);
+      var results = await Task.WhenAll(validators.Select(v => v.ValidateAsync(context, cancellationToken)));
 
-      var validationResults = await Task.WhenAll(validators.Select(v => v.ValidateAsync(context, cancellationToken)));
-      var failures = validationResults.SelectMany(r => r.Errors)
-                                      .Where(f => f != null)
-                                      .ToList();
+      var failures = results.SelectMany(r => r.Errors)
+                            .Where(f => f is not null)
+                            .ToList();
 
       if (failures.Count == 0)
       {
          return await next(cancellationToken);
       }
 
-      var errors = failures.GroupBy(e => e.PropertyName, e => e.ErrorMessage)
-                           .ToDictionary(failureGroup => failureGroup.Key, failureGroup => failureGroup.First());
-
-      throw new BadRequestException(errors);
+      throw ValidationAggregation.ToBadRequestException(failures);
    }
 }
