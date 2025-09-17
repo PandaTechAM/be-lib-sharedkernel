@@ -2,6 +2,9 @@
 
 namespace SharedKernel.Maintenance;
 
+// This is a local cache entity to hold the maintenance mode in memory
+// This should be removed then L1 + L2 cache is implemented in hybrid cache
+// thread-safe local snapshot
 public sealed class MaintenanceState(HybridCache cache)
 {
    private const string Key = "maintenance-mode";
@@ -16,7 +19,6 @@ public sealed class MaintenanceState(HybridCache cache)
    // for admin/API to change mode (updates local immediately, then L2)
    public async Task SetModeAsync(MaintenanceMode mode, CancellationToken ct = default)
    {
-      Mode = mode;
       await cache.SetAsync(
          Key,
          new MaintenanceCacheEntity
@@ -30,6 +32,8 @@ public sealed class MaintenanceState(HybridCache cache)
             Flags = null
          },
          cancellationToken: ct);
+      
+      Mode = mode;
    }
 
    // used by the poller only

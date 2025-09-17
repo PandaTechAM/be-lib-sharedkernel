@@ -1,6 +1,7 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using SharedKernel.Helpers;
+using SharedKernel.ValidatorAndMediatR.Validators.Files;
 
 namespace SharedKernel.ValidatorAndMediatR.Validators;
 
@@ -30,18 +31,6 @@ public static class ValidatorExtensions
       return ruleBuilder.IsEmailOrPhoneNumber();
    }
 
-   public static IRuleBuilderOptions<T, IFormFile?> HasMaxFileSize<T>(this IRuleBuilder<T, IFormFile?> ruleBuilder,
-      int maxFileSizeInMb)
-   {
-      return ruleBuilder.SetValidator(new FileSizeValidator<T>(maxFileSizeInMb));
-   }
-
-   public static IRuleBuilderOptions<T, IFormFile?> FileTypeIsOneOf<T>(this IRuleBuilder<T, IFormFile?> ruleBuilder,
-      params string[] allowedFileExtensions)
-   {
-      return ruleBuilder.SetValidator(new FileTypeValidator<T>(allowedFileExtensions));
-   }
-
    public static IRuleBuilderOptions<T, string> IsValidJson<T>(this IRuleBuilder<T, string> ruleBuilder)
    {
       return ruleBuilder.SetValidator(new JsonValidator<T>());
@@ -50,5 +39,45 @@ public static class ValidatorExtensions
    public static IRuleBuilderOptions<T, string> IsXssSanitized<T>(this IRuleBuilder<T, string> ruleBuilder)
    {
       return ruleBuilder.SetValidator(new XssSanitizationValidator<T>());
+   }
+
+   // Single file
+   public static IRuleBuilderOptions<T, IFormFile?> HasMaxSizeMb<T>(this IRuleBuilder<T, IFormFile?> rb, int maxMb)
+   {
+      return rb.SetValidator(new FileMaxSizeMbValidator<T>(maxMb));
+   }
+
+   public static IRuleBuilderOptions<T, IFormFile?> ExtensionIn<T>(this IRuleBuilder<T, IFormFile?> rb,
+      params string[] allowedExts)
+   {
+      return rb.SetValidator(new FileExtensionValidator<T>(allowedExts));
+   }
+
+   // Collection files
+   public static IRuleBuilderOptions<T, IFormFileCollection?> EachHasMaxSizeMb<T>(
+      this IRuleBuilder<T, IFormFileCollection?> rb,
+      int maxMb)
+   {
+      return rb.SetValidator(new FilesEachMaxSizeMbValidator<T>(maxMb));
+   }
+
+   public static IRuleBuilderOptions<T, IFormFileCollection?> EachExtensionIn<T>(
+      this IRuleBuilder<T, IFormFileCollection?> rb,
+      params string[] allowedExts)
+   {
+      return rb.SetValidator(new FilesEachExtensionValidator<T>(allowedExts));
+   }
+
+   public static IRuleBuilderOptions<T, IFormFileCollection?> TotalSizeMaxMb<T>(
+      this IRuleBuilder<T, IFormFileCollection?> rb,
+      int maxMb)
+   {
+      return rb.SetValidator(new FilesTotalMaxSizeMbValidator<T>(maxMb));
+   }
+
+   public static IRuleBuilderOptions<T, IFormFileCollection?> MaxCount<T>(this IRuleBuilder<T, IFormFileCollection?> rb,
+      int maxCount)
+   {
+      return rb.SetValidator(new FilesMaxCountValidator<T>(maxCount));
    }
 }
