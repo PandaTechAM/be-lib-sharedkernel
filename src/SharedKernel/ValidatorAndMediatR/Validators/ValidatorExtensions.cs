@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using CommissionCalculator.DTO;
+using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using SharedKernel.Helpers;
 using SharedKernel.ValidatorAndMediatR.Validators.Files;
@@ -79,5 +80,9 @@ public static class ValidatorExtensions
       int maxCount)
    {
       return rb.SetValidator(new FilesMaxCountValidator<T>(maxCount));
+   }
+   public static IRuleBuilderOptions<T, CommissionRule?> ValidateCommissionRule<T>(this IRuleBuilder<T, CommissionRule?> rule)
+   {
+      return rule.SetValidator(new CommissionRuleValidator<T>());
    }
 }
