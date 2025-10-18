@@ -4,6 +4,7 @@ using FluentValidation.Validators;
 using SharedKernel.ValidatorAndMediatR.Validators.Files;
 
 namespace SharedKernel.ValidatorAndMediatR.Validators;
+
 public sealed class CommissionRuleValidator<T> : PropertyValidator<T, CommissionRule?>
 {
    public override string Name => "CommissionRuleValidator";
@@ -16,8 +17,8 @@ public sealed class CommissionRuleValidator<T> : PropertyValidator<T, Commission
          return false;
       }
 
-      if (rule.CommissionRangeConfigs.Any(
-             r => r is { Type: CommissionType.Percentage, CommissionAmount: < -10 or > 10 }))
+      if (rule.CommissionRangeConfigs.Any(r =>
+             r is { Type: CommissionType.Percentage, CommissionAmount: < -10 or > 10 }))
       {
          context.AddFailure(
             "For 'Percentage' CommissionType, the CommissionAmount should be between -10 and 10. Commissions over 1000% are not allowed.");
@@ -32,21 +33,19 @@ public sealed class CommissionRuleValidator<T> : PropertyValidator<T, Commission
             return false;
          }
 
-         if (rule.CommissionRangeConfigs[0].MaxCommission != 0 && rule.CommissionRangeConfigs[0].MaxCommission <
+         if (rule.CommissionRangeConfigs[0].MaxCommission == 0 || rule.CommissionRangeConfigs[0].MaxCommission >=
              rule.CommissionRangeConfigs[0].MinCommission)
          {
-            context.AddFailure("MaxCommission should be greater than or equal to MinCommission.");
-            return false;
+            return true; //check
          }
 
-         return true; //check
+         context.AddFailure("MaxCommission should be greater than or equal to MinCommission.");
+         return false;
       }
-      else
-      {
-         var rangeValidator = new CommissionRangeValidator<T>();
-         var rangeValidatorResult = rangeValidator.IsValid(context, rule);
 
-         return true && rangeValidatorResult;
-      }
+      var rangeValidator = new CommissionRangeValidator<T>();
+      var rangeValidatorResult = rangeValidator.IsValid(context, rule);
+
+      return rangeValidatorResult;
    }
 }
