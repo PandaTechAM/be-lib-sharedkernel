@@ -33,6 +33,7 @@ public static class OpenApiExtensions
                options.AddDocument(document, openApiConfiguration);
                options.AddSchemaTransformer<EnumSchemaTransformer>();
                options.UseApiSecuritySchemes(openApiConfiguration);
+               options.AddDocumentTransformer<TagOrderingTransformer>();
                configureOptions?.Invoke(options);
             });
       }
