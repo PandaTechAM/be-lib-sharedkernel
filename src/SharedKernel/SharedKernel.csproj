@@ -8,13 +8,13 @@
         <PackageReadmeFile>Readme.md</PackageReadmeFile>
         <Authors>Pandatech</Authors>
         <Copyright>MIT</Copyright>
-        <Version>1.8.4</Version>
+        <Version>1.8.5</Version>
         <PackageId>Pandatech.SharedKernel</PackageId>
         <Title>Pandatech Shared Kernel Library</Title>
         <PackageTags>Pandatech, shared kernel, library, OpenAPI, Swagger, utilities, scalar</PackageTags>
         <Description>Pandatech.SharedKernel provides centralized configurations, utilities, and extensions for ASP.NET Core projects. For more information refere to readme.md document.</Description>
         <RepositoryUrl>https://github.com/PandaTechAM/be-lib-sharedkernel</RepositoryUrl>
-        <PackageReleaseNotes>tag ordering added to open api</PackageReleaseNotes>
+        <PackageReleaseNotes>logging option to remove duplicate logs</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
@@ -39,13 +39,13 @@
         <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="9.0.8"/>
         <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="9.0.8"/>
         <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.8.0"/>
-        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.12.0"/>
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.13.1" />
         <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.8.0-rc.1"/>
-        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.12.0"/>
-        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0"/>
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.13.1" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.13.0" />
         <PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.0.0-beta.12"/>
-        <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.12.0"/>
-        <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.12.0"/>
+        <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.13.0" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.13.0" />
         <PackageReference Include="Pandatech.CommissionCalculator" Version="4.0.1" />
         <PackageReference Include="Pandatech.Crypto" Version="6.1.1" />
         <PackageReference Include="Pandatech.DistributedCache" Version="4.0.9"/>
