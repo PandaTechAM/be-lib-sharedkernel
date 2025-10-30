@@ -21,12 +21,13 @@ public static class SerilogExtensions
       LogBackend logBackend,
       Dictionary<string, string>? logAdditionalProperties = null,
       int daysToRetain = 7,
-      bool asyncSinks = false)
+      bool asyncSinks = false,
+      bool suppressAspNetExceptionHandler = true)
    {
       builder.Logging.ClearProviders();
 
       var loggerConfig = new LoggerConfiguration()
-                         .FilterOutUnwantedLogs()
+                         .FilterOutUnwantedLogs(suppressAspNetExceptionHandler)
                          .Enrich
                          .FromLogContext()
                          .ConfigureDestinations(builder, logBackend, asyncSinks)
@@ -159,13 +160,35 @@ public static class SerilogExtensions
       return loggerConfig.WriteTo.File(formatter, logPath, rollingInterval: RollingInterval.Day);
    }
 
-   private static LoggerConfiguration FilterOutUnwantedLogs(this LoggerConfiguration loggerConfig)
+   private static LoggerConfiguration FilterOutUnwantedLogs(this LoggerConfiguration loggerConfig,
+      bool suppressAspNetExceptionHandler)
    {
-      return loggerConfig
-             .Filter
-             .ByExcluding(IsEfOutboxQuery)
-             .Filter
-             .ByExcluding(ShouldDropByPath);
+      var filteredConfig = loggerConfig
+                           .Filter
+                           .ByExcluding(IsEfOutboxQuery)
+                           .Filter
+                           .ByExcluding(ShouldDropByPath);
+      if (suppressAspNetExceptionHandler)
+      {
+         filteredConfig = filteredConfig
+                          .Filter
+                          .ByExcluding(ShouldDropExceptionHandlerLogs);
+      }
+
+      return filteredConfig;
+   }
+
+   private static bool ShouldDropExceptionHandlerLogs(LogEvent evt)
+   {
+      if (!evt.Properties.TryGetValue("SourceContext", out var sc) || sc is not ScalarValue sv)
+      {
+         return false;
+      }
+
+      var sourceContext = sv.Value as string ?? "";
+
+      return sourceContext.Equals("Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddleware",
+         StringComparison.OrdinalIgnoreCase);
    }
 
    private static bool ShouldDropByPath(LogEvent evt)
