@@ -132,23 +132,26 @@ AssemblyRegistry.Add(typeof(Program).Assembly);
 
 builder
    .ConfigureWithPandaVault()
-   .AddSerilog(LogBackend.Loki)
-   .AddResponseCrafter(NamingConvention.ToUpperSnakeCase)
+   .AddSerilog(LogBackend.ElasticSearch)
+   .AddResponseCrafter(NamingConvention.ToSnakeCase)
    .AddOpenApi()
+   .AddMaintenanceMode()
    .AddOpenTelemetry()
-   .AddMapMinimalApis(AssemblyRegistry.ToArray())
+   .AddMinimalApis(AssemblyRegistry.ToArray())
    .AddControllers(AssemblyRegistry.ToArray())
    .AddMediatrWithBehaviors(AssemblyRegistry.ToArray())
    .AddResilienceDefaultPipeline()
-   .MapDefaultTimeZone()
+   .AddDistributedSignalR("localhost:6379", "app_name") // or .AddSignalR()
    .AddDistributedCache(o =>
    {
-      o.RedisConnectionString = "redis://localhost:6379";
-      o.ChannelPrefix = "app_name:";
+      o.RedisConnectionString = "localhost:6379";
+      o.ChannelPrefix = "app_name";
    })
-   .AddMaintenanceMode() // Works only with DistributedCache
-   .AddDistributedSignalR("redis://localhost:6379","app_name:") // or .AddSignalR()
+   .AddMassTransit(AssemblyRegistry.ToArray())
+   .AddFileExporter(AssemblyRegistry.ToArray())
+   .MapDefaultTimeZone()
    .AddCors()
+   .AddOutboundLoggingHandler()
    .AddHealthChecks();
 
 
