@@ -1,4 +1,5 @@
 using DistributedCache.Extensions;
+using FileExporter.Extensions;
 using FluentMinimalApiMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +39,7 @@ builder
       o.ChannelPrefix = "app_name";
    })
    .AddMassTransit(AssemblyRegistry.ToArray())
+   .AddFileExporter(AssemblyRegistry.ToArray())
    .MapDefaultTimeZone()
    .AddCors()
    .AddOutboundLoggingHandler()
