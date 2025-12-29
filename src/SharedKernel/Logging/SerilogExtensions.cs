@@ -60,122 +60,122 @@ public static class SerilogExtensions
    }
 
 
-   private static LoggerConfiguration ConfigureDestinations(this LoggerConfiguration loggerConfig,
-      WebApplicationBuilder builder,
-      LogBackend logBackend,
-      bool asyncSinks)
+   extension(LoggerConfiguration loggerConfig)
    {
-      if (builder.Environment.IsLocal())
+      private LoggerConfiguration ConfigureDestinations(WebApplicationBuilder builder,
+         LogBackend logBackend,
+         bool asyncSinks)
       {
-         loggerConfig.WriteToConsole(asyncSinks);
+         if (builder.Environment.IsLocal())
+         {
+            loggerConfig.WriteToConsole(asyncSinks);
+
+            return loggerConfig;
+         }
+
+         if (!builder.Environment.IsProduction())
+         {
+            loggerConfig.WriteToConsole(asyncSinks);
+         }
+
+         if (logBackend != LogBackend.None)
+         {
+            loggerConfig.WriteToFile(builder, logBackend, asyncSinks);
+         }
 
          return loggerConfig;
       }
 
-      if (!builder.Environment.IsProduction())
+      private LoggerConfiguration WriteToConsole(bool useAsync)
       {
-         loggerConfig.WriteToConsole(asyncSinks);
-      }
-
-      if (logBackend != LogBackend.None)
-      {
-         loggerConfig.WriteToFile(builder, logBackend, asyncSinks);
-      }
-
-      return loggerConfig;
-   }
-
-   private static LoggerConfiguration WriteToConsole(this LoggerConfiguration loggerConfig, bool useAsync)
-   {
-      if (useAsync)
-      {
-         loggerConfig.WriteTo.Async(a => a.Console());
-      }
-      else
-      {
-         loggerConfig.WriteTo.Console();
-      }
-
-      return loggerConfig;
-   }
-
-   private static LoggerConfiguration WriteToFile(this LoggerConfiguration loggerConfig,
-      WebApplicationBuilder builder,
-      LogBackend logBackend,
-      bool useAsync)
-   {
-      var ecsConfig = new EcsTextFormatterConfiguration
-      {
-         MessageFormatProvider = CultureInfo.InvariantCulture,
-         IncludeHost = false,
-         IncludeProcess = false,
-         IncludeUser = false,
-
-         MapCustom = (doc, _) =>
+         if (useAsync)
          {
-            doc.Agent = null;
-
-            if (doc.Labels is { Count: > 0 })
-            {
-               doc.Labels.Remove("MessageTemplate");
-            }
-
-            if (doc.Event != null)
-            {
-               var dur = doc.Event.Duration;
-               doc.Event = new Event
-               {
-                  Duration = dur
-               };
-            }
-
-            if (doc.Service != null)
-            {
-               doc.Service.Type = null;
-            }
-
-            return doc;
+            loggerConfig.WriteTo.Async(a => a.Console());
          }
-      };
-      ITextFormatter formatter = logBackend switch
-      {
-         LogBackend.ElasticSearch => new EcsTextFormatter(ecsConfig),
-         LogBackend.Loki => new LokiJsonTextFormatter(),
-         LogBackend.CompactJson => new CompactJsonFormatter(),
-         _ => new CompactJsonFormatter() // Fallback
-      };
+         else
+         {
+            loggerConfig.WriteTo.Console();
+         }
 
-      var logPath = builder.GetLogsPath();
-
-      if (useAsync)
-      {
-         return loggerConfig.WriteTo.Async(a =>
-               a.File(formatter,
-                  logPath,
-                  rollingInterval: RollingInterval.Day),
-            blockWhenFull: true,
-            bufferSize: 10_000);
+         return loggerConfig;
       }
 
-      return loggerConfig.WriteTo.File(formatter, logPath, rollingInterval: RollingInterval.Day);
-   }
-
-   private static LoggerConfiguration FilterOutUnwantedLogs(this LoggerConfiguration loggerConfig,
-      bool suppressAspNetExceptionHandler)
-   {
-      var filteredConfig = loggerConfig
-                           .Filter
-                           .ByExcluding(IsEfOutboxQuery)
-                           .Filter
-                           .ByExcluding(ShouldDropByPath);
-      if (suppressAspNetExceptionHandler)
+      private LoggerConfiguration WriteToFile(WebApplicationBuilder builder,
+         LogBackend logBackend,
+         bool useAsync)
       {
-         filteredConfig = filteredConfig
-                          .Filter
-                          .ByExcluding(ShouldDropExceptionHandlerLogs);
+         var ecsConfig = new EcsTextFormatterConfiguration
+         {
+            MessageFormatProvider = CultureInfo.InvariantCulture,
+            IncludeHost = false,
+            IncludeProcess = false,
+            IncludeUser = false,
+
+            MapCustom = (doc, _) =>
+            {
+               doc.Agent = null;
+
+               if (doc.Labels is { Count: > 0 })
+               {
+                  doc.Labels.Remove("MessageTemplate");
+               }
+
+               if (doc.Event != null)
+               {
+                  var dur = doc.Event.Duration;
+                  doc.Event = new Event
+                  {
+                     Duration = dur
+                  };
+               }
+
+               if (doc.Service != null)
+               {
+                  doc.Service.Type = null;
+               }
+
+               return doc;
+            }
+         };
+         ITextFormatter formatter = logBackend switch
+         {
+            LogBackend.ElasticSearch => new EcsTextFormatter(ecsConfig),
+            LogBackend.Loki => new LokiJsonTextFormatter(),
+            LogBackend.CompactJson => new CompactJsonFormatter(),
+            _ => new CompactJsonFormatter() // Fallback
+         };
+
+         var logPath = builder.GetLogsPath();
+
+         if (useAsync)
+         {
+            return loggerConfig.WriteTo.Async(a =>
+                  a.File(formatter,
+                     logPath,
+                     rollingInterval: RollingInterval.Day),
+               blockWhenFull: true,
+               bufferSize: 10_000);
+         }
+
+         return loggerConfig.WriteTo.File(formatter, logPath, rollingInterval: RollingInterval.Day);
       }
 
-      return filteredConfig;
+      private LoggerConfiguration FilterOutUnwantedLogs(bool suppressAspNetExceptionHandler)
+      {
+         var filteredConfig = loggerConfig
+                              .Filter
+                              .ByExcluding(IsEfOutboxQuery)
+                              .Filter
+                              .ByExcluding(ShouldDropByPath);
+         if (suppressAspNetExceptionHandler)
+         {
+            filteredConfig = filteredConfig
+                             .Filter
+                             .ByExcluding(ShouldDropExceptionHandlerLogs);
+         }
+
+         return filteredConfig;
+      }
    }
 
    private static bool ShouldDropExceptionHandlerLogs(LogEvent evt)

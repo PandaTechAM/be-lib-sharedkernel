@@ -41,8 +41,7 @@ public static class HealthCheckExtensions
       app
          .MapGet($"{EndpointConstants.BasePath}/ping", () => "pong")
          .Produces<string>()
-         .WithTags(EndpointConstants.TagName)
-         .WithOpenApi();
+         .WithTags(EndpointConstants.TagName);
 
       app.MapHealthChecks($"{EndpointConstants.BasePath}/health",
          new HealthCheckOptions

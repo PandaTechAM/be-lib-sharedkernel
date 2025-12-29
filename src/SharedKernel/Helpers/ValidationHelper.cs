@@ -10,10 +10,6 @@ public static class ValidationHelper
 {
    private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(50);
 
-   private static readonly Regex Email =
-      new(@"^[\w-_]+(\.[\w!#$%'*+\/=?\^`{|}]+)*@((([\-\w]+\.)+[a-zA-Z]{2,20})|(([0-9]{1,3}\.){3}[0-9]{1,3}))$",
-         RegexOptions.ExplicitCapture | RegexOptions.Compiled,
-         RegexTimeout);
 
    private static readonly Regex Username =
       new(@"^[a-zA-Z0-9_]{5,15}$",
@@ -25,14 +21,6 @@ public static class ValidationHelper
       new(@"^\(\d{1,5}\)\d{4,15}$",
          RegexOptions.ExplicitCapture | RegexOptions.Compiled,
          RegexTimeout);
-
-
-   //Credit card is commented out as 4 tests are not passing for an unknown reason! Via https://regex101.com/ everything passes.
-   // private static readonly Regex CreditCardNumber =
-   //     new Regex(
-   //         @"^(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|6(?:011|5[0-9]{2})[0-9]{12}|35\d{14})$",
-   //         RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture | RegexOptions.Compiled, RegexTimeout);
-
 
    private static readonly Regex UsSocialSecurityNumber =
       new(
@@ -166,5 +154,47 @@ public static class ValidationHelper
       {
          return false;
       }
+   }
+
+   public static bool IsCreditCardNumber(string? value)
+   {
+      if (string.IsNullOrWhiteSpace(value))
+      {
+         return false;
+      }
+
+      var len = value.Length;
+      if (len is < 13 or > 19)
+      {
+         return false;
+      }
+
+      var sum = 0;
+      var doubleIt = false;
+
+      for (var i = len - 1; i >= 0; i--)
+      {
+         var ch = value[i];
+         if (ch is < '0' or > '9')
+         {
+            return false;
+         }
+
+         var d = ch - '0';
+
+         if (doubleIt)
+         {
+            d *= 2;
+            if (d > 9)
+            {
+               d -= 9;
+            }
+         }
+
+         sum += d;
+         doubleIt = !doubleIt;
+      }
+
+      return sum % 10 == 0;
    }
 }

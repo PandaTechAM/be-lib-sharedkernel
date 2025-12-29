@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.OpenApi;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 namespace SharedKernel.OpenApi;
 
@@ -9,7 +9,7 @@ internal class RemoveServersTransformer : IOpenApiDocumentTransformer
       OpenApiDocumentTransformerContext context,
       CancellationToken cancellationToken)
    {
-      document.Servers.Clear();
+      document.Servers?.Clear();
       return Task.CompletedTask;
    }
 }

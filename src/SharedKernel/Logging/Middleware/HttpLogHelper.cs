@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Net.Http.Headers;
+using System.Threading;
 
 namespace SharedKernel.Logging.Middleware;
 
@@ -8,7 +9,8 @@ internal static class HttpLogHelper
 {
    public static async Task<(object Headers, object Body)> CaptureAsync(Stream bodyStream,
       IHeaderDictionary headers,
-      string? contentType)
+      string? contentType,
+      CancellationToken ct = default)
    {
       var redactedHeaders = RedactionHelper.RedactHeaders(headers);
 
@@ -32,7 +34,7 @@ internal static class HttpLogHelper
             LoggingOptions.RequestResponseBodyMaxBytes));
       }
 
-      var (raw, truncated) = await ReadLimitedAsync(bodyStream, LoggingOptions.RequestResponseBodyMaxBytes);
+      var (raw, truncated) = await ReadLimitedAsync(bodyStream, LoggingOptions.RequestResponseBodyMaxBytes, ct);
       if (truncated)
       {
          return (redactedHeaders, LogFormatting.Omitted(
@@ -48,7 +50,8 @@ internal static class HttpLogHelper
 
    public static async Task<(object Headers, object Body)> CaptureAsync(Dictionary<string, IEnumerable<string>> headers,
       Func<Task<string>> rawReader,
-      string? contentType)
+      string? contentType,
+      CancellationToken ct = default)
    {
       var redactedHeaders = RedactionHelper.RedactHeaders(headers);
 
@@ -101,13 +104,11 @@ internal static class HttpLogHelper
          dict[h.Key] = h.Value;
       }
 
-      var ch = res.Content?.Headers;
-      if (ch != null)
+      var ch = res.Content.Headers;
+      
+      foreach (var h in ch)
       {
-         foreach (var h in ch)
-         {
-            dict[h.Key] = h.Value;
-         }
+         dict[h.Key] = h.Value;
       }
 
       return dict;
@@ -129,7 +130,9 @@ internal static class HttpLogHelper
       return null;
    }
 
-   private static async Task<(string text, bool truncated)> ReadLimitedAsync(Stream s, int maxBytes)
+   private static async Task<(string text, bool truncated)> ReadLimitedAsync(Stream s,
+      int maxBytes,
+      CancellationToken ct = default)
    {
       s.Seek(0, SeekOrigin.Begin);
 
@@ -140,13 +143,13 @@ internal static class HttpLogHelper
       while (total < maxBytes)
       {
          var toRead = Math.Min(buf.Length, maxBytes - total);
-         var read = await s.ReadAsync(buf.AsMemory(0, toRead));
+         var read = await s.ReadAsync(buf.AsMemory(0, toRead), ct);
          if (read == 0)
          {
             break;
          }
 
-         await ms.WriteAsync(buf.AsMemory(0, read));
+         await ms.WriteAsync(buf.AsMemory(0, read), ct);
          total += read;
       }
 
@@ -154,7 +157,7 @@ internal static class HttpLogHelper
       if (total == maxBytes)
       {
          var probe = new byte[1];
-         var read = await s.ReadAsync(probe.AsMemory(0, 1));
+         var read = await s.ReadAsync(probe.AsMemory(0, 1), ct);
          if (read > 0)
          {
             truncated = true;

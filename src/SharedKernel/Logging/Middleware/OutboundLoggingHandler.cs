@@ -130,12 +130,9 @@ internal sealed class OutboundLoggingHandler(ILogger<OutboundLoggingHandler> log
       }
       else
       {
-         (reqHeaders, reqBody) = await HttpLogHelper.CaptureAsync(
-            reqHdrDict,
-            () => request.Content == null
+         (reqHeaders, reqBody) = await HttpLogHelper.CaptureAsync(reqHdrDict, () => request.Content == null
                ? Task.FromResult(string.Empty)
-               : request.Content.ReadAsStringAsync(cancellationToken),
-            reqMedia);
+               : request.Content.ReadAsStringAsync(cancellationToken), reqMedia, cancellationToken);
       }
 
       var response = await base.SendAsync(request, cancellationToken);
@@ -166,10 +163,7 @@ internal sealed class OutboundLoggingHandler(ILogger<OutboundLoggingHandler> log
       }
       else
       {
-         (resHeaders, resBody) = await HttpLogHelper.CaptureAsync(
-            resHdrDict,
-            () => response.Content.ReadAsStringAsync(cancellationToken),
-            resMedia);
+         (resHeaders, resBody) = await HttpLogHelper.CaptureAsync(resHdrDict, () => response.Content.ReadAsStringAsync(cancellationToken), resMedia, cancellationToken);
       }
 
       var hostPath = request.RequestUri is null ? "" : request.RequestUri.GetLeftPart(UriPartial.Path);
