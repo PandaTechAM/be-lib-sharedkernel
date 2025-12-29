@@ -9,47 +9,30 @@ internal static class ConfigurationExtensions
    private const string RepositoryNameConfigurationPath = "RepositoryName";
    private const string TimeZoneConfigurationPath = "DefaultTimeZone";
 
-   internal static string GetAllowedCorsOrigins(this IConfiguration configuration)
+   extension(IConfiguration configuration)
    {
-      var corsOrigins = configuration[CorsOriginsConfigurationPath];
-      if (corsOrigins is null)
+      internal string GetAllowedCorsOrigins()
       {
-         throw new InvalidOperationException("Allowed CORS origins are not configured.");
+         var corsOrigins = configuration[CorsOriginsConfigurationPath];
+         return corsOrigins ?? throw new InvalidOperationException("Allowed CORS origins are not configured.");
       }
 
-      return corsOrigins;
-   }
-
-   internal static string GetRepositoryName(this IConfiguration configuration)
-   {
-      var repositoryName = configuration[RepositoryNameConfigurationPath];
-      if (repositoryName is null)
+      internal string GetRepositoryName()
       {
-         throw new InvalidOperationException("Repository name is not configured.");
+         var repositoryName = configuration[RepositoryNameConfigurationPath];
+         return repositoryName ?? throw new InvalidOperationException("Repository name is not configured.");
       }
 
-      return repositoryName;
-   }
-
-   internal static string GetPersistentPath(this IConfiguration configuration)
-   {
-      var persistentPath = configuration.GetConnectionString(PersistentConfigurationPath);
-      if (persistentPath is null)
+      internal string GetPersistentPath()
       {
-         throw new InvalidOperationException("Persistent path is not configured.");
+         var persistentPath = configuration.GetConnectionString(PersistentConfigurationPath);
+         return persistentPath ?? throw new InvalidOperationException("Persistent path is not configured.");
       }
 
-      return persistentPath;
-   }
-
-   public static string GetDefaultTimeZone(this IConfiguration configuration)
-   {
-      var timeZone = configuration[TimeZoneConfigurationPath];
-      if (timeZone is null)
+      public string GetDefaultTimeZone()
       {
-         throw new InvalidOperationException("Default time zone is not configured.");
+         var timeZone = configuration[TimeZoneConfigurationPath];
+         return timeZone ?? throw new InvalidOperationException("Default time zone is not configured.");
       }
-
-      return timeZone;
    }
 }

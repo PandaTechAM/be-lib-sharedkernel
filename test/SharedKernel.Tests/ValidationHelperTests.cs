@@ -66,27 +66,28 @@ public class ValidationHelperTests
       Assert.Equal(expected, isValid);
    }
 
-   // [Theory]
-   // [InlineData("4111111111111111", true)] // Visa
-   // [InlineData("5555555555554444", true)] // MasterCard
-   // [InlineData("378282246310005", true)] // American Express
-   // [InlineData("6011111111111117", true)] // Discover
-   // [InlineData("3530111333300000", true)] // JCB
-   // [InlineData("411111111111111", false)] // Shortened Visa number
-   // [InlineData("55555555555544444", false)] // Extended MasterCard number
-   // [InlineData("37828224631005", false)] // Shortened American Express
-   // [InlineData("601111111111111", false)] // Shortened Discover number
-   // [InlineData("353011133330000", false)] // Shortened JCB number
-   // [InlineData("1234567890123456", false)] // Doesn't follow Luhn algorithm
-   // [InlineData("abcdefabcdefabc", false)] // Contains non-numeric characters
-   // [InlineData("4111-1111-1111-1111", false)] // Contains hyphens
-   // [InlineData("4111 1111 1111 1111", false)] // Contains spaces
-   // public void IsCreditCardNumberTests(string number, bool expected)
-   // {
-   //     var isValid = ValidationHelper.IsCreditCardNumber(number);
-   //     Assert.Equal(expected, isValid);
-   // }
-
+      [Theory]
+      [InlineData("4111111111111111", true)] // Visa
+      [InlineData("5555555555554444", true)] // MasterCard
+      [InlineData("378282246310005", true)] // American Express
+      [InlineData("6011111111111117", true)] // Discover
+      [InlineData("3530111333300000", true)] // JCB
+      [InlineData("411111111111111", false)] // too short
+      [InlineData("55555555555544444", false)] // too long
+      [InlineData("37828224631005", false)] // too short
+      [InlineData("601111111111111", false)] // too short
+      [InlineData("353011133330000", false)] // too short
+      [InlineData("1234567890123456", false)] // fails Luhn
+      [InlineData("abcdefabcdefabc", false)] // non-numeric
+      [InlineData("4111-1111-1111-1111", false)] // separators not allowed
+      [InlineData("4111 1111 1111 1111", false)] // separators not allowed
+      [InlineData("4578900000014055", true)]
+      [InlineData("4578906000014055", false)]
+      
+      public void IsCreditCardNumberTests(string number, bool expected)
+      {
+         Assert.Equal(expected, ValidationHelper.IsCreditCardNumber(number));
+      }
 
    [Theory]
    [InlineData("http://google.com", true)]

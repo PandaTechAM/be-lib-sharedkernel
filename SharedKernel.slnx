@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".github/workflows/main.yml" />
+    <File Path=".gitignore" />
+    <File Path="global.json" />
+    <File Path="Readme.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/SharedKernel/SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="SharedKernel.Demo/SharedKernel.Demo.csproj" />
+    <Project Path="test/SharedKernel.Tests/SharedKernel.Tests.csproj" />
+  </Folder>
+</Solution>

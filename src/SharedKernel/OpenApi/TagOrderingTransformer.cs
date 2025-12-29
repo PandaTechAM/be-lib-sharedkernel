@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.OpenApi;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 namespace SharedKernel.OpenApi;
 
@@ -9,41 +9,77 @@ internal sealed class TagOrderingTransformer : IOpenApiDocumentTransformer
       OpenApiDocumentTransformerContext context,
       CancellationToken cancellationToken)
    {
-      var tags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-      foreach (var path in document.Paths.Values)
+      var tagsByName = new Dictionary<string, OpenApiTag>(StringComparer.OrdinalIgnoreCase);
+
+      if (document.Tags is not null)
       {
-         foreach (var op in path.Operations.Values)
+         foreach (var t in document.Tags)
          {
-            foreach (var t in op.Tags ?? [])
+            if (!string.IsNullOrWhiteSpace(t.Name))
             {
-               tags.Add(t.Name);
+               tagsByName[t.Name] = t; // keep existing metadata if present
             }
          }
       }
 
-      var ordered = tags.OrderBy(t => t, StringComparer.OrdinalIgnoreCase)
-                        .ToList();
-
-      document.Tags = ordered.Select(t => new OpenApiTag
-                             {
-                                Name = t
-                             })
-                             .ToList();
-
-      var index = document.Tags
-                          .Select((t, i) => (t.Name, i))
-                          .ToDictionary(x => x.Name, x => x.i, StringComparer.OrdinalIgnoreCase);
-
       foreach (var path in document.Paths.Values)
       {
-         foreach (var op in path.Operations.Values)
+         var operations = path.Operations;
+         if (operations is null)
          {
-            if (op.Tags is { Count: > 1 })
+            continue;
+         }
+
+         foreach (var name in from opTags in operations.Values
+                                                       .Select(op => op.Tags)
+                                                       .OfType<ISet<OpenApiTagReference>>()
+                              from tr in opTags
+                              select tr.Name
+                              into name
+                              where !string.IsNullOrWhiteSpace(name)
+                              where !tagsByName.ContainsKey(name)
+                              select name)
+         {
+            tagsByName[name] = new OpenApiTag
             {
-               op.Tags = op.Tags
-                           .OrderBy(t => index[t.Name])
-                           .ToList();
-            }
+               Name = name
+            };
+         }
+      }
+
+      var orderedNames = tagsByName.Keys
+                                   .OrderBy(static x => x, StringComparer.OrdinalIgnoreCase)
+                                   .ToList();
+
+      var index = orderedNames
+                  .Select((name, i) => (name, i))
+                  .ToDictionary(x => x.name, x => x.i, StringComparer.OrdinalIgnoreCase);
+
+      document.Tags ??= new HashSet<OpenApiTag>();
+      document.Tags.Clear();
+
+      foreach (var name in orderedNames)
+      {
+         document.Tags.Add(tagsByName[name]);
+      }
+
+      foreach (var opTags in document.Paths
+                                     .Values
+                                     .Select(path => path.Operations)
+                                     .OfType<Dictionary<HttpMethod, OpenApiOperation>>()
+                                     .SelectMany(operations => operations.Values
+                                                                         .Select(op => op.Tags)
+                                                                         .OfType<ISet<OpenApiTagReference>>()
+                                                                         .Where(opTags => opTags.Count > 1)))
+      {
+         var ordered = opTags
+                       .OrderBy(t => index.TryGetValue(t.Name ?? "", out var i) ? i : int.MaxValue)
+                       .ToList();
+
+         opTags.Clear();
+         foreach (var t in ordered)
+         {
+            opTags.Add(t);
          }
       }
 

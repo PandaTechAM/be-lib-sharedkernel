@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using ResponseCrafter.ExceptionHandlers.SignalR;
+using System.Threading;
 
 namespace SharedKernel.Demo;
 

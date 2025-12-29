@@ -1,55 +1,59 @@
 using Microsoft.AspNetCore.OpenApi;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using SharedKernel.OpenApi.Options;
 
 namespace SharedKernel.OpenApi;
 
 internal static class OpenApiOptionsExtensions
 {
-   internal static OpenApiOptions AddDocument(this OpenApiOptions options,
-      Document doc,
-      OpenApiConfig openApiConfigConfiguration)
+   extension(OpenApiOptions options)
    {
-      options.AddDocumentTransformer((document, _, _) =>
+      internal OpenApiOptions AddDocument(Document doc, OpenApiConfig openApiConfig)
       {
-         document.Info = new OpenApiInfo
+         options.AddDocumentTransformer((document, _, _) =>
          {
-            Title = doc.Title,
-            Description = doc.Description,
-            Version = doc.Version,
-            Contact = new OpenApiContact
+            document.Info = new OpenApiInfo
             {
-               Name = openApiConfigConfiguration.Contact.Name,
-               Url = new Uri(openApiConfigConfiguration.Contact.Url),
-               Email = openApiConfigConfiguration.Contact.Email
-            }
-         };
-         return Task.CompletedTask;
-      });
+               Title = doc.Title,
+               Description = doc.Description,
+               Version = doc.Version,
+               Contact = new OpenApiContact
+               {
+                  Name = openApiConfig.Contact.Name,
+                  Url = new Uri(openApiConfig.Contact.Url),
+                  Email = openApiConfig.Contact.Email
+               }
+            };
 
-      return options;
-   }
+            return Task.CompletedTask;
+         });
 
-   internal static OpenApiOptions UseApiSecuritySchemes(this OpenApiOptions options, OpenApiConfig? configurations)
-   {
-      if (configurations is null)
-      {
          return options;
       }
 
-      foreach (var scheme in configurations.SecuritySchemes)
+      internal OpenApiOptions UseApiSecuritySchemes(OpenApiConfig? config)
       {
-         var securityScheme = new OpenApiSecurityScheme
+         if (config?.SecuritySchemes is not { Count: > 0 })
          {
-            Description = scheme.Description,
-            Name = scheme.HeaderName,
-            In = ParameterLocation.Header
-         };
+            return options;
+         }
 
          options.AddDocumentTransformer((document, _, _) =>
          {
             document.Components ??= new OpenApiComponents();
-            document.Components.SecuritySchemes.Add(scheme.HeaderName, securityScheme);
+            document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>(StringComparer.Ordinal);
+
+            foreach (var scheme in config.SecuritySchemes)
+            {
+               document.Components.SecuritySchemes[scheme.HeaderName] = new OpenApiSecurityScheme
+               {
+                  Type = SecuritySchemeType.ApiKey,
+                  In = ParameterLocation.Header,
+                  Name = scheme.HeaderName,
+                  Description = scheme.Description
+               };
+            }
+
             return Task.CompletedTask;
          });
 
@@ -57,26 +61,18 @@ internal static class OpenApiOptionsExtensions
          {
             operation.Security ??= new List<OpenApiSecurityRequirement>();
 
-            var securityRequirement = new OpenApiSecurityRequirement
+            foreach (var scheme in config.SecuritySchemes)
             {
+               operation.Security.Add(new OpenApiSecurityRequirement
                {
-                  new OpenApiSecurityScheme
-                  {
-                     Reference = new OpenApiReference
-                     {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = scheme.HeaderName
-                     }
-                  },
-                  Array.Empty<string>()
-               }
-            };
+                  [new OpenApiSecuritySchemeReference(scheme.HeaderName)] = []
+               });
+            }
 
-            operation.Security.Add(securityRequirement);
             return Task.CompletedTask;
          });
-      }
 
-      return options;
+         return options;
+      }
    }
 }
