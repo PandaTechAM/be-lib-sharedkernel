@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 
 namespace SharedKernel.Logging.Middleware;
@@ -9,179 +8,143 @@ internal sealed class OutboundLoggingHandler(ILogger<OutboundLoggingHandler> log
    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
       CancellationToken cancellationToken)
    {
-      var sw = Stopwatch.GetTimestamp();
+      var timestamp = Stopwatch.GetTimestamp();
 
-      var reqHdrDict = HttpLogHelper.CreateHeadersDictionary(request);
-      var reqMedia = request.Content?.Headers.ContentType?.MediaType;
-      var reqLen = request.Content?.Headers.ContentLength;
-
-      object reqHeaders;
-      object reqBody;
-
-      var isFormLike =
-         string.Equals(reqMedia, "application/x-www-form-urlencoded", StringComparison.OrdinalIgnoreCase) ||
-         string.Equals(reqMedia, "multipart/form-data", StringComparison.OrdinalIgnoreCase);
-
-      if (request.Content is null)
-      {
-         reqHeaders = RedactionHelper.RedactHeaders(reqHdrDict);
-         reqBody = new Dictionary<string, object?>();
-      }
-      else if (isFormLike)
-      {
-         reqHeaders = RedactionHelper.RedactHeaders(reqHdrDict);
-
-         if (reqLen is null or > LoggingOptions.RequestResponseBodyMaxBytes)
-         {
-            reqBody = LogFormatting.Omitted("form-large-or-unknown",
-               reqLen,
-               reqMedia,
-               LoggingOptions.RequestResponseBodyMaxBytes);
-         }
-         else
-         {
-            var fields = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-            switch (request.Content)
-            {
-               case FormUrlEncodedContent:
-               {
-                  var raw = await request.Content.ReadAsStringAsync(cancellationToken);
-                  var parsed = QueryHelpers.ParseQuery("?" + raw);
-                  foreach (var kvp in parsed)
-                  {
-                     var k = kvp.Key;
-                     if (string.IsNullOrEmpty(k))
-                     {
-                        continue;
-                     }
-
-                     fields[k] = RedactionHelper.RedactFormValue(k, string.Join(";", kvp.Value.ToArray()));
-                  }
-
-                  break;
-               }
-               case MultipartFormDataContent mfd:
-               {
-                  var fileCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-                  var fileSizes = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
-
-                  foreach (var part in mfd)
-                  {
-                     var cd = part.Headers.ContentDisposition;
-                     var name = cd?.Name?.Trim('"') ?? "field";
-                     var isFile = cd != null &&
-                                  (!string.IsNullOrEmpty(cd.FileName) || !string.IsNullOrEmpty(cd.FileNameStar));
-
-                     if (isFile)
-                     {
-                        fileCounts.TryGetValue(name, out var c);
-                        fileCounts[name] = c + 1;
-
-                        if (part.Headers.ContentLength.HasValue)
-                        {
-                           fileSizes.TryGetValue(name, out var b);
-                           fileSizes[name] = b + part.Headers.ContentLength.Value;
-                        }
-
-                        continue;
-                     }
-
-                     var value = await part.ReadAsStringAsync(cancellationToken);
-                     fields[name] = RedactionHelper.RedactFormValue(name, value);
-                  }
-
-                  foreach (var name in fileCounts.Keys)
-                  {
-                     var count = fileCounts[name];
-                     fileSizes.TryGetValue(name, out var bytes);
-                     var hasSize = bytes > 0;
-                     var sizeKb = hasSize ? (int)Math.Round(bytes / 1024d) : (int?)null;
-
-                     var place = count == 1
-                        ? hasSize ? $"[OMITTED: file {sizeKb}KB]" : "[OMITTED: file]"
-                        : hasSize
-                           ? $"[OMITTED: {count} files {sizeKb}KB]"
-                           : $"[OMITTED: {count} files]";
-
-                     if (fields.TryGetValue(name, out var existing) && !string.IsNullOrWhiteSpace(existing))
-                     {
-                        fields[name] = $"{existing}; {place}";
-                     }
-                     else
-                     {
-                        fields[name] = place;
-                     }
-                  }
-
-                  break;
-               }
-            }
-
-            reqBody = fields;
-         }
-      }
-      else if (!HttpLogHelper.IsTextLike(reqMedia) || !reqLen.HasValue ||
-               reqLen.Value > LoggingOptions.RequestResponseBodyMaxBytes)
-      {
-         reqHeaders = RedactionHelper.RedactHeaders(reqHdrDict);
-         var reason = !HttpLogHelper.IsTextLike(reqMedia) ? "non-text" : "exceeds-limit-or-unknown";
-         reqBody = LogFormatting.Omitted(reason, reqLen, reqMedia, LoggingOptions.RequestResponseBodyMaxBytes);
-      }
-      else
-      {
-         (reqHeaders, reqBody) = await HttpLogHelper.CaptureAsync(reqHdrDict, () => request.Content == null
-               ? Task.FromResult(string.Empty)
-               : request.Content.ReadAsStringAsync(cancellationToken), reqMedia, cancellationToken);
-      }
+      var (reqHeaders, reqBody) = await CaptureRequestAsync(request, cancellationToken);
 
       var response = await base.SendAsync(request, cancellationToken);
-      var elapsed = Stopwatch.GetElapsedTime(sw)
-                             .TotalMilliseconds;
 
-      var resHdrDict = HttpLogHelper.CreateHeadersDictionary(response);
-      var resMedia = response.Content.Headers.ContentType?.MediaType;
-      var resLen = response.Content.Headers.ContentLength;
+      var elapsedMs = Stopwatch.GetElapsedTime(timestamp)
+                               .TotalMilliseconds;
 
-      object resHeaders;
-      object resBody;
+      var (resHeaders, resBody) = await CaptureResponseAsync(response, cancellationToken);
 
-      if (!HttpLogHelper.IsTextLike(resMedia) || !resLen.HasValue ||
-          resLen.Value > LoggingOptions.RequestResponseBodyMaxBytes)
+      LogHttpOut(request, response, reqHeaders, reqBody, resHeaders, resBody, elapsedMs);
+
+      return response;
+   }
+
+   private static async Task<(object Headers, object Body)> CaptureRequestAsync(HttpRequestMessage request,
+      CancellationToken ct)
+   {
+      var headerDict = HttpLogHelper.CreateHeadersDictionary(request);
+      var redactedHeaders = RedactionHelper.RedactHeaders(headerDict);
+
+      if (request.Content is null)
+         return (redactedHeaders, new Dictionary<string, object?>());
+
+      var mediaType = request.Content.Headers.ContentType?.MediaType;
+      var contentLength = request.Content.Headers.ContentLength;
+
+      // MULTIPART: Never enumerate or read - it corrupts internal state
+      if (request.Content is MultipartFormDataContent)
       {
-         resHeaders = RedactionHelper.RedactHeaders(resHdrDict);
-
-         if (resLen == 0)
+         return (redactedHeaders, new Dictionary<string, object?>
          {
-            resBody = new Dictionary<string, object?>();
-         }
-         else
-         {
-            var reason = !HttpLogHelper.IsTextLike(resMedia) ? "non-text" : "exceeds-limit-or-unknown";
-            resBody = LogFormatting.Omitted(reason, resLen, resMedia, LoggingOptions.RequestResponseBodyMaxBytes);
-         }
+            ["_type"] = "multipart/form-data",
+            ["_contentLength"] = contentLength,
+            ["_note"] = "multipart body not captured to preserve request integrity"
+         });
       }
-      else
+
+      // STREAM CONTENT: Not safe to read - would consume the stream
+      if (request.Content is StreamContent)
       {
-         (resHeaders, resBody) = await HttpLogHelper.CaptureAsync(resHdrDict, () => response.Content.ReadAsStringAsync(cancellationToken), resMedia, cancellationToken);
+         return (redactedHeaders, new Dictionary<string, object?>
+         {
+            ["_type"] = mediaType,
+            ["_contentLength"] = contentLength,
+            ["_note"] = "stream body not captured to preserve request integrity"
+         });
       }
 
-      var hostPath = request.RequestUri is null ? "" : request.RequestUri.GetLeftPart(UriPartial.Path);
+      // NON-TEXT: Just log metadata
+      if (!MediaTypeUtil.IsTextLike(mediaType))
+      {
+         return (redactedHeaders,
+            LogFormatting.Omitted("non-text", contentLength, mediaType, LoggingOptions.RequestResponseBodyMaxBytes));
+      }
+
+      // TOO LARGE: Don't read
+      if (contentLength is > LoggingOptions.RequestResponseBodyMaxBytes)
+      {
+         return (redactedHeaders,
+            LogFormatting.Omitted("exceeds-limit", contentLength, mediaType, LoggingOptions.RequestResponseBodyMaxBytes));
+      }
+
+      // SAFE TO READ: ByteArrayContent, StringContent, FormUrlEncodedContent, ReadOnlyMemoryContent
+      // These are all backed by byte arrays and support multiple reads
+      var raw = await request.Content.ReadAsStringAsync(ct);
+      
+      // Double-check size after reading (in case contentLength was null)
+      if (raw.Length > LoggingOptions.RequestResponseBodyMaxBytes)
+      {
+         return (redactedHeaders,
+            LogFormatting.Omitted("exceeds-limit", raw.Length, mediaType, LoggingOptions.RequestResponseBodyMaxBytes));
+      }
+      
+      var body = RedactionHelper.RedactBody(mediaType, raw);
+      return (redactedHeaders, body);
+   }
+
+   private static async Task<(object Headers, object Body)> CaptureResponseAsync(HttpResponseMessage response,
+      CancellationToken ct)
+   {
+      var headerDict = HttpLogHelper.CreateHeadersDictionary(response);
+      var redactedHeaders = RedactionHelper.RedactHeaders(headerDict);
+
+      var mediaType = response.Content.Headers.ContentType?.MediaType;
+      var contentLength = response.Content.Headers.ContentLength;
+
+      // Empty response (explicit Content-Length: 0)
+      if (contentLength == 0)
+         return (redactedHeaders, new Dictionary<string, object?>());
+
+      // Non-text content
+      if (!MediaTypeUtil.IsTextLike(mediaType))
+      {
+         return (redactedHeaders,
+            LogFormatting.Omitted("non-text", contentLength, mediaType, LoggingOptions.RequestResponseBodyMaxBytes));
+      }
+
+      // Known to be too large
+      if (contentLength > LoggingOptions.RequestResponseBodyMaxBytes)
+      {
+         return (redactedHeaders,
+            LogFormatting.Omitted("exceeds-limit", contentLength, mediaType, LoggingOptions.RequestResponseBodyMaxBytes));
+      }
+
+      // SAFE TO READ: Response bodies are always safe - they've already been received
+      // This includes chunked responses (no Content-Length header)
+      return await HttpLogHelper.CaptureAsync(
+         headerDict,
+         () => response.Content.ReadAsStringAsync(ct),
+         mediaType,
+         ct);
+   }
+
+   private void LogHttpOut(HttpRequestMessage request,
+      HttpResponseMessage response,
+      object reqHeaders,
+      object reqBody,
+      object resHeaders,
+      object resBody,
+      double elapsedMs)
+   {
+      var hostPath = request.RequestUri?.GetLeftPart(UriPartial.Path) ?? "";
 
       var scope = new Dictionary<string, object?>
       {
-         ["RequestHeaders"] = reqHeaders,
-         ["RequestBody"] = reqBody,
-         ["ResponseHeaders"] = resHeaders,
-         ["ResponseBody"] = resBody,
-         ["ElapsedMs"] = elapsed,
+         ["RequestHeaders"] = LogFormatting.ToJsonString(reqHeaders),
+         ["RequestBody"] = LogFormatting.ToJsonString(reqBody),
+         ["ResponseHeaders"] = LogFormatting.ToJsonString(resHeaders),
+         ["ResponseBody"] = LogFormatting.ToJsonString(resBody),
+         ["ElapsedMs"] = elapsedMs,
          ["Kind"] = "HttpOut"
       };
 
       if (!string.IsNullOrEmpty(request.RequestUri?.Query))
-      {
          scope["Query"] = request.RequestUri!.Query;
-      }
 
       using (logger.BeginScope(scope))
       {
@@ -190,9 +153,7 @@ internal sealed class OutboundLoggingHandler(ILogger<OutboundLoggingHandler> log
             request.Method,
             hostPath,
             (int)response.StatusCode,
-            elapsed);
+            elapsedMs);
       }
-
-      return response;
    }
 }

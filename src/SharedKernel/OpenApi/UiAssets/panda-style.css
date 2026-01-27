@@ -1,4 +1,6 @@
-/* Glass topbar (light + dark via CSS vars) */
+/* ==========================================================================
+   CSS Variables - Theme colors for light/dark mode
+   ========================================================================== */
 :root {
     --sw-topbar-bg: rgba(255, 255, 255, 0.65);
     --sw-topbar-border: rgba(0, 0, 0, 0.10);
@@ -10,161 +12,95 @@ html.dark-mode {
     --sw-topbar-bg: rgba(18, 18, 18, 0.55);
     --sw-topbar-border: rgba(255, 255, 255, 0.14);
     --sw-topbar-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+    --opblock-hover-alpha: 0.22;
 }
 
+/* ==========================================================================
+   Topbar - Glass effect styling
+   ========================================================================== */
 .swagger-ui .topbar {
     background: var(--sw-topbar-bg) !important;
     backdrop-filter: blur(var(--sw-topbar-blur)) saturate(1.2);
     -webkit-backdrop-filter: blur(var(--sw-topbar-blur)) saturate(1.2);
     border-bottom: 1px solid var(--sw-topbar-border);
     box-shadow: var(--sw-topbar-shadow);
-
     position: sticky;
     top: 0;
     z-index: 1000;
 }
 
-/*.swagger-ui .auth-container .btn.modal-btn.auth {*/
-/*    display: flex;*/
-/*    justify-content: center;*/
-/*}*/
+/* ==========================================================================
+   Custom Logo - Replace Swagger logo with Pandatech branding
+   ========================================================================== */
+.swagger-ui .topbar-wrapper .link > svg {
+    display: none !important;
+}
 
-/*.topbar-wrapper > a > svg {*/
-/*    opacity: 0;*/
-/*}*/
+.swagger-ui .topbar-wrapper img {
+    visibility: hidden;
+}
 
+.swagger-ui .topbar-wrapper .link::before {
+    content: "";
+    background: url("/swagger-resources/logo.svg") no-repeat center;
+    background-size: contain;
+    width: 36px;
+    height: 29px;
+    display: inline-block;
+}
 
-/*.swagger-ui .topbar .download-url-wrapper .select-label select {*/
-/*    border-color: #4E37D3;*/
-/*}*/
+.swagger-ui .topbar-wrapper .link::after {
+    content: "";
+    background: url("/swagger-resources/logo-wording.svg") no-repeat center;
+    background-size: contain;
+    width: 90px;
+    height: 20px;
+    display: inline-block;
+    margin-left: 8px;
+}
 
-/*.swagger-ui .topbar .download-url-wrapper .select-label span {*/
-/*    color: transparent;*/
-/*    user-select: none;*/
-/*}*/
+html.dark-mode .swagger-ui .topbar-wrapper .link::after {
+    filter: brightness(0) invert(1);
+}
 
+/* ==========================================================================
+   Topbar Controls - Light mode visibility fixes
+   ========================================================================== */
+html:not(.dark-mode) .swagger-ui .topbar .download-url-wrapper .select-label span {
+    color: #3b4151 !important;
+}
 
-/*.swagger-ui .topbar-wrapper img {*/
-/*    visibility: hidden;*/
-/*}*/
+html:not(.dark-mode) .swagger-ui .topbar .download-url-wrapper select {
+    color: #3b4151 !important;
+    border-color: rgba(0, 0, 0, 0.2) !important;
+}
 
-/*element.style {*/
-/*}*/
+html:not(.dark-mode) .swagger-ui .topbar .dark-mode-toggle button svg {
+    fill: #3b4151 !important;
+}
 
-/*.swagger-ui .auth-btn-wrapper {*/
-/*    gap: 20px;*/
-/*    margin-top: 20px;*/
-/*}*/
+/* ==========================================================================
+   Auth Modal - Layout and sizing improvements
+   ========================================================================== */
+.swagger-ui .dialog-ux .modal-ux {
+    overflow-y: auto;
+    max-height: 80vh;
+    max-width: 650px;
+}
 
-/*.swagger-ui .auth-wrapper .authorize {*/
-/*    margin: 0;*/
-/*}*/
+.swagger-ui .dialog-ux .modal-ux-content {
+    scroll-behavior: auto;
+}
 
-/*.swagger-ui .btn.authorize.locked, .swagger-ui .btn.authorize.unlocked {*/
-/*    display: flex;*/
-/*    align-items: center;*/
-/*    justify-content: center;*/
-/*    gap: 7px*/
+.swagger-ui .auth-container input[type=text],
+.swagger-ui .auth-container input[type=password] {
+    width: 100% !important;
+    min-width: 300px;
+}
 
-/*}*/
-
-/*.swagger-ui .btn.authorize span {*/
-/*    clear: both;*/
-/*    padding: 0;*/
-/*    margin-top: 3px;*/
-/*}*/
-
-/*.swagger-ui .auth-container .btn.modal-btn.auth {*/
-/*    min-width: 250px;*/
-/*    padding: 10px 0;*/
-/*}*/
-
-/*.swagger-ui .topbar-wrapper .link::before {*/
-/*    content: "";*/
-/*    background: url("/swagger-resources/logo.svg") no-repeat center;*/
-/*    background-size: contain;*/
-/*    width: 36.402px;*/
-/*    height: 28.8px;*/
-/*    display: inline-block;*/
-/*    position: relative;*/
-/*}*/
-
-/*!* Add your second image *!*/
-/*.swagger-ui .topbar-wrapper .link::after {*/
-/*    content: "";*/
-/*    background: url("/swagger-resources/logo-wording.svg") no-repeat center;*/
-/*    background-size: contain;*/
-/*    width: 90.0276px;*/
-/*    height: 20.2044px;*/
-/*    display: inline-block;*/
-/*    position: relative;*/
-/*    left: -132px;*/
-/*}*/
-
-/*div.topbar {*/
-/*    background: transparent !important;*/
-/*    backdrop-filter: blur(3px);*/
-/*    position: fixed;*/
-/*    width: 100%;*/
-/*    top: 0;*/
-/*    border-bottom: 1px solid #ffffff;*/
-/*    z-index: 1000;*/
-/*}*/
-
-/*.swagger-ui {*/
-/*    margin-top: 128px;*/
-/*}*/
-
-/*.swagger-ui .btn.authorize.unlocked {*/
-/*    background-color: white !important;*/
-/*    color: black !important;*/
-/*    border: 2px solid #4E37D3 !important;*/
-/*}*/
-
-/*.swagger-ui .btn.authorize.unlocked svg {*/
-/*    fill: black !important;*/
-/*}*/
-
-/*.swagger-ui .btn.authorize.locked {*/
-/*    background-color: #4E37D3 !important;*/
-/*    color: #ffffff !important;*/
-/*    border: 2px solid #4E37D3 !important;*/
-/*}*/
-
-/*.swagger-ui .btn.authorize.locked svg {*/
-/*    fill: #ffffff !important;*/
-/*}*/
-
-/*.swagger-ui .auth-container .btn.modal-btn.auth {*/
-/*    background-color: #4E37D3 !important;*/
-/*    color: #ffffff !important;*/
-/*    border: 1px solid #4E37D3 !important;*/
-/*    width: 100%;*/
-/*}*/
-
-/*.btn.modal-btn.auth.btn-done.button {*/
-/*    display: none;*/
-/*}*/
-
-/*.auth-container {*/
-/*    padding: 0 !important;*/
-/*}*/
-
-/*.swagger-ui .dialog-ux .modal-ux {*/
-/*    max-width: 600px;*/
-/*}*/
-
-/*.opblock-summary-get:hover {*/
-/*    background-color: #b3e0ff !important;*/
-/*}*/
-
-/*.swagger-ui .auth-container input[type=text] {*/
-/*    width: 100%;*/
-/*}*/
-
-
-/* colored hover effects for different HTTP methods */
-
+/* ==========================================================================
+   HTTP Method Hover Effects - Light mode
+   ========================================================================== */
 .swagger-ui .opblock-summary-get:hover {
     background-color: #9dc9ff !important;
 }
@@ -185,11 +121,9 @@ html.dark-mode {
     background-color: #faa3a3 !important;
 }
 
-/* dark mode (Swagger UI 5.31+): softer hover tints */
-html.dark-mode {
-    --opblock-hover-alpha: .22;
-}
-
+/* ==========================================================================
+   HTTP Method Hover Effects - Dark mode (softer tints)
+   ========================================================================== */
 html.dark-mode .swagger-ui .opblock-summary-get:hover {
     background-color: rgb(157 201 255 / var(--opblock-hover-alpha)) !important;
 }

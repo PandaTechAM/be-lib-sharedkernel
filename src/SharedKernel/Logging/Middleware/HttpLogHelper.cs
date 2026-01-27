@@ -1,179 +1,160 @@
 ﻿using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Net.Http.Headers;
-using System.Threading;
 
 namespace SharedKernel.Logging.Middleware;
 
 internal static class HttpLogHelper
 {
-   public static async Task<(object Headers, object Body)> CaptureAsync(Stream bodyStream,
-      IHeaderDictionary headers,
-      string? contentType,
-      CancellationToken ct = default)
-   {
-      var redactedHeaders = RedactionHelper.RedactHeaders(headers);
+    public static async Task<(object Headers, object Body)> CaptureAsync(
+        Stream bodyStream,
+        IHeaderDictionary headers,
+        string? contentType,
+        CancellationToken ct = default)
+    {
+        var redactedHeaders = RedactionHelper.RedactHeaders(headers);
 
-      var textLike = MediaTypeUtil.IsTextLike(contentType);
-      var hasContentLength = headers.ContainsKey(HeaderNames.ContentLength);
-      var len = GetContentLengthOrNull(headers);
-      var hasChunked = headers.TryGetValue(HeaderNames.TransferEncoding, out _);
+        var textLike = MediaTypeUtil.IsTextLike(contentType);
+        var hasContentLength = headers.ContainsKey(HeaderNames.ContentLength);
+        var contentLength = GetContentLengthOrNull(headers);
+        var hasChunked = headers.ContainsKey(HeaderNames.TransferEncoding);
 
-      if ((hasContentLength && len == 0) ||
-          (!hasContentLength && !hasChunked && string.IsNullOrWhiteSpace(contentType)))
-      {
-         return (redactedHeaders, new Dictionary<string, object?>());
-      }
+        // Empty body detection
+        if ((hasContentLength && contentLength == 0) ||
+            (!hasContentLength && !hasChunked && string.IsNullOrWhiteSpace(contentType)))
+        {
+            return (redactedHeaders, new Dictionary<string, object?>());
+        }
 
-      if (!textLike)
-      {
-         return (redactedHeaders, LogFormatting.Omitted(
-            "non-text",
-            len,
-            MediaTypeUtil.Normalize(contentType),
-            LoggingOptions.RequestResponseBodyMaxBytes));
-      }
+        if (!textLike)
+        {
+            return (redactedHeaders, LogFormatting.Omitted(
+                "non-text",
+                contentLength,
+                MediaTypeUtil.Normalize(contentType),
+                LoggingOptions.RequestResponseBodyMaxBytes));
+        }
 
-      var (raw, truncated) = await ReadLimitedAsync(bodyStream, LoggingOptions.RequestResponseBodyMaxBytes, ct);
-      if (truncated)
-      {
-         return (redactedHeaders, LogFormatting.Omitted(
-            "exceeds-limit",
-            LoggingOptions.RequestResponseBodyMaxBytes,
-            MediaTypeUtil.Normalize(contentType),
-            LoggingOptions.RequestResponseBodyMaxBytes));
-      }
+        var (raw, truncated) = await ReadLimitedAsync(bodyStream, LoggingOptions.RequestResponseBodyMaxBytes, ct);
 
-      var body = RedactionHelper.RedactBody(contentType, raw);
-      return (redactedHeaders, body);
-   }
+        if (truncated)
+        {
+            return (redactedHeaders, LogFormatting.Omitted(
+                "exceeds-limit",
+                LoggingOptions.RequestResponseBodyMaxBytes,
+                MediaTypeUtil.Normalize(contentType),
+                LoggingOptions.RequestResponseBodyMaxBytes));
+        }
 
-   public static async Task<(object Headers, object Body)> CaptureAsync(Dictionary<string, IEnumerable<string>> headers,
-      Func<Task<string>> rawReader,
-      string? contentType,
-      CancellationToken ct = default)
-   {
-      var redactedHeaders = RedactionHelper.RedactHeaders(headers);
+        var body = RedactionHelper.RedactBody(contentType, raw);
+        return (redactedHeaders, body);
+    }
 
-      if (!MediaTypeUtil.IsTextLike(contentType))
-      {
-         return (redactedHeaders, new Dictionary<string, object?>());
-      }
+    public static async Task<(object Headers, object Body)> CaptureAsync(
+        Dictionary<string, IEnumerable<string>> headers,
+        Func<Task<string>> rawReader,
+        string? contentType,
+        CancellationToken ct = default)
+    {
+        var redactedHeaders = RedactionHelper.RedactHeaders(headers);
 
-      var raw = await rawReader();
+        if (!MediaTypeUtil.IsTextLike(contentType))
+            return (redactedHeaders, new Dictionary<string, object?>());
 
-      if (Utf8ByteCount(raw) > LoggingOptions.RequestResponseBodyMaxBytes)
-      {
-         return (redactedHeaders, LogFormatting.Omitted(
-            "exceeds-limit",
-            Utf8ByteCount(raw),
-            MediaTypeUtil.Normalize(contentType),
-            LoggingOptions.RequestResponseBodyMaxBytes));
-      }
+        var raw = await rawReader();
+        var byteCount = Encoding.UTF8.GetByteCount(raw);
 
-      var body = RedactionHelper.RedactBody(contentType, raw);
-      return (redactedHeaders, body);
-   }
+        if (byteCount > LoggingOptions.RequestResponseBodyMaxBytes)
+        {
+            return (redactedHeaders, LogFormatting.Omitted(
+                "exceeds-limit",
+                byteCount,
+                MediaTypeUtil.Normalize(contentType),
+                LoggingOptions.RequestResponseBodyMaxBytes));
+        }
 
-   public static Dictionary<string, IEnumerable<string>> CreateHeadersDictionary(HttpRequestMessage req)
-   {
-      var dict = new Dictionary<string, IEnumerable<string>>(StringComparer.OrdinalIgnoreCase);
-      foreach (var h in req.Headers)
-      {
-         dict[h.Key] = h.Value;
-      }
+        var body = RedactionHelper.RedactBody(contentType, raw);
+        return (redactedHeaders, body);
+    }
 
-      var contentHeaders = req.Content?.Headers;
+    public static Dictionary<string, IEnumerable<string>> CreateHeadersDictionary(HttpRequestMessage request)
+    {
+        var dict = new Dictionary<string, IEnumerable<string>>(StringComparer.OrdinalIgnoreCase);
 
-      if (contentHeaders != null)
-      {
-         foreach (var h in contentHeaders)
-         {
-            dict[h.Key] = h.Value;
-         }
-      }
+        foreach (var header in request.Headers)
+            dict[header.Key] = header.Value;
 
-      return dict;
-   }
+        if (request.Content?.Headers is { } contentHeaders)
+        {
+            foreach (var header in contentHeaders)
+                dict[header.Key] = header.Value;
+        }
 
-   public static Dictionary<string, IEnumerable<string>> CreateHeadersDictionary(HttpResponseMessage res)
-   {
-      var dict = new Dictionary<string, IEnumerable<string>>(StringComparer.OrdinalIgnoreCase);
-      foreach (var h in res.Headers)
-      {
-         dict[h.Key] = h.Value;
-      }
+        return dict;
+    }
 
-      var ch = res.Content.Headers;
-      
-      foreach (var h in ch)
-      {
-         dict[h.Key] = h.Value;
-      }
+    public static Dictionary<string, IEnumerable<string>> CreateHeadersDictionary(HttpResponseMessage response)
+    {
+        var dict = new Dictionary<string, IEnumerable<string>>(StringComparer.OrdinalIgnoreCase);
 
-      return dict;
-   }
+        foreach (var header in response.Headers)
+            dict[header.Key] = header.Value;
 
-   internal static bool IsTextLike(string? mediaType)
-   {
-      return MediaTypeUtil.IsTextLike(mediaType);
-   }
+        foreach (var header in response.Content.Headers)
+            dict[header.Key] = header.Value;
 
-   private static long? GetContentLengthOrNull(IHeaderDictionary headers)
-   {
-      if (headers.TryGetValue("Content-Length", out var clVal) &&
-          long.TryParse(clVal.ToString(), out var cl))
-      {
-         return cl;
-      }
+        return dict;
+    }
 
-      return null;
-   }
+    private static long? GetContentLengthOrNull(IHeaderDictionary headers)
+    {
+        if (headers.TryGetValue(HeaderNames.ContentLength, out var value) &&
+            long.TryParse(value.ToString(), out var contentLength))
+        {
+            return contentLength;
+        }
+        return null;
+    }
 
-   private static async Task<(string text, bool truncated)> ReadLimitedAsync(Stream s,
-      int maxBytes,
-      CancellationToken ct = default)
-   {
-      s.Seek(0, SeekOrigin.Begin);
+    private static async Task<(string text, bool truncated)> ReadLimitedAsync(
+        Stream stream,
+        int maxBytes,
+        CancellationToken ct = default)
+    {
+        stream.Seek(0, SeekOrigin.Begin);
 
-      using var ms = new MemoryStream(maxBytes);
-      var buf = new byte[Math.Min(8192, maxBytes)];
-      var total = 0;
+        using var memoryStream = new MemoryStream(maxBytes);
+        var buffer = new byte[Math.Min(8192, maxBytes)];
+        var totalRead = 0;
 
-      while (total < maxBytes)
-      {
-         var toRead = Math.Min(buf.Length, maxBytes - total);
-         var read = await s.ReadAsync(buf.AsMemory(0, toRead), ct);
-         if (read == 0)
-         {
-            break;
-         }
+        while (totalRead < maxBytes)
+        {
+            var toRead = Math.Min(buffer.Length, maxBytes - totalRead);
+            var bytesRead = await stream.ReadAsync(buffer.AsMemory(0, toRead), ct);
 
-         await ms.WriteAsync(buf.AsMemory(0, read), ct);
-         total += read;
-      }
+            if (bytesRead == 0)
+                break;
 
-      var truncated = false;
-      if (total == maxBytes)
-      {
-         var probe = new byte[1];
-         var read = await s.ReadAsync(probe.AsMemory(0, 1), ct);
-         if (read > 0)
-         {
-            truncated = true;
-            if (s.CanSeek)
+            await memoryStream.WriteAsync(buffer.AsMemory(0, bytesRead), ct);
+            totalRead += bytesRead;
+        }
+
+        var truncated = false;
+
+        if (totalRead == maxBytes)
+        {
+            var probe = new byte[1];
+            var probeRead = await stream.ReadAsync(probe.AsMemory(0, 1), ct);
+
+            if (probeRead > 0)
             {
-               s.Seek(-read, SeekOrigin.Current);
+                truncated = true;
+                if (stream.CanSeek)
+                    stream.Seek(-probeRead, SeekOrigin.Current);
             }
-         }
-      }
+        }
 
-      s.Seek(0, SeekOrigin.Begin);
-      return (Encoding.UTF8.GetString(ms.ToArray()), truncated);
-   }
-
-   private static int Utf8ByteCount(string s)
-   {
-      return Encoding.UTF8.GetByteCount(s);
-   }
+        stream.Seek(0, SeekOrigin.Begin);
+        return (Encoding.UTF8.GetString(memoryStream.ToArray()), truncated);
+    }
 }

@@ -7,51 +7,54 @@ namespace SharedKernel.OpenApi;
 
 internal static class UiExtensions
 {
-   internal static WebApplication MapSwaggerUi(this WebApplication app, OpenApiConfig openApiConfigConfiguration)
+   extension(WebApplication app)
    {
-      app.UseSwaggerUI(options =>
-      {
-         foreach (var document in openApiConfigConfiguration.Documents)
-         {
-            options.SwaggerEndpoint($"{document.GetEndpointUrl()}", document.Title);
-         }
-
-         options.RoutePrefix = "swagger";
-         options.AddPandaOptions();
-      });
-
-
-      foreach (var document in openApiConfigConfiguration.Documents.Where(x => x.ForExternalUse))
+      internal WebApplication MapSwaggerUi(OpenApiConfig openApiConfigConfiguration)
       {
          app.UseSwaggerUI(options =>
          {
-            options.SwaggerEndpoint($"{document.GetEndpointUrl()}", document.Title);
-            options.RoutePrefix = $"swagger/{document.GroupName}";
+            foreach (var document in openApiConfigConfiguration.Documents)
+            {
+               options.SwaggerEndpoint($"{document.GetEndpointUrl()}", document.Title);
+            }
+
+            options.RoutePrefix = "swagger";
             options.AddPandaOptions();
          });
+
+
+         foreach (var document in openApiConfigConfiguration.Documents.Where(x => x.ForExternalUse))
+         {
+            app.UseSwaggerUI(options =>
+            {
+               options.SwaggerEndpoint($"{document.GetEndpointUrl()}", document.Title);
+               options.RoutePrefix = $"swagger/{document.GroupName}";
+               options.AddPandaOptions();
+            });
+         }
+
+         return app;
       }
 
-      return app;
-   }
-
-   internal static WebApplication MapScalarUi(this WebApplication app, OpenApiConfig openApiConfigConfiguration)
-   {
-      app.MapScalarApiReference(options =>
+      internal WebApplication MapScalarUi(OpenApiConfig openApiConfigConfiguration)
       {
-         options.Theme = ScalarTheme.Kepler;
-         options.Favicon = "/swagger-resources/favicon.svg";
-         options.SortTagsAlphabetically();
-
-         foreach (var document in openApiConfigConfiguration.Documents)
+         app.MapScalarApiReference(options =>
          {
-            options.AddDocument(
-               document.GroupName,
-               document.Title,
-               document.GetEndpointUrl()
-            );
-         }
-      });
-      return app;
+            options.Theme = ScalarTheme.Kepler;
+            options.Favicon = "/swagger-resources/favicon.svg";
+            options.SortTagsAlphabetically();
+
+            foreach (var document in openApiConfigConfiguration.Documents)
+            {
+               options.AddDocument(
+                  document.GroupName,
+                  document.Title,
+                  document.GetEndpointUrl()
+               );
+            }
+         });
+         return app;
+      }
    }
 
    private static string GetEndpointUrl(this Document document)

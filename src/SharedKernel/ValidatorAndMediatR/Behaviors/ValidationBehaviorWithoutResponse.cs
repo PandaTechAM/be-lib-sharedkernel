@@ -1,6 +1,5 @@
 using FluentValidation;
 using MediatR;
-using ResponseCrafter.HttpExceptions;
 
 namespace SharedKernel.ValidatorAndMediatR.Behaviors;
 
