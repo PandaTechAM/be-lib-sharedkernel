@@ -2,32 +2,18 @@
 
 namespace SharedKernel.Logging.Middleware;
 
-internal sealed class CappedResponseBodyStream : Stream
+internal sealed class CappedResponseBodyStream(Stream inner, int capBytes) : Stream
 {
-   private readonly byte[] _buf;
-   private readonly int _capBytes;
-   private readonly Stream _inner;
-   private int _bufLen;
-
-   public CappedResponseBodyStream(Stream inner, int capBytes)
-   {
-      _inner = inner;
-      _capBytes = capBytes;
-      _buf = ArrayPool<byte>.Shared.Rent(_capBytes);
-      _bufLen = 0;
-      TotalWritten = 0;
-   }
-
+   private readonly byte[] _buffer = ArrayPool<byte>.Shared.Rent(capBytes);
+   private int _bufferLength;
+   private bool _disposed;
    public long TotalWritten { get; private set; }
 
-   public ReadOnlyMemory<byte> Captured => new(_buf, 0, _bufLen);
+   public ReadOnlyMemory<byte> Captured => new(_buffer, 0, _bufferLength);
 
    public override bool CanRead => false;
-
    public override bool CanSeek => false;
-
    public override bool CanWrite => true;
-
    public override long Length => throw new NotSupportedException();
 
    public override long Position
@@ -36,80 +22,67 @@ internal sealed class CappedResponseBodyStream : Stream
       set => throw new NotSupportedException();
    }
 
-   private void Capture(ReadOnlySpan<byte> src)
+   private void Capture(ReadOnlySpan<byte> source)
    {
-      if (_bufLen >= _capBytes)
-      {
+      if (_bufferLength >= capBytes)
          return;
-      }
 
-      var toCopy = Math.Min(_capBytes - _bufLen, src.Length);
+      var toCopy = Math.Min(capBytes - _bufferLength, source.Length);
       if (toCopy <= 0)
-      {
          return;
-      }
 
-      src[..toCopy]
-         .CopyTo(_buf.AsSpan(_bufLen));
-      _bufLen += toCopy;
+      source[..toCopy]
+         .CopyTo(_buffer.AsSpan(_bufferLength));
+      _bufferLength += toCopy;
    }
 
    public override void Write(byte[] buffer, int offset, int count)
    {
-      _inner.Write(buffer, offset, count);
+      inner.Write(buffer, offset, count);
       TotalWritten += count;
-      Capture(new ReadOnlySpan<byte>(buffer, offset, count));
+      Capture(buffer.AsSpan(offset, count));
    }
 
    public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
    {
-      await _inner.WriteAsync(buffer.AsMemory(offset, count), cancellationToken);
+      await inner.WriteAsync(buffer.AsMemory(offset, count), cancellationToken);
       TotalWritten += count;
-      Capture(new ReadOnlySpan<byte>(buffer, offset, count));
+      Capture(buffer.AsSpan(offset, count));
    }
 
    public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
    {
-      var vt = _inner.WriteAsync(buffer, cancellationToken);
+      var task = inner.WriteAsync(buffer, cancellationToken);
       TotalWritten += buffer.Length;
       Capture(buffer.Span);
-      return vt;
+      return task;
    }
 
-   public override void Flush()
-   {
-      _inner.Flush();
-   }
+   public override void Flush() => inner.Flush();
 
-   public override Task FlushAsync(CancellationToken cancellationToken)
-   {
-      return _inner.FlushAsync(cancellationToken);
-   }
+   public override Task FlushAsync(CancellationToken cancellationToken) => inner.FlushAsync(cancellationToken);
 
    protected override void Dispose(bool disposing)
    {
-      try
-      {
-         base.Dispose(disposing);
-      }
-      finally
-      {
-         ArrayPool<byte>.Shared.Return(_buf);
-      }
+      if (_disposed)
+         return;
+
+      _disposed = true;
+      ArrayPool<byte>.Shared.Return(_buffer);
+      base.Dispose(disposing);
    }
 
-   public override int Read(byte[] buffer, int offset, int count)
+   public override ValueTask DisposeAsync()
    {
-      throw new NotSupportedException();
+      if (_disposed)
+         return ValueTask.CompletedTask;
+
+      _disposed = true;
+      ArrayPool<byte>.Shared.Return(_buffer);
+      return ValueTask.CompletedTask;
    }
 
-   public override long Seek(long offset, SeekOrigin origin)
-   {
-      throw new NotSupportedException();
-   }
-
-   public override void SetLength(long value)
-   {
-      throw new NotSupportedException();
-   }
+   public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+   public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+   public override void SetLength(long value) => throw new NotSupportedException();
 }

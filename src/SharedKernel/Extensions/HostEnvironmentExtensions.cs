@@ -4,58 +4,61 @@ namespace SharedKernel.Extensions;
 
 public static class HostEnvironmentExtensions
 {
-   public static bool IsQa(this IHostEnvironment hostEnvironment)
+   extension(IHostEnvironment hostEnvironment)
    {
-      ArgumentNullException.ThrowIfNull(hostEnvironment);
-
-      return hostEnvironment.IsEnvironment("QA");
-   }
-
-   public static bool IsLocal(this IHostEnvironment hostEnvironment)
-   {
-      ArgumentNullException.ThrowIfNull(hostEnvironment);
-
-      return hostEnvironment.IsEnvironment("Local");
-   }
-
-   public static bool IsLocalOrDevelopment(this IHostEnvironment hostEnvironment)
-   {
-      ArgumentNullException.ThrowIfNull(hostEnvironment);
-
-      return hostEnvironment.IsLocal() || hostEnvironment.IsDevelopment();
-   }
-
-   public static bool IsLocalOrDevelopmentOrQa(this IHostEnvironment hostEnvironment)
-   {
-      ArgumentNullException.ThrowIfNull(hostEnvironment);
-
-      return hostEnvironment.IsLocal() || hostEnvironment.IsDevelopment() || hostEnvironment.IsQa();
-   }
-
-   public static string GetShortEnvironmentName(this IHostEnvironment environment)
-   {
-      ArgumentNullException.ThrowIfNull(environment);
-
-      if (environment.IsLocal())
+      public bool IsQa()
       {
-         return "local";
+         ArgumentNullException.ThrowIfNull(hostEnvironment);
+
+         return hostEnvironment.IsEnvironment("QA");
       }
 
-      if (environment.IsDevelopment())
+      public bool IsLocal()
       {
-         return "dev";
+         ArgumentNullException.ThrowIfNull(hostEnvironment);
+
+         return hostEnvironment.IsEnvironment("Local");
       }
 
-      if (environment.IsQa())
+      public bool IsLocalOrDevelopment()
       {
-         return "qa";
+         ArgumentNullException.ThrowIfNull(hostEnvironment);
+
+         return hostEnvironment.IsLocal() || hostEnvironment.IsDevelopment();
       }
 
-      if (environment.IsStaging())
+      public bool IsLocalOrDevelopmentOrQa()
       {
-         return "staging";
+         ArgumentNullException.ThrowIfNull(hostEnvironment);
+
+         return hostEnvironment.IsLocal() || hostEnvironment.IsDevelopment() || hostEnvironment.IsQa();
       }
 
-      return "";
+      public string GetShortEnvironmentName()
+      {
+         ArgumentNullException.ThrowIfNull(hostEnvironment);
+
+         if (hostEnvironment.IsLocal())
+         {
+            return "local";
+         }
+
+         if (hostEnvironment.IsDevelopment())
+         {
+            return "dev";
+         }
+
+         if (hostEnvironment.IsQa())
+         {
+            return "qa";
+         }
+
+         if (hostEnvironment.IsStaging())
+         {
+            return "staging";
+         }
+
+         return "";
+      }
    }
 }

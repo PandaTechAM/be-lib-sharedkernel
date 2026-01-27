@@ -5,30 +5,31 @@ namespace SharedKernel.Extensions;
 
 public static class DictionaryExtensions
 {
-   public static TValue? GetOrAdd<TKey, TValue>(this Dictionary<TKey, TValue> dict, TKey key, TValue? value)
-      where TKey : notnull
+   extension<TKey, TValue>(Dictionary<TKey, TValue> dict) where TKey : notnull
    {
-      ref var val = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, key, out var exists);
-
-      if (exists)
+      public TValue? GetOrAdd(TKey key, TValue? value)
       {
+         ref var val = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, key, out var exists);
+
+         if (exists)
+         {
+            return val;
+         }
+
+         val = value;
          return val;
       }
 
-      val = value;
-      return val;
-   }
-
-   public static bool TryUpdate<TKey, TValue>(this Dictionary<TKey, TValue> dict, TKey key, TValue value)
-      where TKey : notnull
-   {
-      ref var val = ref CollectionsMarshal.GetValueRefOrNullRef(dict, key);
-      if (Unsafe.IsNullRef(ref val))
+      public bool TryUpdate(TKey key, TValue value)
       {
-         return false;
-      }
+         ref var val = ref CollectionsMarshal.GetValueRefOrNullRef(dict, key);
+         if (Unsafe.IsNullRef(ref val))
+         {
+            return false;
+         }
 
-      val = value;
-      return true;
+         val = value;
+         return true;
+      }
    }
 }

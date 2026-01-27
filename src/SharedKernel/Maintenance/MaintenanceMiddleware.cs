@@ -1,6 +1,5 @@
 ﻿using System.Text.Json;
 using Microsoft.AspNetCore.Http;
-using System.Threading;
 
 namespace SharedKernel.Maintenance;
 
@@ -39,7 +38,7 @@ internal sealed class MaintenanceMiddleware(RequestDelegate next, MaintenanceSta
       await next(httpContext);
    }
 
-   private static async Task Set503Async(HttpContext ctx)
+   private static async Task Set503Async(HttpContext ctx, CancellationToken ct = default)
    {
       ctx.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
       ctx.Response.Headers.RetryAfter = "60";
@@ -52,7 +51,7 @@ internal sealed class MaintenanceMiddleware(RequestDelegate next, MaintenanceSta
          {
             message = "The service is under maintenance. Please try again later."
          });
-         await ctx.Response.WriteAsync(payload);
+         await ctx.Response.WriteAsync(payload, cancellationToken: ct);
       }
    }
 }
