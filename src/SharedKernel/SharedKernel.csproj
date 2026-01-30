@@ -8,13 +8,13 @@
         <PackageReadmeFile>Readme.md</PackageReadmeFile>
         <Authors>Pandatech</Authors>
         <Copyright>MIT</Copyright>
-        <Version>2.1.1</Version>
+        <Version>2.1.2</Version>
         <PackageId>Pandatech.SharedKernel</PackageId>
         <Title>Pandatech Shared Kernel Library</Title>
         <PackageTags>Pandatech, shared kernel, library, OpenAPI, Swagger, utilities, scalar</PackageTags>
         <Description>Pandatech.SharedKernel provides centralized configurations, utilities, and extensions for ASP.NET Core projects. For more information refere to readme.md document.</Description>
         <RepositoryUrl>https://github.com/PandaTechAM/be-lib-sharedkernel</RepositoryUrl>
-        <PackageReleaseNotes>request/response logging armenian support</PackageReleaseNotes>
+        <PackageReleaseNotes>Swagger headers bug fix</PackageReleaseNotes>
 
 
         <!-- Never run analyzers as part of compilation (local, CI, dotnet build/test/publish) -->
@@ -65,7 +65,7 @@
         <PackageReference Include="Pandatech.FluentMinimalApiMapper" Version="3.0.1"/>
         <PackageReference Include="Pandatech.PandaVaultClient" Version="5.0.1"/>
         <PackageReference Include="Pandatech.ResponseCrafter" Version="6.0.1"/>
-        <PackageReference Include="Scalar.AspNetCore" Version="2.12.18"/>
+        <PackageReference Include="Scalar.AspNetCore" Version="2.12.24" />
         <PackageReference Include="Serilog.AspNetCore" Version="10.0.0"/>
         <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0"/>
         <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="8.3.2"/>
