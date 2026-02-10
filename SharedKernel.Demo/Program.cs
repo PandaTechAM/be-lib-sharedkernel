@@ -1,6 +1,8 @@
+using System.Text.Json.Serialization;
 using DistributedCache.Extensions;
 using FileExporter.Extensions;
 using FluentMinimalApiMapper;
+using GridifyExtensions.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ResponseCrafter.Enums;
@@ -108,6 +110,8 @@ app.MapPost("/body",
       return TypedResults.Ok(testTypes);
    });
 
+app.MapGet("test-query", ([FromQuery] long id) => TypedResults.Ok(id));
+
 app.MapHub<MessageHub>("/hub");
 
 app.LogStartSuccess();
@@ -120,6 +124,7 @@ namespace SharedKernel.Demo
       public AnimalType AnimalType { get; set; } = AnimalType.Dog;
       public required string JustText { get; set; } = "Hello";
       public int JustNumber { get; set; } = 42;
+      public string? NullableText { get; set; }
    }
 
    public enum AnimalType

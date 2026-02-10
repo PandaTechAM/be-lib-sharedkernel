@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.OpenApi;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.OpenApi;
 using SharedKernel.Helpers;
 using SharedKernel.OpenApi.Options;
 
@@ -29,6 +30,7 @@ public static class OpenApiExtensions
          builder.Services.AddOpenApi(document.GroupName,
             options =>
             {
+               options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0; //TODO: Change someday when swagger will be upgraded
                options.AddDocumentTransformer<RemoveServersTransformer>();
                options.AddDocument(document, openApiConfiguration);
                options.AddSchemaTransformer<EnumSchemaTransformer>();
