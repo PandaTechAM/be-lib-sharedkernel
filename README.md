@@ -1,128 +1,46 @@
 # Pandatech.SharedKernel
 
-Welcome to the `Pandatech.SharedKernel` NuGet package - a centralized library designed to streamline development across
-all PandaTech projects. This package consolidates shared configurations, utilities, and extensions into a single,
-reusable resource.
+Opinionated ASP.NET Core 10 infrastructure library for PandaTech projects. It consolidates logging, OpenAPI,
+validation, CORS, SignalR, telemetry, health checks, maintenance mode, and resilience into a single package so every
+service starts from the same baseline.
 
-Although this package is primarily intended for internal use, it is publicly available for anyone who may find it
-useful. We recommend forking or copying the classes in this repository and creating your own package to suit your needs.
+The package is publicly available but is designed for internal use. If you want to adopt it, fork the repository and
+customize it to your own conventions.
 
-By leveraging this shared kernel, we aim to:
+Requires **.NET 10.0**. Uses C# 14 extension members throughout and cannot be downgraded to earlier TFMs.
 
-- Reduce the amount of boilerplate code required to start a new project.
-- Ensure consistency across all PandaTech projects.
-- Simplify the process of updating shared configurations and utilities.
+---
 
-## Scope
+## Table of Contents
 
-This package currently supports:
+1. [Installation](#installation)
+2. [Quick Start](#quick-start)
+3. [Assembly Registry](#assembly-registry)
+4. [OpenAPI](#openapi)
+5. [Logging](#logging)
+6. [MediatR and FluentValidation](#mediatr-and-fluentvalidation)
+7. [CORS](#cors)
+8. [Resilience Pipelines](#resilience-pipelines)
+9. [Controllers](#controllers)
+10. [SignalR](#signalr)
+11. [OpenTelemetry](#opentelemetry)
+12. [Health Checks](#health-checks)
+13. [Maintenance Mode](#maintenance-mode)
+14. [Utilities](#utilities)
 
-- **OpenAPI Configuration** with SwaggerUI and Scalar.
-- **Logging** with Serilog (including ECS, Loki and compact JSON file output, plus automatic log cleanup).
-- **MediatR and FluentValidation** configurations.
-- **Cors Configuration** with easy configuration options.
-- **Resilience Pipelines** for `HttpClient` operations.
-- **Controller Extensions** for mapping old-style MVC controllers.
-- **SignalR Extensions** for adding simple SignalR or distributed SignalR backed with Redis.
-- **OpenTelemetry**: Metrics, traces, and logs with Prometheus support.
-- **Health Checks**: Startup validation and endpoints for monitoring.
-- **ValidationHelper**: A collection of regex-based validators for common data formats.
-- **Maintenance Mode**: Global switch with three modes (`Disabled`, `EnabledForClients`, `EnabledForAll`); clients = all
-  routes except `/api/admin/*`.
-- Various **Extensions and Utilities**, including enumerable, string, dictionary and queryable extensions.
-
-## Prerequisites
-
-- .NET 9.0 SDK or higher
+---
 
 ## Installation
-
-To install the `Pandatech.SharedKernel` package, use the following command:
 
 ```bash
 dotnet add package Pandatech.SharedKernel
 ```
 
-Alternatively, you can add it via the NuGet Package Manager in Visual Studio, VS Code or Rider.
+---
 
-## Full SharedKernel Demo
+## Quick Start
 
-This section demonstrates how to use the `Pandatech.SharedKernel` package in a fully functional application. It includes
-examples of:
-
-- Comprehensive `appsettings.json` configurations.
-- Environment-specific settings in `appsettings.{Environment}.json`.
-- A complete `Program.cs` implementation with all major features integrated.
-
-Follow this example to set up your project with all the features provided by this library.
-
-### appsettings.json
-
-```json
-{
-    "OpenApi": {
-        "DisabledEnvironments": [
-            "Production"
-        ],
-        "SecuritySchemes": [
-            {
-                "HeaderName": "Client-Type",
-                "Description": "Specifies the client type, e.g., '2'."
-            },
-            {
-                "HeaderName": "Authorization",
-                "Description": "Access token for the API."
-            }
-        ],
-        "Documents": [
-            {
-                "Title": "Administrative Panel Partners",
-                "Description": "This document describes the API endpoints for the Administrative Panel Partners.",
-                "GroupName": "admin-v1",
-                "Version": "v1",
-                "ForExternalUse": false
-            },
-            {
-                "Title": "Integration",
-                "Description": "Integration API Endpoints",
-                "GroupName": "integration-v1",
-                "Version": "v1",
-                "ForExternalUse": true
-            }
-        ],
-        "Contact": {
-            "Name": "Pandatech",
-            "Url": "https://pandatech.it",
-            "Email": "info@pandatech.it"
-        }
-    }
-}
-```
-
-### appsettings.{Environment}.json
-
-```json
-{
-    "Serilog": {
-        "MinimumLevel": {
-            "Default": "Information",
-            "Override": {
-                "Microsoft": "Information",
-                "System": "Information"
-            }
-        }
-    },
-    "ResponseCrafterVisibility": "Private",
-    "DefaultTimeZone": "Caucasus Standard Time",
-    "RepositoryName": "be-lib-sharedkernel",
-    "ConnectionStrings": {
-        "Redis": "localhost:6379",
-        "PersistentStorage": "/persistence"
-    }
-}
-```
-
-### Program.cs
+A complete `Program.cs` using every major feature:
 
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
@@ -141,25 +59,16 @@ builder
    .AddControllers(AssemblyRegistry.ToArray())
    .AddMediatrWithBehaviors(AssemblyRegistry.ToArray())
    .AddResilienceDefaultPipeline()
-   .AddDistributedSignalR("localhost:6379", "app_name") // or .AddSignalR()
-   .AddDistributedCache(o =>
-   {
-      o.RedisConnectionString = "localhost:6379";
-      o.ChannelPrefix = "app_name";
-   })
-   .AddMassTransit(AssemblyRegistry.ToArray())
-   .AddFileExporter(AssemblyRegistry.ToArray())
-   .MapDefaultTimeZone()
+   .AddDistributedSignalR("localhost:6379", "app_name")
    .AddCors()
    .AddOutboundLoggingHandler()
    .AddHealthChecks();
-
 
 var app = builder.Build();
 
 app
    .UseRequestLogging()
-   .UseMaintenanceMode() //(place early)
+   .UseMaintenanceMode()
    .UseResponseCrafter()
    .UseCors()
    .MapMinimalApis()
@@ -174,45 +83,49 @@ app.LogStartSuccess();
 app.Run();
 ```
 
-For a deeper dive into each feature, please refer to the following sections.
+---
+
+## Assembly Registry
+
+`AssemblyRegistry` is a thread-safe static list used to pass your project's assemblies from the builder phase to the
+app phase without repeating `typeof(Program).Assembly` everywhere.
+
+```csharp
+// Add once at startup
+AssemblyRegistry.Add(typeof(Program).Assembly);
+
+// Pass to any method that needs to scan for handlers, validators, or endpoints
+builder.AddMediatrWithBehaviors(AssemblyRegistry.ToArray());
+
+// Clear after app is built to free memory — the scanning is complete
+app.ClearAssemblyRegistry();
+```
+
+---
 
 ## OpenAPI
 
-`Microsoft.AspNetCore.OpenApi` is the new standard for creating OpenAPI JSON files. We have adopted this library instead
-of Swashbuckle for generating OpenAPI definitions. Along with this new library, we have integrated `SwaggerUI` and
-`Scalar` to provide user-friendly interfaces in addition to the JSON files.
+Wraps `Microsoft.AspNetCore.OpenApi` with SwaggerUI and Scalar, supporting multiple API documents, custom security
+schemes, and enum string descriptions.
 
-### Key Features
-
-- **Multiple API Documents:** Easily define and organize multiple API documentation groups.
-- **Enum String Values:** Enum string values are automatically displayed in the documentation, simplifying integration
-  for external partners.
-- **Security Schemes:** Configure security headers directly in your OpenAPI settings.
-
-### Adding OpenAPI to Your Project
-
-To enable OpenAPI in your project, add the following code:
+### Registration
 
 ```csharp
-var builder = WebApplication.CreateBuilder(args);
 builder.AddOpenApi();
 var app = builder.Build();
 app.UseOpenApi();
-app.Run();
 ```
 
-You can also customize the `AddOpenApi` method with options:
+Custom schema transformers can be added via the options callback:
 
 ```csharp
 builder.AddOpenApi(options =>
 {
-    options.AddSchemaTransformer<CustomSchemaTransformer>();
+    options.AddSchemaTransformer<MyCustomTransformer>();
 });
 ```
 
 ### Configuration
-
-Add the following configuration to your `appsettings.json` file:
 
 ```json
 {
@@ -223,20 +136,24 @@ Add the following configuration to your `appsettings.json` file:
         "SecuritySchemes": [
             {
                 "HeaderName": "Authorization",
-                "Description": "Access token for the API."
+                "Description": "Bearer access token."
+            },
+            {
+                "HeaderName": "Client-Type",
+                "Description": "Identifies the client type, e.g. '2'."
             }
         ],
         "Documents": [
             {
-                "Title": "Admin Panel API",
-                "Description": "API for administrative functions.",
+                "Title": "Admin Panel",
+                "Description": "Internal administrative endpoints.",
                 "GroupName": "admin-v1",
                 "Version": "v1",
                 "ForExternalUse": false
             },
             {
                 "Title": "Integration",
-                "Description": "Integration API Endpoints",
+                "Description": "Public integration endpoints.",
                 "GroupName": "integration-v1",
                 "Version": "v1",
                 "ForExternalUse": true
@@ -251,87 +168,61 @@ Add the following configuration to your `appsettings.json` file:
 }
 ```
 
-### Notes
+### UI URLs
 
-- **For External Use:** If you set `ForExternalUse: true` for a document, it will be available both within the regular
-  SwaggerUI and a separate SwaggerUI instance. This allows you to provide a dedicated URL to external partners while
-  keeping internal documents private.
-- **Scalar UI Limitations:** Scalar currently does not support multiple documents within a single URL. Consequently, all
-  documents in Scalar will be separated into individual URLs. Support for multiple documents is expected in future
-  Scalar updates.
+| UI      | URL                       | Notes                                    |
+|---------|---------------------------|------------------------------------------|
+| Swagger | `/swagger`                | All documents                            |
+| Swagger | `/swagger/integration-v1` | External documents only (ForExternalUse) |
+| Scalar  | `/scalar/admin-v1`        | One URL per document                     |
+| Scalar  | `/scalar/integration-v1`  | One URL per document                     |
 
-### Example URLs
+`ForExternalUse: true` creates a dedicated Swagger URL you can share with external partners while keeping internal
+documents private. All documents still appear on the main `/swagger` page.
 
-Based on the above configuration, the UI will be accessible at the following URLs:
-
-- **Swagger (all documents):** [http://localhost/swagger](http://localhost/swagger)
-- **Swagger (external document only):
-  ** [http://localhost/swagger/integration-v1](http://localhost/swagger/integration-v1)
-- **Scalar (admin document):** [http://localhost/scalar/admin-v1](http://localhost/scalar/admin-v1)
-- **Scalar (integration document):** [http://localhost/scalar/integration-v1](http://localhost/scalar/integration-v1)
+---
 
 ## Logging
 
-### Key Features
+Wraps Serilog with structured output, request/response logging middleware, outbound HTTP logging, and automatic log
+cleanup.
 
-- **Serilog Integration:** Simplified setup for structured logging using Serilog.
-- **Log Backend Option** Choose between:
-    - `LogBackend.None` (disables file logging completely),
-    - `LogBackend.ElasticSearch` (ECS formatter to file), or
-    - `LogBackend.Loki` (Loki formatter to file), or
-    - `LogBackend.CompactJson` (compact JSON format to file).
-- **Environment-Specific Configuration:**
-    - **Local:** Only logs to console even if you choose `LogBackend.Any`.
-    - **Production:** Logs to file (in ECS or Loki format depending on the backend).
-    - **Other Environments:** Logs to both console and file.
-- **Automatic Log Cleanup:** Log files are automatically cleaned up based on the configured retention period.
-- **Log File Location:** Logs are stored in a persistent path defined in your configuration, organized by repository
-  name and environment, under the `logs` directory.
-- **Filtering:** Excludes unwanted logs from Hangfire Dashboard, Swagger, outbox DB commands, and MassTransit health
-  checks.
-- **Request Logging:** Middleware that logs incoming requests and outgoing responses while redacting sensitive
-  information and large payloads.
-- **Outbound Logging Handler:** For capturing outbound `HttpClient` requests (including headers and bodies) with the
-  same redaction rules.
-
-### Adding Logging to Your Project
-
-Use the `AddSerilog` extension when building your `WebApplicationBuilder`. You can specify:
-
-- `logBackend`: One of `None`, `ElasticSearch` (ECS file format), `Loki` (Loki JSON file format) or `CompactJson`.
-- `daysToRetain`: Number of days to keep log files. Older files are automatically removed by the background hosted
-  service.
-
-In your middleware pipeline, add the request and response logging middleware:
+### Registration
 
 ```csharp
-// 1) Synchronous logging with 7-day retention (default). 
+// Synchronous sinks — safe for up to ~1000 req/s per pod
 builder.AddSerilog(LogBackend.Loki);
 
-// 2) Asynchronous logging with 14-day retention and extra properties.
-//    Suitable for high-load (~1000+ RPS per pod) scenarios where slight risk of log loss is acceptable 
-//    in exchange for better performance.
+// Asynchronous sinks — better throughput, small risk of losing logs on hard crash
 builder.AddSerilog(
-    logBackend: LogBackend.Loki,
+    logBackend: LogBackend.ElasticSearch,
     logAdditionalProperties: new Dictionary<string, string>
     {
-        ["ServiceName"] = "MyApp",
-        ["Environment"] = "Staging"
+        ["ServiceName"] = "my-service"
     },
     daysToRetain: 14,
     asyncSinks: true
 );
 ```
 
-> - **Asynchronous Sinks (asyncSinks: true):** Recommended for very high-traffic environments (e.g., 1000+ requests per
-    second per pod) where performance is critical and the possibility of losing a small amount of log data (e.g., on
-    sudden process termination) is acceptable. <br><br>
->- **Synchronous Sinks (asyncSinks: false):** Recommended if you can handle up to ~1000 requests per second per pod and
-   must
-   retain every log entry without fail. This might incur slightly more overhead but ensures maximum reliability.
+### Log Backends
 
-Configure minimal Serilog settings in your environment JSON files as needed, for example in
-`appsettings.{Environment}.json`:
+| Value           | Output format                                     |
+|-----------------|---------------------------------------------------|
+| `None`          | Console only, no file output                      |
+| `ElasticSearch` | ECS JSON to file (forward with Filebeat/Logstash) |
+| `Loki`          | Loki JSON to file (forward with Promtail)         |
+| `CompactJson`   | Compact JSON to file                              |
+
+### Environment behavior
+
+| Environment      | Console | File |
+|------------------|---------|------|
+| Local            | Yes     | No   |
+| Development / QA | Yes     | Yes  |
+| Production       | No      | Yes  |
+
+### Configuration
 
 ```json
 {
@@ -344,208 +235,127 @@ Configure minimal Serilog settings in your environment JSON files as needed, for
             }
         }
     },
-    "RepositoryName": "be-lib-sharedkernel",
+    "RepositoryName": "my-service",
     "ConnectionStrings": {
         "PersistentStorage": "/persistence"
     }
 }
 ```
 
-### Log Cleanup
+Log files are stored under `{PersistentStorage}/{RepositoryName}/{env}/logs/`. The `LogCleanupHostedService` runs
+every 12 hours and deletes files older than `daysToRetain`.
 
-When you call `builder.AddSerilog(..., daysToRetain: X)`, a `LogCleanupHostedService` is automatically registered. This
-hosted service runs periodically to delete log files older than the specified retention period.
-
-### Usage Notes
-
-- **No Direct Sinks to External Systems:** By default, logs are written to local files with ECS or Loki JSON format. You
-  can
-  later push these files to external systems (e.g., via Filebeat, Logstash, Promtail, or any specialized agent).
-- **Optional Enrichment:** You can pass a `Dictionary<string, string>` to `AddSerilog` to add extra log properties
-  globally:
-    ```csharp
-    builder.AddSerilog(
-        logBackend: LogBackend.Loki,
-        logAdditionalProperties: new Dictionary<string, string>
-        {
-            {"ServiceName", "MyService"},
-            {"ServiceVersion", "1.0.0"}
-         }
-    );    
-    ```
-
-### Startup Logging
-
-The package provides methods to log application startup events:
-
-- `LogStartAttempt()`: Logs when the application start is attempted.
-- `LogStartSuccess()`: Logs when the application has successfully started, including the initialization time.
-- `LogModuleRegistrationSuccess(moduleName)`: Logs successful registration of a module.
-- `LogModuleUseSuccess(moduleName)`: Logs successful usage of a module.
-
-Example:
+### Request logging middleware
 
 ```csharp
-var builder = WebApplication.CreateBuilder(args);
-builder.LogStartAttempt();
-// Configure services
-var app = builder.Build();
-// Configure middleware
-app.UseRequestLogging();
-// Other middleware
-app.LogStartSuccess();
-app.Run();
+app.UseRequestLogging();  // logs method, path, status code, elapsed ms, redacted headers/body
 ```
 
-### Outbound Logging with HttpClient
+Paths under `/swagger`, `/openapi`, `/above-board`, and `/favicon.ico` are silently skipped. Sensitive header names
+(auth, token, cookie, pan, cvv, etc.) and matching JSON properties are redacted automatically. Bodies over 16 KB are
+omitted.
 
-In addition to the `RequestLoggingMiddleware` for inbound requests, you can now log **outbound** HTTP calls via an
-`OutboundLoggingHandler`. This handler captures request and response data (including headers and bodies), automatically
-redacting sensitive information (e.g., passwords, tokens).
+### Outbound logging
 
-#### Usage
-
-1. **Register the handler** in your `WebApplicationBuilder`:
-   ```csharp
-   builder.AddOutboundLoggingHandler();
-   ```
-2. **Attach** the handler to any HttpClient registration:
-    ```csharp
-    builder.Services
-       .AddHttpClient("RandomApiClient", client =>
-       {
-           client.BaseAddress = new Uri("http://localhost");
-       })
-       .AddOutboundLoggingHandler();
-    ```
-3. **Check logs:** Outbound requests and responses are now logged with redacted headers and bodies, just like inbound
-   traffic.
-
-> Note: The same redaction rules apply to inbound and outbound calls. Update RedactionHelper if you need to modify the
-> behavior (e.g., adding new sensitive keywords).
-
-## MediatR and FluentValidation Integration
-
-### Key Features
-
-- **MediatR Integration:** Simplifies the implementation of the Mediator pattern for handling commands and queries.
-- **Custom Interfaces for CQRS:** Provides ICommand and IQuery interfaces to facilitate the Command Query Responsibility
-  Segregation (CQRS) pattern.
-- **Validation Behaviors:** Automatically validates requests using FluentValidation before they reach the handler.
-- **FluentValidation Extensions:** Includes custom validators for common scenarios like file size, file type, JSON
-  validity,
-  and XSS sanitization.
-
-### Adding MediatR to Your Project
-
-To enable MediatR with validation behaviors in your project, add the following code:
+Captures outbound `HttpClient` requests with the same redaction rules:
 
 ```csharp
-var builder = WebApplication.CreateBuilder(args);
-builder.AddMediatrWithBehaviors([typeof(Program).Assembly]);
+// Register the handler
+builder.AddOutboundLoggingHandler();
+
+// Attach to a specific HttpClient
+builder.Services
+   .AddHttpClient("MyClient", c => c.BaseAddress = new Uri("https://example.com"))
+   .AddOutboundLoggingHandler();
 ```
 
-This extension method registers MediatR and adds custom pipeline behaviors for validation. It scans the specified
-assemblies for handlers and validators.
+### Startup logging
 
-### How It Works
+```csharp
+builder.LogStartAttempt();   // prints banner to console at startup
+app.LogStartSuccess();        // prints success banner with elapsed init time
+```
 
-**Custom Interfaces for CQRS**
-The package provides custom interfaces to distinguish between commands and queries, aligning with the CQRS pattern:
+---
 
-- Commands:
-    - `ICommand<TResponse>` and `ICommand`
-    - Handled by `ICommandHandler<TCommand, TResponse>` and `ICommandHandler<TCommand>`
-- Queries:
-    - `IQuery<TResponse>` and `IQuery`
-    - Handled by `IQueryHandler<TQuery, TResponse>` and `IQueryHandler<TQuery>`
+## MediatR and FluentValidation
 
-These interfaces help in organizing your application logic and can be extended in the future, for example, to route read
-requests to replicas and write requests to a primary database.
+Registers MediatR with a validation pipeline behavior that runs all FluentValidation validators before the handler.
+Validation failures throw `BadRequestException` from `Pandatech.ResponseCrafter`.
 
-### Validation Behaviors
+### Registration
 
-Two custom pipeline behaviors are added to MediatR:
+```csharp
+builder.AddMediatrWithBehaviors(AssemblyRegistry.ToArray());
+```
 
-- `ValidationBehaviorWithResponse<TRequest, TResponse>`: Used for requests that expect a response.
-- `ValidationBehaviorWithoutResponse<TRequest, TResponse>`: Used for requests that do not expect a response.
+### CQRS interfaces
 
-These behaviors automatically validate the incoming requests using FluentValidation validators before they reach the
-handler. If validation fails, a `BadRequestException` is thrown with the validation errors.
-> `BadRequestException` is from Pandatech.ResponseCrafter NuGet package
+```csharp
+// Commands
+public record CreateUserCommand(string Email) : ICommand<UserDto>;
+public class CreateUserHandler : ICommandHandler<CreateUserCommand, UserDto> { ... }
 
-### FluentValidation Extensions
+// Queries
+public record GetUserQuery(Guid Id) : IQuery<UserDto>;
+public class GetUserHandler : IQueryHandler<GetUserQuery, UserDto> { ... }
+```
 
-We ship lightweight validators and presets for common scenarios, including file uploads and string checks.
-All file rules use name/extension checks only (simple + fast). Deep validation still happens inside your storage layer.
+### FluentValidation extensions
 
-**File upload validators**
+**String validators**
+
+```csharp
+RuleFor(x => x.Email).IsEmail();
+RuleFor(x => x.Phone).IsPhoneNumber();           // Panda format: (374)91123456
+RuleFor(x => x.Contact).IsEmailOrPhoneNumber();
+RuleFor(x => x.Payload).IsValidJson();
+RuleFor(x => x.Content).IsXssSanitized();
+```
 
 **Single file (`IFormFile`)**
 
 ```csharp
 RuleFor(x => x.Avatar)
-   .HasMaxSizeMb(6)                       // size cap in MB
-   .ExtensionIn(".jpg", ".jpeg", ".png"); // or use a preset set below
-
+   .HasMaxSizeMb(6)
+   .ExtensionIn(".jpg", ".jpeg", ".png");
 ```
 
 **File collection (`IFormFileCollection`)**
 
 ```csharp
 RuleFor(x => x.Docs)
-   .MaxCount(10)                          // number of files
-   .EachHasMaxSizeMb(10)                  // per-file size cap (MB)
+   .MaxCount(10)
+   .EachHasMaxSizeMb(10)
    .EachExtensionIn(CommonFileSets.Documents)
-   .TotalSizeMaxMb(50);                   // sum of all files (MB)
+   .TotalSizeMaxMb(50);
 ```
 
-**Presets**
+**File presets**
 
 ```csharp
-using SharedKernel.ValidatorAndMediatR.Validators.Files;
-
-CommonFileSets.Images               // .jpg, .jpeg, .png, .webp, .heic, .heif, .svg, .avif
-CommonFileSets.Documents            // .pdf, .txt, .csv, .json, .xml, .yaml, .yml, .md, .docx, .xlsx, .pptx, .odt, .ods, .odp
+CommonFileSets.Images               // .jpg .jpeg .png .webp .heic .heif .svg .avif
+CommonFileSets.Documents            // .pdf .txt .csv .json .xml .yaml .md .docx .xlsx .pptx ...
 CommonFileSets.ImagesAndAnimations  // Images + .gif
 CommonFileSets.ImagesAndDocuments   // Images + Documents
+CommonFileSets.ImportFiles          // .csv .xlsx
 ```
 
-**String validators**
+---
+
+## CORS
+
+Development and non-production environments allow all origins. Production restricts to the configured list and
+automatically adds both `www` and non-`www` variants.
+
+### Registration
 
 ```csharp
-RuleFor(x => x.Email).IsEmail();
-RuleFor(x => x.Phone).IsPhoneNumber();
-RuleFor(x => x.Contact).IsEmailOrPhoneNumber(); // alias: IsPhoneNumberOrEmail
-RuleFor(x => x.PayloadJson).IsValidJson();
-RuleFor(x => x.Content).IsXssSanitized();
-```
-
-## Cors
-
-### Key Features
-
-- **Non-Production Environment:** Allows all origins for ease of development and testing.
-- **Production Environment**
-    - Restricts origins to a specific list defined in the configurations.
-    - Automatically handles `www` and non-`www` versions of allowed origins.
-    - Supports credentials, all methods and headers, and preflight caching.
-
-### Adding Cors to Your Project
-
-To enable Cors in your project, add the following code:
-
-```csharp
-var builder = WebApplication.CreateBuilder(args);
 builder.AddCors();
-var app = builder.Build();
 app.UseCors();
-app.Run();
 ```
 
-### Configuration
-
-Add following to your `appsetings.production.json` file:
+### Production configuration
 
 ```json
 {
@@ -555,242 +365,324 @@ Add following to your `appsetings.production.json` file:
 }
 ```
 
-- AllowedCorsOrigins: A comma- or semicolon-separated list of allowed origins. Invalid URLs are automatically filtered
-  out.
+The list accepts comma- or semicolon-separated URLs. Invalid entries are logged and filtered out.
+
+---
 
 ## Resilience Pipelines
 
-### Key Features
+Built on Polly via `Microsoft.Extensions.Http.Resilience`. Provides retry, circuit breaker, and timeout policies for
+`HttpClient` calls.
 
-- **Default Resilience Pipeline:** Provides a pre-configured resilience pipeline with retry, circuit breaker, and
-  timeout
-  policies.
-- **Polly Integration:** Utilizes the Microsoft.Extensions.Http.Resilience library which is built on Polly library for
-  implementing advanced resilience strategies.
-- **Flexible Configuration:** Can be applied globally via WebApplicationBuilder or locally within specific HTTP client
-  configurations.
-- **HTTP Client Resilience:** Enhances the reliability of HTTP client calls by handling transient faults and network
-  issues.
+### Options
 
-### Adding Resilience Pipelines to Your Project
-
-To enable the default resilience pipeline in your project, you have 3 options:
-
-1. Global Configuration via `WebApplicationBuilder`
-   This method applies the resilience pipeline to all HTTP clients registered in your application.
-   ```csharp
-   var builder = WebApplication.CreateBuilder(args);
-   builder.AddResilienceDefaultPipeline();
-   ```
-2. Local Configuration within HTTP Client Registration
-   This method applies the resilience pipeline to a specific HTTP client registration.
-   ```csharp
-   builder.Services.AddHttpClient("MyHttpClient")
-    .AddResilienceDefaultPipeline();
-   ```
-3. Configuration within HttpClientService.cs
-    ```csharp
-    public class MyHttpClientService
-    {
-    private readonly ResiliencePipelineProvider<string> _resiliencePipelineProvider;
-    private readonly HttpClient _httpClient;
-    
-        public MyHttpClientService(ResiliencePipelineProvider<string> resiliencePipelineProvider, HttpClient httpClient)
-        {
-            _resiliencePipelineProvider = resiliencePipelineProvider;
-            _httpClient = httpClient;
-        }
-    
-        public async Task FooAsync()
-        {
-            var pipeline = _resiliencePipelineProvider.GetDefaultPipeline();
-            var response = await pipeline.ExecuteAsync(() => _httpClient.GetAsync("https://example.com"));
-        }
-    }
-    ```
-
-### How It Works
-
-The default resilience pipeline includes the following policies:
-
-- **Retry Policy for 429 (Too Many Requests):** Retries the request up to 5 times with an exponential backoff,
-  respecting
-  the `Retry-After` header if present.
-- **Retry Policy for Network Errors and Timeouts:** Retries network-related failures up to 7 times with an exponential
-  backoff.
-- **Circuit Breaker Policy:** Breaks the circuit when the failure ratio exceeds 50% within a 30-second sampling
-  duration,
-  with a minimum throughput of 200 requests.
-- **Timeout Policy:** Times out requests that take longer than 8 seconds.
-
-## Controller Extensions
-
-For mapping old style MVC controllers, use `builder.AddControllers()`.
-The `AddControllers()` method can also accept assembly names as parameters to scan for controllers.
-The `MapControllers()` method maps the controllers to the application.
-
-Example:
+**1. Global — applies to all registered HttpClients:**
 
 ```csharp
-var builder = WebApplication.CreateBuilder(args);
-builder.AddControllers([typeof(Program).Assembly]);
-var app = builder.Build();
-app.MapControllers();
-app.Run();
+builder.AddResilienceDefaultPipeline();
 ```
 
-## Telemetry Integration
+**2. Per-client:**
 
-Integrate OpenTelemetry for observability, including metrics, traces, and logging:
+```csharp
+builder.Services.AddHttpClient("MyClient")
+   .AddResilienceDefaultPipeline();
+```
 
-1. Setup:
-    ```csharp
-    var builder = WebApplication.CreateBuilder(args);
-    builder.AddOpenTelemetry();
-    var app = builder.Build();
-    app.MapPrometheusExporterEndpoints();
-    app.Run();
-    ```
-2. Prometheus Endpoints:
-    - Metrics: `url/above-board/prometheus`
-    - Health Metrics: `url/above-board/prometheus/health`
+**3. Manual — for wrapping arbitrary async calls:**
 
-3. OTLP Configuration:
-   To configure the OTLP exporter, ensure the following entries are present in your appsettings{Environment}.json or as
-   environment variables:
-    ```json
+```csharp
+public class MyService(ResiliencePipelineProvider<string> provider)
+{
+    public async Task CallAsync()
     {
-        "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317"
+        var pipeline = provider.GetDefaultPipeline();
+        var result = await pipeline.ExecuteAsync(() => _client.GetAsync("/endpoint"));
     }
-    ```
-4. Included Features:
-    - ASP.NET Core metrics
-    - HTTP client telemetry
-    - Distributed tracing
-    - Logging
-    - Prometheus exporter
-    - OTLP exporter
-    - EF Core telemetry
+}
+```
+
+### Default pipeline policies
+
+| Policy          | Configuration                                          |
+|-----------------|--------------------------------------------------------|
+| Retry (429)     | 5 retries, exponential backoff, respects `Retry-After` |
+| Retry (5xx/408) | 7 retries, exponential backoff from 800ms              |
+| Circuit breaker | Opens at 50% failure rate over 30 s, min 200 requests  |
+| Timeout         | 8 seconds per attempt                                  |
+
+---
+
+## Controllers
+
+For applications using classic MVC controllers alongside minimal APIs:
+
+```csharp
+builder.AddControllers(AssemblyRegistry.ToArray());
+app.MapControllers();
+```
+
+Controller and action names are automatically kebab-cased (`UserProfile` → `user-profile`).
+
+---
+
+## SignalR
+
+**Local SignalR (single instance):**
+
+```csharp
+builder.AddSignalR();
+```
+
+**Distributed SignalR backed by Redis (multi-instance):**
+
+```csharp
+builder.AddDistributedSignalR("localhost:6379", "app_name");
+```
+
+Both variants include:
+
+- `SignalRLoggingHubFilter` — logs hub method calls with redacted arguments and elapsed time
+- `SignalRExceptionFilter` — from `Pandatech.ResponseCrafter`, standardizes error responses
+- MessagePack protocol for compact binary serialization
+
+---
+
+## OpenTelemetry
+
+```csharp
+builder.AddOpenTelemetry();
+app.MapPrometheusExporterEndpoints();
+```
+
+### What is included
+
+- ASP.NET Core metrics and traces
+- HttpClient metrics and traces
+- Entity Framework Core traces
+- Runtime metrics
+- Prometheus scraping endpoint at `/above-board/prometheus`
+- Health metrics at `/above-board/prometheus/health`
+
+### OTLP export
+
+Set the following in your environment config or as an environment variable to enable OTLP export:
+
+```json
+{
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317"
+}
+```
+
+---
+
+## Health Checks
+
+```csharp
+builder.AddHealthChecks();
+
+app.EnsureHealthy();           // runs health checks at startup; throws if anything is unhealthy
+app.MapHealthCheckEndpoints(); // registers /above-board/ping and /above-board/health
+```
+
+`EnsureHealthy` skips MassTransit bus checks during startup (those take time to connect). The ping endpoint returns
+`"pong"` as plain text. The health endpoint returns the full AspNetCore.HealthChecks.UI JSON format.
+
+Additional health check registrations follow the standard `builder.Services.AddHealthChecks().Add...()` pattern — the
+library does not wrap those.
+
+---
 
 ## Maintenance Mode
 
-- **Modes**
-    - `Disabled`: normal operation.
-    - `EnabledForClients`: only `/api/admin/*` or `/hub/admin/*` allowed
-    - `EnabledForAll`: everything blocked except `/above-board/*` and `OPTIONS`.
-- **Security**: use your own auth (recommended). If you don’t have auth yet, you can pass a shared secret to
-  `MapMaintenanceEndpoint(basePath, querySecret)`.
+Three-mode global switch. Requires `Pandatech.DistributedCache` to synchronize state across instances.
 
-> Currently, this feature requires a Pandatech.DistributedCache to work correctly.
+| Mode                | Effect                                                             |
+|---------------------|--------------------------------------------------------------------|
+| `Disabled`          | Normal operation                                                   |
+| `EnabledForClients` | All routes blocked except `/api/admin/*` and `/hub/admin/*`        |
+| `EnabledForAll`     | All routes blocked except `/above-board/*` and `OPTIONS` preflight |
 
-## HealthChecks
-
-- **Startup Validation:** `app.EnsureHealthy()` performs a health check at startup and terminates the application if it
-  is not healthy.
-- **Endpoints Mapping:** `app.MapHealthCheckEndpoints()` maps default health check endpoints to the application.
-- **Mapped Endpoints:**
-    - Ping Endpoint: `url/above-board/ping`
-    - Health Check Endpoint: `url/above-board/health`
-
-Example:
+### Registration
 
 ```csharp
-var app = builder.Build();
-
-app.EnsureHealthy(); // Startup validation
-app.MapHealthCheckEndpoints(); // Map health check routes
-
-app.Run();
+builder.AddMaintenanceMode();
+app.UseMaintenanceMode();       // place before UseResponseCrafter and UseCors
 ```
 
-## ValidationHelper
+### Controlling maintenance mode
 
-The `ValidationHelper` class is a highly performant and robust C# class designed to simplify complex regex validations
-for
-various data formats. With 100% test coverage and a focus on security through a 50ms regex execution timeout, it's an
-ideal solution for applications requiring reliable and efficient data validation.
+Map the built-in endpoint and protect it with your own authorization:
 
 ```csharp
-using Pandatech.RegexBox;
-
-// URI validation
-bool isValidUri = ValidationHelper.IsUri("http://example.com", allowNonSecure: false);
-
-// US Social Security Number validation
-bool isValidSsnUs = ValidationHelper.IsUsSocialSecurityNumber("123-45-6789");
-
-// Email validation
-bool isValidEmail = ValidationHelper.IsEmail("user@example.com");
-
-// Username validation
-bool isValidUsername = ValidationHelper.IsUsername("user123");
-
-// Armenian Social Security Number validation
-bool isValidSsnAm = ValidationHelper.IsArmeniaSocialSecurityNumber("12345678912");
-
-//ArmenianIDCard validation
-bool isValidArmenianIdCard = ValidationHelper.IsArmeniaIdCard("AN1234567");
-
-// Armenian Passport validation
-bool isValidArmenianPassport = ValidationHelper.IsArmeniaPassport("AN1234567");
-
-// Armenian Tax code validation
-bool isValidArmenianTaxCode = ValidationHelper.IsArmeniaTaxCode("12345678");
-
-// Panda Formatted Phone Number validation
-bool isValidPhoneNumber = ValidationHelper.IsPandaFormattedPhoneNumber("(374)94810553");
-
-// Armenian State Registration Number validation
-bool isValidArmenianStateRegistrationNumber = ValidationHelper.IsArmeniaStateRegistryNumber("123.456.78");
-
-// Panda formatted phone number validation
-
-bool isValidPandaFormattedPhoneNumber = ValidationHelper.IsPandaFormattedPhoneNumber("(374)94810553");
-
-// Guid validation
-bool isValidGuid = ValidationHelper.IsGuid("12345678-1234-1234-1234-123456789012");
-
-// IPv4 validation
-bool isValidIpv4 = ValidationHelper.IsIPv4("192.168.1.1");
-
-// IPv6 validation
-bool isValidIpv6 = ValidationHelper.IsIPv6("2001:0db8:85a3:0000:0000:8a2e:0370:7334");
-
-// Any IP validation
-bool isValidIp = ValidationHelper.IsIpAddress("192.168.1.1");
-
-// Json validation
-bool isValidJson = ValidationHelper.IsJson("{\"name\":\"John\", \"age\":30}");
-
-// and many more...
+app.MapMaintenanceEndpoint();
+// PUT /above-board/maintenance   body: { "mode": 1 }
 ```
 
-## Additional Extensions and NuGet Packages
+Or protect with a shared secret query parameter (useful before auth is in place):
 
-This package includes various extensions and utilities to aid development:
+```csharp
+app.MapMaintenanceEndpoint(querySecret: "my-secret");
+// PUT /above-board/maintenance?secret=my-secret
+```
 
-- **Enumerable Extensions:** Additional LINQ methods for collections.
-- **Host Environment Extensions:** Methods to simplify environment checks (e.g., `IsLocal()`, `IsQa()`).
-- **Queryable Extensions:** Extensions for IQueryable, such as conditional `WhereIf`.
-- **Dictionary Extensions:** Utility methods for dictionary manipulation in a performant way like `GetOrAdd` and
-  `TryUpdate`.
-- **String Extensions:** Utility methods for string manipulation.
-- **Time Zone Extensions:** Methods to handle default time zones within your application. Use `.MapDefaultTimeZone()`,
-  which
-  retrieves DefaultTimeZone from `appsettings.json` and sets it as the default time zone.
-- **UrlBuilder:** A utility for building URLs with query parameters.
-- **Language ISO Code Helper:** Validate, query, and retrieve information about ISO language codes.
-- **PhoneUtil class** Utility class for phone number formatting.
+Programmatic control from application code:
 
-### Related NuGet Packages
+```csharp
+public class AdminService(MaintenanceState state)
+{
+    public Task EnableMaintenanceAsync(CancellationToken ct)
+        => state.SetModeAsync(MaintenanceMode.EnabledForClients, ct);
+}
+```
 
-- **Pandatech.Crypto:** Provides cryptographic utilities.
-- **Pandatech.FluentMinimalApiMapper:** Simplifies mapping in minimal APIs.
-- **Pandatech.ResponseCrafter:** A utility for crafting consistent API responses.
-- **Pandatech.DistributedCache:** A distributed cache provider for Redis.
-- **PandaTech.FluentImporter:** Fluent API for importing data.
-- **Pandatech.FileExporter:** A utility for exporting files.
+---
+
+## Utilities
+
+### ValidationHelper
+
+Static regex-based validators with a 50ms timeout per expression.
+
+```csharp
+ValidationHelper.IsEmail("user@example.com");
+ValidationHelper.IsUri("https://example.com", allowNonSecure: false);
+ValidationHelper.IsGuid("12345678-1234-1234-1234-123456789012");
+ValidationHelper.IsPandaFormattedPhoneNumber("(374)91123456");
+ValidationHelper.IsArmeniaSocialSecurityNumber("1234567890");
+ValidationHelper.IsArmeniaIdCard("123456789");
+ValidationHelper.IsArmeniaPassportNumber("AB1234567");
+ValidationHelper.IsArmeniaTaxCode("12345678");
+ValidationHelper.IsArmeniaStateRegistryNumber("123.456.78901");
+ValidationHelper.IsIPv4("192.168.1.1");
+ValidationHelper.IsIPv6("2001:db8::1");
+ValidationHelper.IsIpAddress("192.168.1.1");
+ValidationHelper.IsJson("{\"key\":\"value\"}");
+ValidationHelper.IsCreditCardNumber("4111111111111111");
+ValidationHelper.IsUsSocialSecurityNumber("123-45-6789");
+ValidationHelper.IsUsername("user123");
+```
+
+### LanguageIsoCodeHelper
+
+```csharp
+LanguageIsoCodeHelper.IsValidLanguageCode("hy-AM");   // true
+LanguageIsoCodeHelper.GetName("hy-AM");                // "Armenian (Armenia)"
+LanguageIsoCodeHelper.GetCode("Armenian (Armenia)");   // "hy-AM"
+```
+
+Covers 170+ language-region combinations. The lookup table is initialized once at startup.
+
+### PhoneUtil
+
+Normalizes Armenian phone numbers to `+374XXXXXXXX` format from a variety of input formats:
+
+```csharp
+PhoneUtil.TryFormatArmenianMsisdn("(374)91123456", out var formatted);  // "+37491123456"
+PhoneUtil.TryFormatArmenianMsisdn("+374 91 12 34 56", out var formatted); // "+37491123456"
+PhoneUtil.TryFormatArmenianMsisdn("091123456", out var formatted);        // "+37491123456"
+```
+
+Returns `false` and the original input if the number cannot be parsed as an Armenian MSISDN.
+
+### UrlBuilder
+
+```csharp
+var url = UrlBuilder.Create("https://api.example.com/users")
+   .AddParameter("page", "1")
+   .AddParameter("size", "20")
+   .Build();
+// https://api.example.com/users?page=1&size=20
+```
+
+### TimeZone extensions
+
+```csharp
+// Set once at startup from appsettings DefaultTimeZone
+builder.MapDefaultTimeZone();
+
+// Convert any DateTime to the configured zone
+var local = someUtcDateTime.ToDefaultTimeZone();
+```
+
+### IHostEnvironment extensions
+
+```csharp
+env.IsLocal();
+env.IsQa();
+env.IsLocalOrDevelopment();
+env.IsLocalOrDevelopmentOrQa();
+env.GetShortEnvironmentName();  // "local" | "dev" | "qa" | "staging" | ""
+```
+
+### HttpContext extensions
+
+```csharp
+// Mark a response as private (adds X-Private-Endpoint: 1 header)
+context.MarkAsPrivateEndpoint();
+```
+
+### Collection extensions
+
+```csharp
+// IEnumerable / IQueryable
+var filtered = items.WhereIf(condition, x => x.IsActive);
+
+// In operator
+if (status.In(Status.Active, Status.Pending)) { ... }
+```
+
+### Dictionary extensions (zero-allocation via CollectionsMarshal)
+
+```csharp
+dict.GetOrAdd(key, defaultValue);
+dict.TryUpdate(key, newValue);
+```
+
+### JsonConverters
+
+| Converter                 | Behavior                                                   |
+|---------------------------|------------------------------------------------------------|
+| `EnumConverterFactory`    | Accepts enum by name or integer; serializes as name string |
+| `CustomDateOnlyConverter` | Parses and writes `DateOnly` in `dd-MM-yyyy` format        |
+
+Register via `JsonSerializerOptions.Converters` or your `ResponseCrafter` setup.
+
+### MethodTimingStatistics
+
+Development-only benchmarking helper. Not for production use (marked with `#warning`).
+
+```csharp
+var ts = Stopwatch.GetTimestamp();
+DoWork();
+MethodTimingStatistics.RecordExecution("DoWork", ts);
+MethodTimingStatistics.LogAll(logger);
+```
+
+---
+
+## PandaVault
+
+```csharp
+builder.ConfigureWithPandaVault();
+```
+
+Loads secrets from PandaVault on all non-Local environments. On Local, the call is a no-op so local `appsettings.json`
+is used unchanged.
+
+---
+
+## Related Packages
+
+| Package                            | Purpose                                                   |
+|------------------------------------|-----------------------------------------------------------|
+| `Pandatech.ResponseCrafter`        | Consistent API error responses                            |
+| `Pandatech.DistributedCache`       | Redis-backed hybrid cache (required for maintenance mode) |
+| `Pandatech.Crypto`                 | Cryptographic utilities                                   |
+| `Pandatech.FluentMinimalApiMapper` | Minimal API endpoint mapping                              |
+
+---
 
 ## License
 
-MIT License
+MIT
