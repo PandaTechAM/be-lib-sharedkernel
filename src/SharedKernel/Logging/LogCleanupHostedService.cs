@@ -5,6 +5,7 @@ namespace SharedKernel.Logging;
 
 public class LogCleanupHostedService(string logsDirectory, TimeSpan retentionPeriod) : BackgroundService
 {
+   /// <inheritdoc />
    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
    {
       while (!stoppingToken.IsCancellationRequested)

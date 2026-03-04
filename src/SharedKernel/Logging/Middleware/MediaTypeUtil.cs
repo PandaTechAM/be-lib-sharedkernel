@@ -7,7 +7,9 @@ internal static class MediaTypeUtil
    public static string? Normalize(string? contentType)
    {
       if (string.IsNullOrWhiteSpace(contentType))
+      {
          return null;
+      }
 
       try
       {
@@ -35,24 +37,34 @@ internal static class MediaTypeUtil
    public static bool IsMultipartForm(string? contentType) =>
       Normalize(contentType)?.StartsWith("multipart/form-data", StringComparison.OrdinalIgnoreCase) == true;
 
-   public static bool IsFormLike(string? contentType) =>
-      IsFormUrlEncoded(contentType) || IsMultipartForm(contentType);
+   // Normalizes once instead of delegating to IsFormUrlEncoded + IsMultipartForm (which each normalize separately).
+   public static bool IsFormLike(string? contentType)
+   {
+      var mt = Normalize(contentType);
+      return string.Equals(mt, "application/x-www-form-urlencoded", StringComparison.OrdinalIgnoreCase)
+          || mt?.StartsWith("multipart/form-data", StringComparison.OrdinalIgnoreCase) == true;
+   }
 
    public static bool IsTextLike(string? contentType)
    {
       var mt = Normalize(contentType);
       if (string.IsNullOrWhiteSpace(mt))
+      {
          return false;
+      }
 
-      // Check +json suffix
+      // Catches vendor types like application/vnd.api+json
       if (mt.EndsWith("+json", StringComparison.OrdinalIgnoreCase))
+      {
          return true;
+      }
 
-      // Check against known text-like prefixes
       foreach (var prefix in LoggingOptions.TextLikeMediaPrefixes)
       {
          if (mt.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+         {
             return true;
+         }
       }
 
       return false;

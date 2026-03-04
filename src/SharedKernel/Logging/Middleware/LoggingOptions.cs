@@ -11,31 +11,34 @@ public static class LoggingOptions
    /// Sensitive keywords to redact in headers and JSON bodies.
    /// Uses FrozenSet for optimized lookups on static data.
    /// </summary>
-   public static readonly FrozenSet<string> SensitiveKeywords = new[]
-   {
-      "pwd", "pass", "secret", "token", "cookie", "auth",
-      "pan", "cvv", "cvc", "cardholder", "bindingid",
-      "ssn", "tin", "iban", "swift", "bankaccount", "notboundcard"
-   }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
+   public static readonly FrozenSet<string> SensitiveKeywords = new HashSet<string>(
+      [
+         "pwd", "pass", "secret", "token", "cookie", "auth",
+         "pan", "cvv", "cvc", "cardholder", "bindingid",
+         "ssn", "tin", "iban", "swift", "bankaccount", "notboundcard"
+      ],
+      StringComparer.OrdinalIgnoreCase).ToFrozenSet();
 
    /// <summary>
    /// Media type prefixes considered text-like for logging purposes.
    /// </summary>
-   public static readonly FrozenSet<string> TextLikeMediaPrefixes = new[]
-   {
-      "application/json",
-      "application/x-www-form-urlencoded",
-      "text/"
-   }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
+   public static readonly FrozenSet<string> TextLikeMediaPrefixes = new HashSet<string>(
+      [
+         "application/json",
+         "application/x-www-form-urlencoded",
+         "text/"
+      ],
+      StringComparer.OrdinalIgnoreCase).ToFrozenSet();
 
    /// <summary>
    /// Paths to ignore for request logging.
    /// </summary>
-   public static readonly FrozenSet<string> PathsToIgnore = new[]
-   {
-      "/openapi",
-      "/above-board",
-      "/favicon.ico",
-      "/swagger"
-   }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
+   public static readonly FrozenSet<string> PathsToIgnore = new HashSet<string>(
+      [
+         "/openapi",
+         "/above-board",
+         "/favicon.ico",
+         "/swagger"
+      ],
+      StringComparer.OrdinalIgnoreCase).ToFrozenSet();
 }

@@ -25,11 +25,15 @@ internal sealed class CappedResponseBodyStream(Stream inner, int capBytes) : Str
    private void Capture(ReadOnlySpan<byte> source)
    {
       if (_bufferLength >= capBytes)
+      {
          return;
+      }
 
       var toCopy = Math.Min(capBytes - _bufferLength, source.Length);
       if (toCopy <= 0)
+      {
          return;
+      }
 
       source[..toCopy]
          .CopyTo(_buffer.AsSpan(_bufferLength));
@@ -43,11 +47,10 @@ internal sealed class CappedResponseBodyStream(Stream inner, int capBytes) : Str
       Capture(buffer.AsSpan(offset, count));
    }
 
+   // Delegates to the ValueTask overload to unify capture logic and avoid duplication.
    public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
    {
-      await inner.WriteAsync(buffer.AsMemory(offset, count), cancellationToken);
-      TotalWritten += count;
-      Capture(buffer.AsSpan(offset, count));
+      await WriteAsync(buffer.AsMemory(offset, count), cancellationToken);
    }
 
    public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
@@ -65,21 +68,27 @@ internal sealed class CappedResponseBodyStream(Stream inner, int capBytes) : Str
    protected override void Dispose(bool disposing)
    {
       if (_disposed)
+      {
          return;
+      }
 
       _disposed = true;
       ArrayPool<byte>.Shared.Return(_buffer);
       base.Dispose(disposing);
    }
 
-   public override ValueTask DisposeAsync()
+   // Bug fix: original skipped base.DisposeAsync(), leaving the finalizer un-suppressed
+   // and the inner stream without an async-dispose signal through the chain.
+   public override async ValueTask DisposeAsync()
    {
       if (_disposed)
-         return ValueTask.CompletedTask;
+      {
+         return;
+      }
 
       _disposed = true;
       ArrayPool<byte>.Shared.Return(_buffer);
-      return ValueTask.CompletedTask;
+      await base.DisposeAsync();
    }
 
    public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
