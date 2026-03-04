@@ -5,98 +5,78 @@ using Microsoft.Extensions.Logging;
 
 namespace SharedKernel.Logging.Middleware;
 
-internal sealed class SignalRLoggingHubFilter(ILogger<SignalRLoggingHubFilter> logger) : IHubFilter
+internal sealed partial class SignalRLoggingHubFilter(ILogger<SignalRLoggingHubFilter> logger) : IHubFilter
 {
-    public async ValueTask<object?> InvokeMethodAsync(
-        HubInvocationContext invocationContext,
-        Func<HubInvocationContext, ValueTask<object?>> next)
-    {
-        var timestamp = Stopwatch.GetTimestamp();
+   public async ValueTask<object?> InvokeMethodAsync(
+      HubInvocationContext invocationContext,
+      Func<HubInvocationContext, ValueTask<object?>> next)
+   {
+      var timestamp = Stopwatch.GetTimestamp();
 
-        var hubName = invocationContext.Hub.GetType().Name;
-        var connectionId = invocationContext.Context.ConnectionId;
-        var userId = invocationContext.Context.UserIdentifier;
-        var methodName = invocationContext.HubMethodName;
+      var hubName = invocationContext.Hub.GetType().Name;
+      var methodName = invocationContext.HubMethodName;
+      var connectionId = invocationContext.Context.ConnectionId;
+      var userId = invocationContext.Context.UserIdentifier;
 
-        // Serialize and redact arguments
-        var rawArgsJson = JsonSerializer.Serialize(invocationContext.HubMethodArguments);
-        var redactedArgs = RedactionHelper.RedactBody("application/json", rawArgsJson);
+      var rawArgsJson = JsonSerializer.Serialize(invocationContext.HubMethodArguments);
+      var redactedArgs = RedactionHelper.RedactBody("application/json", rawArgsJson);
 
-        var result = await next(invocationContext);
+      var result = await next(invocationContext);
 
-        var elapsedMs = Stopwatch.GetElapsedTime(timestamp).TotalMilliseconds;
+      var elapsedMs = Stopwatch.GetElapsedTime(timestamp).TotalMilliseconds;
 
-        // Convert to JSON string to prevent Elasticsearch field explosion
-        var scope = new Dictionary<string, object?>
-        {
-            ["Args"] = LogFormatting.ToJsonString(redactedArgs),
-            ["Hub"] = hubName,
-            ["ConnId"] = connectionId,
-            ["UserId"] = userId,
-            ["ElapsedMs"] = elapsedMs,
-            ["Kind"] = "SignalR"
-        };
+      LogInvoke(hubName, methodName, elapsedMs, "SignalR", connectionId, userId, LogFormatting.ToJsonString(redactedArgs));
 
-        using (logger.BeginScope(scope))
-        {
-            logger.LogInformation(
-                "[SignalR] {Hub}.{Method} completed in {ElapsedMilliseconds}ms",
-                hubName,
-                methodName,
-                elapsedMs);
-        }
+      return result;
+   }
 
-        return result;
-    }
+   public async Task OnConnectedAsync(HubLifetimeContext context, Func<HubLifetimeContext, Task> next)
+   {
+      var (hub, connId, userId) = ExtractContext(context);
+      LogConnected(hub, "SignalR", connId, userId);
+      await next(context);
+   }
 
-    public async Task OnConnectedAsync(HubLifetimeContext context, Func<HubLifetimeContext, Task> next)
-    {
-        var hubName = context.Hub.GetType().Name;
-        var connectionId = context.Context.ConnectionId;
-        var userId = context.Context.UserIdentifier;
+   public async Task OnDisconnectedAsync(
+      HubLifetimeContext context,
+      Exception? exception,
+      Func<HubLifetimeContext, Exception?, Task> next)
+   {
+      var (hub, connId, userId) = ExtractContext(context);
+      LogDisconnected(hub, "SignalR", connId, userId);
+      await next(context, exception);
+   }
 
-        using (logger.BeginScope(new Dictionary<string, object?>
-        {
-            ["Hub"] = hubName,
-            ["ConnId"] = connectionId,
-            ["UserId"] = userId,
-            ["Kind"] = "SignalR"
-        }))
-        {
-            logger.LogInformation(
-                "[Connected] SignalR {Hub}, ConnId={ConnId}, UserId={UserId} connected.",
-                hubName,
-                connectionId,
-                userId);
-        }
+   private static (string Hub, string? ConnId, string? UserId) ExtractContext(HubLifetimeContext ctx) =>
+      (ctx.Hub.GetType().Name, ctx.Context.ConnectionId, ctx.Context.UserIdentifier);
 
-        await next(context);
-    }
+   // All named placeholders become structured properties in Serilog / Elasticsearch.
+   // Eliminates the BeginScope dictionary allocation and the LogInformation args-array allocation.
 
-    public async Task OnDisconnectedAsync(
-        HubLifetimeContext context,
-        Exception? exception,
-        Func<HubLifetimeContext, Exception?, Task> next)
-    {
-        var hubName = context.Hub.GetType().Name;
-        var connectionId = context.Context.ConnectionId;
-        var userId = context.Context.UserIdentifier;
+   [LoggerMessage(Level = LogLevel.Information,
+      Message = "[SignalR] {Hub}.{HubMethod} completed in {ElapsedMs}ms | {Kind} connId={ConnId} userId={UserId} args={Args}")]
+   private partial void LogInvoke(
+      string hub,
+      string hubMethod,
+      double elapsedMs,
+      string kind,
+      string? connId,
+      string? userId,
+      string args);
 
-        using (logger.BeginScope(new Dictionary<string, object?>
-        {
-            ["Hub"] = hubName,
-            ["ConnId"] = connectionId,
-            ["UserId"] = userId,
-            ["Kind"] = "SignalR"
-        }))
-        {
-            logger.LogInformation(
-                "[Disconnected] SignalR {Hub}, ConnId={ConnId}, UserId={UserId} disconnected gracefully.",
-                hubName,
-                connectionId,
-                userId);
-        }
+   [LoggerMessage(Level = LogLevel.Information,
+      Message = "[Connected] SignalR {Hub} | {Kind} connId={ConnId} userId={UserId}")]
+   private partial void LogConnected(
+      string hub,
+      string kind,
+      string? connId,
+      string? userId);
 
-        await next(context, exception);
-    }
+   [LoggerMessage(Level = LogLevel.Information,
+      Message = "[Disconnected] SignalR {Hub} | {Kind} connId={ConnId} userId={UserId}")]
+   private partial void LogDisconnected(
+      string hub,
+      string kind,
+      string? connId,
+      string? userId);
 }

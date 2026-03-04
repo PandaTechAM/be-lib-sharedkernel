@@ -17,7 +17,7 @@ public static class MassTransitExtension
          // Degrades gracefully on single-node (still works, just no replication).
          x.AddConfigureEndpointsCallback((_, cfg) =>
          {
-            if (cfg is IRabbitMqReceiveEndpointConfigurator rmq)
+            if (cfg is IRabbitMqReceiveEndpointConfigurator rmq && builder.Environment.IsProduction())
             {
                rmq.SetQuorumQueue(3);
             }
