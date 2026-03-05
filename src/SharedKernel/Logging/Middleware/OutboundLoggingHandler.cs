@@ -139,7 +139,7 @@ internal sealed partial class OutboundLoggingHandler(ILogger<OutboundLoggingHand
    // Eliminates the BeginScope dictionary allocation and the LogInformation args-array allocation.
    [LoggerMessage(Level = LogLevel.Information,
       Message = "[HTTP OUT] {Method} {HostPath} -> {StatusCode} in {ElapsedMs}ms | " +
-                "{Kind} q={Query} rqH={RequestHeaders} rqB={RequestBody} rsH={ResponseHeaders} rsB={ResponseBody}")]
+                "{Kind} query={Query} requestHeader={RequestHeaders} requestBody={RequestBody} responseHeader={ResponseHeaders} responseBody={ResponseBody}")]
    private partial void LogHttpOut(string method,
       string hostPath,
       int statusCode,

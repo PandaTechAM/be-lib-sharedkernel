@@ -29,7 +29,8 @@ internal sealed partial class RequestLoggingMiddleware(RequestDelegate next, ILo
       }
       finally
       {
-         var elapsedMs = Stopwatch.GetElapsedTime(timestamp).TotalMilliseconds;
+         var elapsedMs = Stopwatch.GetElapsedTime(timestamp)
+                                  .TotalMilliseconds;
          var (resHeaders, resBody) = await CaptureResponseAsync(context, tee);
 
          context.Response.Body = originalBody;
@@ -145,9 +146,8 @@ internal sealed partial class RequestLoggingMiddleware(RequestDelegate next, ILo
    // Eliminates the BeginScope dictionary allocation and the LogInformation args-array allocation.
    [LoggerMessage(Level = LogLevel.Information,
       Message = "[HTTP IN] {Method} {Path} -> {StatusCode} in {ElapsedMs}ms | " +
-                "{Kind} q={Query} rqH={RequestHeaders} rqB={RequestBody} rsH={ResponseHeaders} rsB={ResponseBody}")]
-   private partial void LogHttpIn(
-      string method,
+                "{Kind} query={Query} requestHeader={RequestHeaders} requestBody={RequestBody} responseHeader={ResponseHeaders} responseBody={ResponseBody}")]
+   private partial void LogHttpIn(string method,
       string? path,
       int statusCode,
       double elapsedMs,
