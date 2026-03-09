@@ -7,6 +7,8 @@ namespace SharedKernel.Extensions;
 
 public static class CorsExtensions
 {
+   private static readonly string[] ExposedHeaders = ["Content-Disposition"];
+
    public static WebApplicationBuilder AddCors(this WebApplicationBuilder builder)
    {
       if (builder.Environment.IsProduction())
@@ -21,7 +23,8 @@ public static class CorsExtensions
                  .WithOrigins(allowedOrigins)
                  .AllowCredentials()
                  .AllowAnyMethod()
-                 .AllowAnyHeader()));
+                 .AllowAnyHeader()
+                 .WithExposedHeaders(ExposedHeaders)));
       }
       else
       {
@@ -30,7 +33,8 @@ public static class CorsExtensions
                  .SetIsOriginAllowed(_ => true)
                  .AllowCredentials()
                  .AllowAnyMethod()
-                 .AllowAnyHeader()));
+                 .AllowAnyHeader()
+                 .WithExposedHeaders(ExposedHeaders)));
       }
 
       return builder;
@@ -45,28 +49,21 @@ public static class CorsExtensions
    private static string[] SplitOrigins(this string input)
    {
       if (string.IsNullOrWhiteSpace(input))
-      {
-         throw new ArgumentException("Cors Origins cannot be null or empty.");
-      }
+         throw new ArgumentException("CORS origins cannot be null or empty.", nameof(input));
 
-      var result = input.Split([';', ','], StringSplitOptions.RemoveEmptyEntries);
+      return input
+             .Split([';', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+             .Where(origin =>
+             {
+                if (ValidationHelper.IsUri(origin, false))
+                {
+                   return true;
+                }
 
-      for (var i = 0; i < result.Length; i++)
-      {
-         result[i] = result[i]
-            .Trim();
-
-         if (ValidationHelper.IsUri(result[i], false))
-         {
-            continue;
-         }
-
-         Console.WriteLine($"Removed invalid cors origin: {result[i]}");
-         result[i] = string.Empty;
-      }
-
-      return result.Where(x => !string.IsNullOrEmpty(x))
-                   .ToArray();
+                Console.WriteLine($"Removed invalid CORS origin: {origin}");
+                return false;
+             })
+             .ToArray();
    }
 
    private static string[] EnsureWwwAndNonWwwVersions(this string[] uris)
@@ -75,39 +72,24 @@ public static class CorsExtensions
 
       foreach (var uri in uris)
       {
-         if (!Uri.TryCreate(uri, UriKind.Absolute, out var parsedUri))
-         {
-            continue;
-         }
+         if (!Uri.TryCreate(uri, UriKind.Absolute, out var parsed)) continue;
 
-         var uriString = parsedUri.ToString()
-                                  .TrimEnd('/');
+         var bare = parsed.Host.StartsWith("www.", StringComparison.OrdinalIgnoreCase)
+            ? parsed.Host[4..]
+            : parsed.Host;
 
-         result.Add(uriString);
-
-
-         var hostWithoutWww = parsedUri.Host.StartsWith("www.")
-            ? parsedUri.Host.Substring(4)
-            : parsedUri.Host;
-
-         var uriWithoutWww = new UriBuilder(parsedUri)
-            {
-               Host = hostWithoutWww
-            }.Uri
-             .ToString()
-             .TrimEnd('/');
-
-         var uriWithWww = new UriBuilder(parsedUri)
-            {
-               Host = "www." + hostWithoutWww
-            }.Uri
-             .ToString()
-             .TrimEnd('/');
-
-         result.Add(uriWithoutWww);
-         result.Add(uriWithWww);
+         result.Add(BuildOrigin(parsed, bare));
+         result.Add(BuildOrigin(parsed, "www." + bare));
       }
 
-      return new List<string>(result).ToArray();
+      return [..result];
    }
+
+   private static string BuildOrigin(Uri source, string host) =>
+      new UriBuilder(source)
+         {
+            Host = host
+         }.Uri
+          .ToString()
+          .TrimEnd('/');
 }
