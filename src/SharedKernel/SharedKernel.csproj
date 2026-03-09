@@ -21,8 +21,8 @@
         <PackageIcon>pandatech.png</PackageIcon>
         <PackageReadmeFile>README.md</PackageReadmeFile>
 
-        <Version>2.2.2</Version>
-        <PackageReleaseNotes>Request and Response logging modernized and has extreme perf boost for logging</PackageReleaseNotes>
+        <Version>2.2.3</Version>
+        <PackageReleaseNotes>Cors now will start to expose Content-Disposition header</PackageReleaseNotes>
 
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <IncludeSymbols>true</IncludeSymbols>
