@@ -21,11 +21,30 @@ internal sealed partial class SignalRLoggingHubFilter(ILogger<SignalRLoggingHubF
       var rawArgsJson = JsonSerializer.Serialize(invocationContext.HubMethodArguments);
       var redactedArgs = RedactionHelper.RedactBody("application/json", rawArgsJson);
 
-      var result = await next(invocationContext);
+      object? result;
+      try
+      {
+         result = await next(invocationContext);
+      }
+      catch (Exception ex)
+      {
+         var elapsedMs = Stopwatch.GetElapsedTime(timestamp).TotalMilliseconds;
 
-      var elapsedMs = Stopwatch.GetElapsedTime(timestamp).TotalMilliseconds;
+         var errorBody = new Dictionary<string, object?>
+         {
+            ["exceptionType"] = ex.GetType().Name,
+            ["message"] = ex.Message
+         };
 
-      LogInvoke(hubName, methodName, elapsedMs, "SignalR", connectionId, userId, LogFormatting.ToJsonString(redactedArgs));
+         LogInvokeFailure(ex, hubName, methodName, elapsedMs, "SignalR", connectionId, userId,
+            LogFormatting.ToJsonString(redactedArgs), LogFormatting.ToJsonString(errorBody));
+
+         throw;
+      }
+
+      var elapsed = Stopwatch.GetElapsedTime(timestamp).TotalMilliseconds;
+
+      LogInvoke(hubName, methodName, elapsed, "SignalR", connectionId, userId, LogFormatting.ToJsonString(redactedArgs));
 
       return result;
    }
@@ -63,6 +82,19 @@ internal sealed partial class SignalRLoggingHubFilter(ILogger<SignalRLoggingHubF
       string? connId,
       string? userId,
       string args);
+
+   [LoggerMessage(Level = LogLevel.Warning,
+      Message = "[SignalR] {Hub}.{HubMethod} FAILED in {ElapsedMs}ms | {Kind} connId={ConnId} userId={UserId} args={Args} error={ErrorBody}")]
+   private partial void LogInvokeFailure(
+      Exception ex,
+      string hub,
+      string hubMethod,
+      double elapsedMs,
+      string kind,
+      string? connId,
+      string? userId,
+      string args,
+      string errorBody);
 
    [LoggerMessage(Level = LogLevel.Information,
       Message = "[Connected] SignalR {Hub} | {Kind} connId={ConnId} userId={UserId}")]

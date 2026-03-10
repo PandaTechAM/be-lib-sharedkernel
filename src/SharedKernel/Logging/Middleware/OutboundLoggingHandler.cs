@@ -12,10 +12,36 @@ internal sealed partial class OutboundLoggingHandler(ILogger<OutboundLoggingHand
 
       var (reqHeaders, reqBody) = await CaptureRequestAsync(request, cancellationToken);
 
-      var response = await base.SendAsync(request, cancellationToken);
+      HttpResponseMessage response;
+      try
+      {
+         response = await base.SendAsync(request, cancellationToken);
+      }
+      catch (Exception ex)
+      {
+         var elapsedMs = Stopwatch.GetElapsedTime(timestamp).TotalMilliseconds;
 
-      var elapsedMs = Stopwatch.GetElapsedTime(timestamp)
-                               .TotalMilliseconds;
+         var errorBody = new Dictionary<string, object?>
+         {
+            ["exceptionType"] = ex.GetType().Name,
+            ["message"] = ex.Message
+         };
+
+         LogHttpOutFailure(
+            ex,
+            request.Method.Method,
+            request.RequestUri?.GetLeftPart(UriPartial.Path) ?? "",
+            elapsedMs,
+            "HttpOut",
+            string.IsNullOrEmpty(request.RequestUri?.Query) ? null : request.RequestUri!.Query,
+            LogFormatting.ToJsonString(reqHeaders),
+            LogFormatting.ToJsonString(reqBody),
+            LogFormatting.ToJsonString(errorBody));
+
+         throw;
+      }
+
+      var elapsed = Stopwatch.GetElapsedTime(timestamp).TotalMilliseconds;
 
       var (resHeaders, resBody) = await CaptureResponseAsync(response, cancellationToken);
 
@@ -23,7 +49,7 @@ internal sealed partial class OutboundLoggingHandler(ILogger<OutboundLoggingHand
          request.Method.Method,
          request.RequestUri?.GetLeftPart(UriPartial.Path) ?? "",
          (int)response.StatusCode,
-         elapsedMs,
+         elapsed,
          "HttpOut",
          string.IsNullOrEmpty(request.RequestUri?.Query) ? null : request.RequestUri!.Query,
          LogFormatting.ToJsonString(reqHeaders),
@@ -150,4 +176,17 @@ internal sealed partial class OutboundLoggingHandler(ILogger<OutboundLoggingHand
       string requestBody,
       string responseHeaders,
       string responseBody);
+
+   [LoggerMessage(Level = LogLevel.Warning,
+      Message = "[HTTP OUT] {Method} {HostPath} -> FAILED in {ElapsedMs}ms | " +
+                "{Kind} query={Query} requestHeader={RequestHeaders} requestBody={RequestBody} error={ErrorBody}")]
+   private partial void LogHttpOutFailure(Exception ex,
+      string method,
+      string hostPath,
+      double elapsedMs,
+      string kind,
+      string? query,
+      string requestHeaders,
+      string requestBody,
+      string errorBody);
 }
