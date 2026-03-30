@@ -221,7 +221,8 @@ public static class SerilogExtensions
       return !string.IsNullOrEmpty(sql) &&
              // Match table references, regardless of quoting/schema
              // e.g. outbox_messages, "outbox_messages", [outbox_messages], public.outbox_messages
-             sql.Contains("outbox_messages", StringComparison.OrdinalIgnoreCase);
+             (sql.Contains("outbox_messages", StringComparison.OrdinalIgnoreCase) ||
+             sql.Contains("inbox_messages", StringComparison.OrdinalIgnoreCase));
 
       // Grab the structured SQL (EF logs it as 'commandText'; some sinks rename to 'CommandText')
       static string? Get(LogEvent e, string name)

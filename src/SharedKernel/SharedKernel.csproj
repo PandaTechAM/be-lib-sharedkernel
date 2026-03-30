@@ -21,7 +21,7 @@
         <PackageIcon>pandatech.png</PackageIcon>
         <PackageReadmeFile>README.md</PackageReadmeFile>
 
-        <Version>2.2.4</Version>
+        <Version>2.2.5</Version>
         <PackageReleaseNotes>Log HTTP out and SignalR hub invocation failures (timeout, connection errors, exceptions) that were previously silently lost</PackageReleaseNotes>
 
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
