@@ -5,7 +5,8 @@ namespace SharedKernel.Maintenance;
 
 internal sealed class MaintenanceMiddleware(RequestDelegate next, MaintenanceState state)
 {
-   private static readonly PathString[] AdminPrefixes = ["/api/admin", "/hub/admin"]; // add "/admin" if needed
+   // TODO: Consider making admin prefixes configurable for projects with different path conventions
+   private static readonly PathString[] AdminPrefixes = ["/api/admin", "/hub/admin"];
 
    public async Task InvokeAsync(HttpContext httpContext)
    {

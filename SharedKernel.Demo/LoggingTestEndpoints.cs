@@ -175,37 +175,6 @@ public class LoggingTestEndpoints : IEndpoint
          })
          .WithSummary("Outbound FormUrlEncodedContent");
       
-      grp.MapGet("/outbound/form-as-string", async (IHttpClientFactory factory) =>
-         {
-            var client = factory.CreateClient("RandomApiClient");
-      
-            // Use FormUrlEncodedContent instead of StringContent for proper form encoding
-            var formContent = new FormUrlEncodedContent(new Dictionary<string, string>
-            {
-               ["grant_type"] = "password",
-               ["username"] = "testuser",
-               ["password"] = "secret123",
-               ["scope"] = "openid"
-            });
-
-            var response = await client.PostAsync("tests/form-urlencoded", formContent);
-      
-            // Handle non-success responses gracefully
-            if (!response.IsSuccessStatusCode)
-            {
-               var errorBody = await response.Content.ReadAsStringAsync();
-               return Results.Json(new { 
-                  success = false, 
-                  statusCode = (int)response.StatusCode,
-                  error = errorBody 
-               });
-            }
-      
-            return Results.Ok(await response.Content.ReadFromJsonAsync<FormUrlDto>());
-         })
-         .WithSummary("Outbound form-urlencoded - now using FormUrlEncodedContent for proper binding");
-
-
       grp.MapGet("/outbound/multipart", async (IHttpClientFactory factory) =>
          {
             var client = factory.CreateClient("RandomApiClient");

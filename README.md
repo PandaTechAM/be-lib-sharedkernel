@@ -72,12 +72,14 @@ app
    .UseResponseCrafter()
    .UseCors()
    .MapMinimalApis()
-   .EnsureHealthy()
    .MapHealthCheckEndpoints()
    .MapPrometheusExporterEndpoints()
+   .EnsureHealthy()
    .ClearAssemblyRegistry()
    .UseOpenApi()
    .MapControllers();
+
+app.MapMaintenanceEndpoint();
 
 app.LogStartSuccess();
 app.Run();
@@ -87,8 +89,8 @@ app.Run();
 
 ## Assembly Registry
 
-`AssemblyRegistry` is a thread-safe static list used to pass your project's assemblies from the builder phase to the
-app phase without repeating `typeof(Program).Assembly` everywhere.
+`AssemblyRegistry` is a thread-safe static collection used to pass your project's assemblies from the builder phase to
+the app phase without repeating `typeof(Program).Assembly` everywhere.
 
 ```csharp
 // Add once at startup
@@ -105,8 +107,8 @@ app.ClearAssemblyRegistry();
 
 ## OpenAPI
 
-Wraps `Microsoft.AspNetCore.OpenApi` with SwaggerUI and Scalar, supporting multiple API documents, custom security
-schemes, and enum string descriptions.
+Wraps `Microsoft.AspNetCore.OpenApi` with SwaggerUI and Scalar, generating **OpenAPI 3.1** specs. Supports multiple API
+documents, custom security schemes, and enum string descriptions (including nullable enums).
 
 ### Registration
 
@@ -208,7 +210,7 @@ builder.AddSerilog(
 ### Log Backends
 
 | Value           | Output format                                     |
-|-----------------|---------------------------------------------------|
+|-----------------|----------------------------------------------------|
 | `None`          | Console only, no file output                      |
 | `ElasticSearch` | ECS JSON to file (forward with Filebeat/Logstash) |
 | `Loki`          | Loki JSON to file (forward with Promtail)         |
@@ -251,9 +253,12 @@ every 12 hours and deletes files older than `daysToRetain`.
 app.UseRequestLogging();  // logs method, path, status code, elapsed ms, redacted headers/body
 ```
 
-Paths under `/swagger`, `/openapi`, `/above-board`, and `/favicon.ico` are silently skipped. Sensitive header names
-(auth, token, cookie, pan, cvv, etc.) and matching JSON properties are redacted automatically. Bodies over 16 KB are
+Paths under `/swagger`, `/openapi`, `/above-board`, and `/favicon.ico` are silently skipped. Bodies over 16 KB are
 omitted.
+
+**Redaction is key-based:** header names and JSON property names containing sensitive keywords (`auth`, `token`,
+`pass`, `secret`, `cookie`, `pan`, `cvv`, `ssn`, `tin`, `iban`, etc.) are automatically replaced with `[REDACTED]`.
+Values are never inspected — only the property/header name determines whether redaction applies.
 
 ### Outbound logging
 
@@ -283,6 +288,8 @@ app.LogStartSuccess();        // prints success banner with elapsed init time
 Registers MediatR with a validation pipeline behavior that runs all FluentValidation validators before the handler.
 Validation failures throw `BadRequestException` from `Pandatech.ResponseCrafter`.
 
+> **Note:** MediatR is pinned to version 12.5.0 — the last MIT-licensed release.
+
 ### Registration
 
 ```csharp
@@ -311,6 +318,7 @@ RuleFor(x => x.Phone).IsPhoneNumber();           // Panda format: (374)91123456
 RuleFor(x => x.Contact).IsEmailOrPhoneNumber();
 RuleFor(x => x.Payload).IsValidJson();
 RuleFor(x => x.Content).IsXssSanitized();
+RuleFor(x => x.Card).IsCreditCardNumber();
 ```
 
 **Single file (`IFormFile`)**
@@ -371,8 +379,11 @@ The list accepts comma- or semicolon-separated URLs. Invalid entries are logged 
 
 ## Resilience Pipelines
 
-Built on Polly via `Microsoft.Extensions.Http.Resilience`. Provides retry, circuit breaker, and timeout policies for
-`HttpClient` calls.
+Built on Polly via `Microsoft.Extensions.Http.Resilience`. Two pipeline variants share the same configuration constants
+from a single source of truth:
+
+- **General pipeline** — registered globally via `AddResilienceDefaultPipeline()` on the builder, or used manually via `ResiliencePipelineProvider<string>`
+- **HTTP pipeline** — attached per-client via `AddResilienceDefaultPipeline()` on an `IHttpClientBuilder`, with additional `Retry-After` header support for 429 responses
 
 ### Options
 
@@ -404,12 +415,15 @@ public class MyService(ResiliencePipelineProvider<string> provider)
 
 ### Default pipeline policies
 
-| Policy          | Configuration                                          |
-|-----------------|--------------------------------------------------------|
-| Retry (429)     | 5 retries, exponential backoff, respects `Retry-After` |
-| Retry (5xx/408) | 7 retries, exponential backoff from 800ms              |
-| Circuit breaker | Opens at 50% failure rate over 30 s, min 200 requests  |
-| Timeout         | 8 seconds per attempt                                  |
+| Policy          | Configuration                                                               |
+|-----------------|-----------------------------------------------------------------------------|
+| Retry (429)     | 5 retries, exponential backoff with jitter, respects `Retry-After` header   |
+| Retry (5xx/408) | 7 retries, exponential backoff from 800 ms with jitter                      |
+| Circuit breaker | Opens at 50% failure rate over 30 s (min 200 requests), 45 s break duration |
+| Timeout         | 8 seconds per attempt                                                       |
+
+The circuit breaker only trips on transient failures (`HttpRequestException`, `TaskCanceledException`) and non-success
+HTTP status codes. Programming errors like `ArgumentException` will not open the circuit.
 
 ---
 
@@ -481,8 +495,8 @@ Set the following in your environment config or as an environment variable to en
 ```csharp
 builder.AddHealthChecks();
 
-app.EnsureHealthy();           // runs health checks at startup; throws if anything is unhealthy
 app.MapHealthCheckEndpoints(); // registers /above-board/ping and /above-board/health
+app.EnsureHealthy();           // runs health checks at startup; throws if anything is unhealthy
 ```
 
 `EnsureHealthy` skips MassTransit bus checks during startup (those take time to connect). The ping endpoint returns
@@ -507,8 +521,11 @@ Three-mode global switch. Requires `Pandatech.DistributedCache` to synchronize s
 
 ```csharp
 builder.AddMaintenanceMode();
-app.UseMaintenanceMode();       // place before UseResponseCrafter and UseCors
+app.UseMaintenanceMode();       // place after UseRequestLogging and before UseResponseCrafter
 ```
+
+All calls are idempotent and safe to call multiple times. Registration state is tracked via DI, so
+multiple `WebApplicationFactory` test hosts in the same process work correctly.
 
 ### Controlling maintenance mode
 
@@ -542,7 +559,7 @@ public class AdminService(MaintenanceState state)
 
 ### ValidationHelper
 
-Static regex-based validators with a 50ms timeout per expression.
+Static regex-based validators with a 50 ms timeout per expression.
 
 ```csharp
 ValidationHelper.IsEmail("user@example.com");

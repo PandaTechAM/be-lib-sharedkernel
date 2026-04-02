@@ -70,49 +70,5 @@ internal static class OpenApiOptionsExtensions
 
          return options;
       }
-
-      // internal OpenApiOptions UseApiSecuritySchemes(OpenApiConfig? config)
-      // {
-      //    if (config?.SecuritySchemes is not { Count: > 0 })
-      //    {
-      //       return options;
-      //    }
-      //
-      //    options.AddDocumentTransformer((document, _, _) =>
-      //    {
-      //       document.Components ??= new OpenApiComponents();
-      //       document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>(StringComparer.Ordinal);
-      //
-      //       foreach (var scheme in config.SecuritySchemes)
-      //       {
-      //          document.Components.SecuritySchemes[scheme.HeaderName] = new OpenApiSecurityScheme
-      //          {
-      //             Type = SecuritySchemeType.ApiKey,
-      //             In = ParameterLocation.Header,
-      //             Name = scheme.HeaderName,
-      //             Description = scheme.Description
-      //          };
-      //       }
-      //
-      //       return Task.CompletedTask;
-      //    });
-      //
-      //    options.AddOperationTransformer((operation, _, _) =>
-      //    {
-      //       operation.Security ??= new List<OpenApiSecurityRequirement>();
-      //
-      //       foreach (var scheme in config.SecuritySchemes)
-      //       {
-      //          operation.Security.Add(new OpenApiSecurityRequirement
-      //          {
-      //             [new OpenApiSecuritySchemeReference(scheme.HeaderName)] = []
-      //          });
-      //       }
-      //
-      //       return Task.CompletedTask;
-      //    });
-      //
-      //    return options;
-      // }
    }
 }

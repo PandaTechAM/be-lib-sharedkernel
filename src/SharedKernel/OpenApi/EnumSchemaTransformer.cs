@@ -9,7 +9,7 @@ internal class EnumSchemaTransformer : IOpenApiSchemaTransformer
       OpenApiSchemaTransformerContext context,
       CancellationToken cancellationToken)
    {
-      var type = context.JsonTypeInfo.Type;
+      var type = Nullable.GetUnderlyingType(context.JsonTypeInfo.Type) ?? context.JsonTypeInfo.Type;
 
       if (!type.IsEnum)
       {

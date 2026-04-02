@@ -84,8 +84,7 @@ internal static class RedactionHelper
          };
       }
 
-      var value = ContainsSensitiveKeyword(raw) ? Redacted : raw;
-      return new Dictionary<string, object?> { ["text"] = value };
+      return new Dictionary<string, object?> { ["text"] = raw };
    }
 
    public static Dictionary<string, string> RedactFormFields(IFormCollection form)
@@ -145,7 +144,7 @@ internal static class RedactionHelper
 
    internal static string RedactFormValue(string key, string value)
    {
-      if (IsSensitiveKey(key) || ContainsSensitiveKeyword(value))
+      if (IsSensitiveKey(key))
       {
          return Redacted;
       }
@@ -202,12 +201,9 @@ internal static class RedactionHelper
          return $"[OMITTED: exceeds-limit ~{bytes / 1024}KB]";
       }
 
-      return ContainsSensitiveKeyword(value) ? Redacted : value;
+      return value;
    }
 
    private static bool IsSensitiveKey(string key) =>
       LoggingOptions.SensitiveKeywords.Any(k => key.Contains(k, StringComparison.OrdinalIgnoreCase));
-
-   private static bool ContainsSensitiveKeyword(string value) =>
-      LoggingOptions.SensitiveKeywords.Any(k => value.Contains(k, StringComparison.OrdinalIgnoreCase));
 }
