@@ -21,7 +21,7 @@
         <PackageIcon>pandatech.png</PackageIcon>
         <PackageReadmeFile>README.md</PackageReadmeFile>
 
-        <Version>2.2.5</Version>
+        <Version>2.2.6</Version>
         <PackageReleaseNotes>Upgrade to OpenAPI 3.1, fix nullable enum schema descriptions, scope circuit breaker to transient exceptions only, consolidate resilience config into single source of truth, switch to DI-based idempotency guards, key-based-only log redaction</PackageReleaseNotes>
 
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
