@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http.Resilience;
 using Polly;
@@ -15,7 +15,7 @@ public static class ResilienceExtensions
             pipelineBuilder.AddRetry(ResilienceDefaultPipelineProvider.DefaultNetworkRetryOptions)
                            .AddRetry(ResilienceDefaultPipelineProvider.TooManyRequestsRetryOptions)
                            .AddCircuitBreaker(ResilienceDefaultPipelineProvider.DefaultCircuitBreakerOptions)
-                           .AddTimeout(TimeSpan.FromSeconds(8));
+                           .AddTimeout(ResilienceDefaultPipelineProvider.AttemptTimeout);
          });
       return builder;
    }
@@ -25,10 +25,10 @@ public static class ResilienceExtensions
       return builder.AddResilienceHandler("DefaultPipeline",
          resilienceBuilder =>
          {
-            resilienceBuilder.AddRetry(ResilienceHttpOptions.DefaultTooManyRequestsRetryOptions)
-                             .AddRetry(ResilienceHttpOptions.DefaultNetworkRetryOptions)
-                             .AddCircuitBreaker(ResilienceHttpOptions.DefaultCircuitBreakerOptions)
-                             .AddTimeout(TimeSpan.FromSeconds(8));
+            resilienceBuilder.AddRetry(ResilienceDefaultPipelineProvider.HttpTooManyRequestsRetryOptions)
+                             .AddRetry(ResilienceDefaultPipelineProvider.HttpNetworkRetryOptions)
+                             .AddCircuitBreaker(ResilienceDefaultPipelineProvider.HttpCircuitBreakerOptions)
+                             .AddTimeout(ResilienceDefaultPipelineProvider.AttemptTimeout);
          });
    }
 }

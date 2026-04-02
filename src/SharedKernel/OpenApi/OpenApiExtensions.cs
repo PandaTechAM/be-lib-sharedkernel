@@ -30,7 +30,7 @@ public static class OpenApiExtensions
          builder.Services.AddOpenApi(document.GroupName,
             options =>
             {
-               options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0; //TODO: Change someday when swagger will be upgraded
+               options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_1;
                options.AddDocumentTransformer<RemoveServersTransformer>();
                options.AddDocument(document, openApiConfiguration);
                options.AddSchemaTransformer<EnumSchemaTransformer>();

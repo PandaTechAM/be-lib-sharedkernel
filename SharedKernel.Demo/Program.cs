@@ -1,9 +1,6 @@
-using System.Text.Json.Serialization;
 using DistributedCache.Extensions;
 using FileExporter.Extensions;
 using FluentMinimalApiMapper;
-using GridifyExtensions.Models;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ResponseCrafter.Enums;
 using ResponseCrafter.Extensions;
@@ -34,7 +31,7 @@ builder
    .AddControllers(AssemblyRegistry.ToArray())
    .AddMediatrWithBehaviors(AssemblyRegistry.ToArray())
    .AddResilienceDefaultPipeline()
-   .AddDistributedSignalR("localhost:6379", "app_name") // or .AddSignalR()
+   .AddDistributedSignalR("localhost:6379", "app_name")
    .AddDistributedCache(o =>
    {
       o.RedisConnectionString = "localhost:6379";
@@ -46,13 +43,6 @@ builder
    .AddCors()
    .AddOutboundLoggingHandler()
    .AddHealthChecks();
-
-
-builder.Services.ConfigureHttpJsonOptions(options =>
-{
-   options.SerializerOptions.PropertyNamingPolicy = null;
-});
-
 
 builder.Services
        .AddHttpClient("RandomApiClient",
@@ -66,7 +56,6 @@ builder.Services
 builder.UseSqlLiteInMemory();
 
 var app = builder.Build();
-
 
 app
    .UseRequestLogging()
@@ -82,55 +71,17 @@ app
    .MapControllers();
 
 app.CreateInMemoryDb();
-
 app.MapMaintenanceEndpoint();
 
-
+// Tests EF outbox_messages log filtering (see SerilogExtensions.IsEfOutboxQuery)
 app.MapGet("/outbox-count",
    async (InMemoryContext db) =>
    {
       var cnt = await db.OutboxMessages.CountAsync();
-      return TypedResults.Ok(new
-      {
-         count = cnt
-      });
+      return TypedResults.Ok(new { count = cnt });
    });
-
-app.MapPost("/receive-file", ([FromForm] IFormFile file) => TypedResults.Ok())
-   .DisableAntiforgery();
-
-app.MapPost("/params", ([AsParameters] TestTypes testTypes) => TypedResults.Ok(testTypes));
-
-app.MapPost("/body",
-   ([FromBody] TestTypes testTypes, HttpContext httpContext) =>
-   {
-      httpContext.Response.ContentType = "application/json";
-      httpContext.Response.Headers.Append("Custom-Header-Response", "CustomValue");
-
-      return TypedResults.Ok(testTypes);
-   });
-
-app.MapGet("test-query", ([FromQuery] long id) => TypedResults.Ok(id));
 
 app.MapHub<MessageHub>("/hub");
 
 app.LogStartSuccess();
 app.Run();
-
-namespace SharedKernel.Demo
-{
-   public class TestTypes
-   {
-      public AnimalType AnimalType { get; set; } = AnimalType.Dog;
-      public required string JustText { get; set; } = "Hello";
-      public int JustNumber { get; set; } = 42;
-      public string? NullableText { get; set; }
-   }
-
-   public enum AnimalType
-   {
-      Dog,
-      Cat,
-      Fish
-   }
-}

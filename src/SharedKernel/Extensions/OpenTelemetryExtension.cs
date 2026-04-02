@@ -50,7 +50,6 @@ public static class OpenTelemetryExtension
 
       builder.Services.ConfigureOpenTelemetryLoggerProvider(l => l.AddOtlpExporter());
       builder.Services.ConfigureOpenTelemetryTracerProvider(t => t.AddOtlpExporter());
-      builder.Services.ConfigureOpenTelemetryTracerProvider(t => t.AddOtlpExporter());
 
       return builder;
    }

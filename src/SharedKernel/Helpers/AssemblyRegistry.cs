@@ -5,7 +5,7 @@ namespace SharedKernel.Helpers;
 
 public static class AssemblyRegistry
 {
-   private static readonly List<Assembly> Assemblies = [];
+   private static readonly HashSet<Assembly> Assemblies = [];
 
    public static void Add(params Assembly[] assemblies)
    {
@@ -13,10 +13,7 @@ public static class AssemblyRegistry
       {
          foreach (var assembly in assemblies)
          {
-            if (!Assemblies.Contains(assembly))
-            {
-               Assemblies.Add(assembly);
-            }
+            Assemblies.Add(assembly);
          }
       }
    }

@@ -22,7 +22,7 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
 
         <Version>2.2.5</Version>
-        <PackageReleaseNotes>Log HTTP out and SignalR hub invocation failures (timeout, connection errors, exceptions) that were previously silently lost</PackageReleaseNotes>
+        <PackageReleaseNotes>Upgrade to OpenAPI 3.1, fix nullable enum schema descriptions, scope circuit breaker to transient exceptions only, consolidate resilience config into single source of truth, switch to DI-based idempotency guards, key-based-only log redaction</PackageReleaseNotes>
 
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <IncludeSymbols>true</IncludeSymbols>
@@ -55,11 +55,11 @@
         <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.3"/>
         <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="10.0.3"/>
         <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.3"/>
-        <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.3.0"/>
-        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.0"/>
+        <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.4.0" />
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.1" />
         <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.15.0-beta.1"/>
-        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.0"/>
-        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.0"/>
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.1" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.1" />
         <PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.15.0-beta.1"/>
         <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.15.0"/>
         <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.0"/>
@@ -71,11 +71,11 @@
         <PackageReference Include="Pandatech.FluentMinimalApiMapper" Version="4.0.0"/>
         <PackageReference Include="Pandatech.PandaVaultClient" Version="6.0.0"/>
         <PackageReference Include="Pandatech.ResponseCrafter" Version="7.0.0"/>
-        <PackageReference Include="Scalar.AspNetCore" Version="2.13.3" />
+        <PackageReference Include="Scalar.AspNetCore" Version="2.13.18" />
         <PackageReference Include="Serilog.AspNetCore" Version="10.0.0"/>
         <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0"/>
         <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="8.3.2"/>
-        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.1.4"/>
+        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.1.7" />
     </ItemGroup>
 
     <!-- Analyzers only — never shipped to consumers -->
