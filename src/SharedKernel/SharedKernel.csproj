@@ -21,8 +21,8 @@
         <PackageIcon>pandatech.png</PackageIcon>
         <PackageReadmeFile>README.md</PackageReadmeFile>
 
-        <Version>2.2.7</Version>
-        <PackageReleaseNotes>Downgrade OpenAPI 3.1 to 3.0</PackageReleaseNotes>
+        <Version>2.2.8</Version>
+        <PackageReleaseNotes>Restore OpenAPI 3.1 and fix numeric schemas rendered as string union (workaround for dotnet/aspnetcore#58882, #64145)</PackageReleaseNotes>
 
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <IncludeSymbols>true</IncludeSymbols>

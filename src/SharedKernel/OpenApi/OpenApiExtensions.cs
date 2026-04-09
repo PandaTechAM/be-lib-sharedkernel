@@ -30,10 +30,11 @@ public static class OpenApiExtensions
          builder.Services.AddOpenApi(document.GroupName,
             options =>
             {
-               options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0;
+               options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_1;
                options.AddDocumentTransformer<RemoveServersTransformer>();
                options.AddDocument(document, openApiConfiguration);
                options.AddSchemaTransformer<EnumSchemaTransformer>();
+               options.AddSchemaTransformer<NumericStringUnionTransformer>();
                options.UseApiSecuritySchemes(openApiConfiguration);
                options.AddDocumentTransformer<TagOrderingTransformer>();
                configureOptions?.Invoke(options);
