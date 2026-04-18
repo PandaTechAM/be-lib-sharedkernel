@@ -43,7 +43,9 @@ public static class HealthCheckExtensions
          .Produces<string>()
          .WithTags(EndpointConstants.TagName);
 
-      app.MapHealthChecks($"{EndpointConstants.BasePath}/health",
+      app.MapHealthChecks($"{EndpointConstants.BasePath}/health");
+
+      app.MapHealthChecks($"{EndpointConstants.BasePath}/health/detailed",
          new HealthCheckOptions
          {
             ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse

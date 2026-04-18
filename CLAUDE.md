@@ -65,7 +65,8 @@ Use `ICommand<T>` / `ICommand` for writes, `IQuery<T>` / `IQuery` for reads. Han
 
 All infrastructure endpoints live under `/above-board/`:
 - `GET /above-board/ping` — returns "pong"
-- `GET /above-board/health` — full health check JSON
+- `GET /above-board/health` — minimal health status (plain text: `Healthy`, `Degraded`, or `Unhealthy`)
+- `GET /above-board/health/detailed` — full health check JSON (UI format, exposes per-check details)
 - `GET /above-board/prometheus` — metrics scrape
 - `PUT /above-board/maintenance` — set maintenance mode
 

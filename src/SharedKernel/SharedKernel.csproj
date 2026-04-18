@@ -21,8 +21,8 @@
         <PackageIcon>pandatech.png</PackageIcon>
         <PackageReadmeFile>README.md</PackageReadmeFile>
 
-        <Version>2.2.8</Version>
-        <PackageReleaseNotes>Restore OpenAPI 3.1 and fix numeric schemas rendered as string union (workaround for dotnet/aspnetcore#58882, #64145)</PackageReleaseNotes>
+        <Version>2.3.0</Version>
+        <PackageReleaseNotes>Split health endpoint: /above-board/health now returns a minimal status (Healthy/Degraded/Unhealthy); full JSON moved to /above-board/health/detailed.</PackageReleaseNotes>
 
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <IncludeSymbols>true</IncludeSymbols>
@@ -55,10 +55,10 @@
         <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.3"/>
         <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="10.0.3"/>
         <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.3"/>
-        <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.4.0" />
-        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.1" />
+        <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.5.0" />
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.2" />
         <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.15.0-beta.1"/>
-        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.1" />
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.2" />
         <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.1" />
         <PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.15.0-beta.1"/>
         <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.15.0"/>
@@ -71,7 +71,7 @@
         <PackageReference Include="Pandatech.FluentMinimalApiMapper" Version="4.0.0"/>
         <PackageReference Include="Pandatech.PandaVaultClient" Version="6.0.0"/>
         <PackageReference Include="Pandatech.ResponseCrafter" Version="7.0.0"/>
-        <PackageReference Include="Scalar.AspNetCore" Version="2.13.18" />
+        <PackageReference Include="Scalar.AspNetCore" Version="2.14.1" />
         <PackageReference Include="Serilog.AspNetCore" Version="10.0.0"/>
         <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0"/>
         <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="8.3.2"/>

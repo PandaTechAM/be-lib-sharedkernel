@@ -495,12 +495,14 @@ Set the following in your environment config or as an environment variable to en
 ```csharp
 builder.AddHealthChecks();
 
-app.MapHealthCheckEndpoints(); // registers /above-board/ping and /above-board/health
+app.MapHealthCheckEndpoints(); // registers /above-board/ping, /above-board/health and /above-board/health/detailed
 app.EnsureHealthy();           // runs health checks at startup; throws if anything is unhealthy
 ```
 
 `EnsureHealthy` skips MassTransit bus checks during startup (those take time to connect). The ping endpoint returns
-`"pong"` as plain text. The health endpoint returns the full AspNetCore.HealthChecks.UI JSON format.
+`"pong"` as plain text. `/above-board/health` returns a minimal plain-text status (`Healthy`, `Degraded`, or
+`Unhealthy`) safe to expose publicly to load balancers and uptime probes. `/above-board/health/detailed` returns
+the full AspNetCore.HealthChecks.UI JSON format with per-check details and should be kept behind internal access.
 
 Additional health check registrations follow the standard `builder.Services.AddHealthChecks().Add...()` pattern — the
 library does not wrap those.
