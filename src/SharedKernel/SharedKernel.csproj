@@ -21,7 +21,7 @@
         <PackageIcon>pandatech.png</PackageIcon>
         <PackageReadmeFile>README.md</PackageReadmeFile>
 
-        <Version>2.3.0</Version>
+        <Version>2.3.1</Version>
         <PackageReleaseNotes>Split health endpoint: /above-board/health now returns a minimal status (Healthy/Degraded/Unhealthy); full JSON moved to /above-board/health/detailed.</PackageReleaseNotes>
 
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -35,52 +35,52 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="..\..\pandatech.png" Pack="true" PackagePath="\"/>
-        <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
+        <None Include="..\..\pandatech.png" Pack="true" PackagePath="\" />
+        <None Include="..\..\README.md" Pack="true" PackagePath="\" />
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Include="OpenApi\UiAssets\**\*"/>
+        <EmbeddedResource Include="OpenApi\UiAssets\**\*" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="AspNetCore.HealthChecks.Prometheus.Metrics" Version="9.0.0"/>
-        <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0"/>
-        <PackageReference Include="Elastic.CommonSchema.Serilog" Version="9.0.0"/>
-        <PackageReference Include="FluentDateTime" Version="3.0.0"/>
-        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1"/>
-        <PackageReference Include="HtmlSanitizer" Version="9.0.892"/>
-        <PackageReference Include="MediatR" Version="[12.5.0]"/>
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3"/>
-        <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.3"/>
-        <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="10.0.3"/>
-        <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.3"/>
-        <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.5.0" />
-        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.2" />
-        <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.15.0-beta.1"/>
-        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.2" />
-        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.1" />
-        <PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.15.0-beta.1"/>
-        <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.15.0"/>
-        <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.0"/>
-        <PackageReference Include="Pandatech.CommissionCalculator" Version="6.0.0"/>
-        <PackageReference Include="Pandatech.Crypto" Version="8.0.0"/>
-        <PackageReference Include="Pandatech.DistributedCache" Version="6.0.0"/>
-        <PackageReference Include="PandaTech.FileExporter" Version="7.0.0"/>
-        <PackageReference Include="PandaTech.FluentImporter" Version="5.0.0"/>
-        <PackageReference Include="Pandatech.FluentMinimalApiMapper" Version="4.0.0"/>
-        <PackageReference Include="Pandatech.PandaVaultClient" Version="6.0.0"/>
-        <PackageReference Include="Pandatech.ResponseCrafter" Version="7.0.0"/>
-        <PackageReference Include="Scalar.AspNetCore" Version="2.14.1" />
-        <PackageReference Include="Serilog.AspNetCore" Version="10.0.0"/>
-        <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0"/>
-        <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="8.3.2"/>
+        <PackageReference Include="AspNetCore.HealthChecks.Prometheus.Metrics" Version="9.0.0" />
+        <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
+        <PackageReference Include="Elastic.CommonSchema.Serilog" Version="9.0.0" />
+        <PackageReference Include="FluentDateTime" Version="3.0.0" />
+        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+        <PackageReference Include="HtmlSanitizer" Version="9.0.892" />
+        <PackageReference Include="MediatR" Version="[12.5.0]" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.8" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="10.0.8" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.8" />
+        <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.6.0" />
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
+        <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.15.0-beta.1" />
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.15.0-beta.1" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
+        <PackageReference Include="Pandatech.CommissionCalculator" Version="6.0.0" />
+        <PackageReference Include="Pandatech.Crypto" Version="8.0.0" />
+        <PackageReference Include="Pandatech.DistributedCache" Version="6.0.0" />
+        <PackageReference Include="PandaTech.FileExporter" Version="7.0.0" />
+        <PackageReference Include="PandaTech.FluentImporter" Version="5.0.0" />
+        <PackageReference Include="Pandatech.FluentMinimalApiMapper" Version="4.0.0" />
+        <PackageReference Include="Pandatech.PandaVaultClient" Version="6.0.0" />
+        <PackageReference Include="Pandatech.ResponseCrafter" Version="7.0.0" />
+        <PackageReference Include="Scalar.AspNetCore" Version="2.14.14" />
+        <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+        <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
+        <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="8.3.2" />
         <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.1.7" />
     </ItemGroup>
 
     <!-- Analyzers only — never shipped to consumers -->
     <ItemGroup>
-        <PackageReference Include="Pandatech.Analyzers" Version="[2.1.0]" PrivateAssets="all"/>
+        <PackageReference Include="Pandatech.Analyzers" Version="[2.1.0]" PrivateAssets="all" />
         <PackageReference Include="SonarAnalyzer.CSharp" Version="[10.18.0.131500]">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
