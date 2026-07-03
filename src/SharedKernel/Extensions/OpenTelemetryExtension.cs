@@ -7,6 +7,7 @@ using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Prometheus;
 using SharedKernel.Constants;
 
 namespace SharedKernel.Extensions;
@@ -56,6 +57,17 @@ public static class OpenTelemetryExtension
 
    public static WebApplication MapPrometheusExporterEndpoints(this WebApplication app)
    {
+      // prometheus-net (transitive via AspNetCore.HealthChecks.Prometheus.Metrics) auto-mirrors every
+      // .NET Meter and EventCounter onto its registry and locks in the first-seen tag layout per
+      // instrument; instruments with varying tag sets (e.g. Npgsql command metrics) then throw a
+      // swallowed ArgumentException on every measurement (~90/s per app). The OTel scraping endpoint
+      // above already exposes these metrics, so keep only the explicitly registered health gauges.
+      Metrics.SuppressDefaultMetrics(new SuppressDefaultMetricOptions
+      {
+         SuppressEventCounters = true,
+         SuppressMeters = true
+      });
+
       app.MapPrometheusScrapingEndpoint($"{EndpointConstants.BasePath}/prometheus");
 
       app.UseHealthChecksPrometheusExporter($"{EndpointConstants.BasePath}/prometheus/health",

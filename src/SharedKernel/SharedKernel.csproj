@@ -21,8 +21,8 @@
         <PackageIcon>pandatech.png</PackageIcon>
         <PackageReadmeFile>README.md</PackageReadmeFile>
 
-        <Version>2.3.2</Version>
-        <PackageReleaseNotes>Split health endpoint: /above-board/health now returns a minimal status (Healthy/Degraded/Unhealthy); full JSON moved to /above-board/health/detailed.</PackageReleaseNotes>
+        <Version>2.4.0</Version>
+        <PackageReleaseNotes>Suppress prometheus-net default Meter/EventCounter adapters in MapPrometheusExporterEndpoints. The adapters mirror every .NET meter and lock in the first-seen tag layout per instrument, causing instruments with varying tag sets (e.g. Npgsql command metrics) to throw a swallowed ArgumentException on every measurement (~90/s per app). /above-board/prometheus (OTel) and the health gauges on /above-board/prometheus/health are unaffected; only the duplicated auto-mirrored series are removed.</PackageReleaseNotes>
 
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <IncludeSymbols>true</IncludeSymbols>
