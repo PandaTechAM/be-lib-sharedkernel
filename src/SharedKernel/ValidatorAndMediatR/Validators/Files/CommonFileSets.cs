@@ -1,19 +1,38 @@
 ﻿namespace SharedKernel.ValidatorAndMediatR.Validators.Files;
 
+/// <summary>
+///     Predefined sets of allowed file extensions for common upload scenarios.
+/// </summary>
 public static class CommonFileSets
 {
-   public static readonly string[] ImagesAndAnimations =
-      [".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif", ".svg", ".avif"];
+    /// <summary>
+    ///     Raster and vector image extensions, including animated formats like GIF.
+    /// </summary>
+    public static readonly string[] ImagesAndAnimations =
+        [".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif", ".svg", ".avif"];
 
-   public static readonly string[] Documents =
-   [
-      ".pdf", ".txt", ".csv", ".json", ".xml", ".yaml", ".yml", ".md", ".docx", ".xlsx", ".pptx", ".odt", ".ods", ".odp"
-   ];
+    /// <summary>
+    ///     Common office and data document extensions (PDF, text, spreadsheets, presentations, etc.).
+    /// </summary>
+    public static readonly string[] Documents =
+    [
+        ".pdf", ".txt", ".csv", ".json", ".xml", ".yaml", ".yml", ".md", ".docx", ".xlsx", ".pptx", ".odt", ".ods",
+        ".odp"
+    ];
 
-   public static readonly string[] Images = [".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif", ".svg", ".avif"];
+    /// <summary>
+    ///     Static and vector image extensions, excluding animated formats like GIF.
+    /// </summary>
+    public static readonly string[] Images = [".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif", ".svg", ".avif"];
 
-   public static readonly string[] ImportFiles = [".csv", ".xlsx"];
+    /// <summary>
+    ///     Extensions accepted for bulk data import (CSV and Excel).
+    /// </summary>
+    public static readonly string[] ImportFiles = [".csv", ".xlsx"];
 
-   public static readonly string[] ImagesAndDocuments = Images.Concat(Documents)
-                                                              .ToArray();
+    /// <summary>
+    ///     Combined set of <see cref="Images" /> and <see cref="Documents" /> extensions.
+    /// </summary>
+    public static readonly string[] ImagesAndDocuments = Images.Concat(Documents)
+        .ToArray();
 }

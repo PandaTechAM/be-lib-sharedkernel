@@ -4,41 +4,53 @@ using Microsoft.AspNetCore.Http;
 
 namespace SharedKernel.ValidatorAndMediatR.Validators.Files;
 
+/// <summary>
+///     Validates that every file in an uploaded collection has one of the allowed extensions.
+/// </summary>
+/// <param name="allowedExts">The file extensions permitted for each file in the collection.</param>
 public sealed class FilesEachExtensionValidator<T>(params string[] allowedExts)
-   : PropertyValidator<T, IFormFileCollection?>
+    : PropertyValidator<T, IFormFileCollection?>
 {
-   private readonly HashSet<string> _allowed = new(allowedExts.Select(Exts.Norm), StringComparer.OrdinalIgnoreCase);
-   public override string Name => "FilesEachExtension";
+    private readonly HashSet<string> _allowed = new(allowedExts.Select(Exts.Norm), StringComparer.OrdinalIgnoreCase);
 
-   public override bool IsValid(ValidationContext<T> context, IFormFileCollection? value)
-   {
-      if (_allowed.Count == 0)
-      {
-         return true;
-      }
+    /// <inheritdoc />
+    public override string Name => "FilesEachExtension";
 
-      var files = FormFileFilter.ForProperty(value, context.PropertyPath);
-      if (files.Count == 0)
-      {
-         return true;
-      }
+    /// <inheritdoc />
+    public override bool IsValid(ValidationContext<T> context, IFormFileCollection? value)
+    {
+        if (_allowed.Count == 0)
+        {
+            return true;
+        }
 
-      var ok = true;
-      for (var i = 0; i < files.Count; i++)
-      {
-         var f = files[i];
-         var ext = Exts.GetExt(f.FileName);
-         if (_allowed.Contains(ext))
-         {
-            continue;
-         }
+        var files = FormFileFilter.ForProperty(value, context.PropertyPath);
+        if (files.Count == 0)
+        {
+            return true;
+        }
 
-         context.AddFailure($"File #{i + 1} '{f.FileName}' type is not allowed. Allowed: {string.Join(", ", _allowed)}");
-         ok = false;
-      }
+        var ok = true;
+        for (var i = 0; i < files.Count; i++)
+        {
+            var f = files[i];
+            var ext = Exts.GetExt(f.FileName);
+            if (_allowed.Contains(ext))
+            {
+                continue;
+            }
 
-      return ok;
-   }
+            context.AddFailure(
+                $"File #{i + 1} '{f.FileName}' type is not allowed. Allowed: {string.Join(", ", _allowed)}");
+            ok = false;
+        }
 
-   protected override string GetDefaultMessageTemplate(string errorCode) => "file_type_not_allowed";
+        return ok;
+    }
+
+    /// <inheritdoc />
+    protected override string GetDefaultMessageTemplate(string errorCode)
+    {
+        return "file_type_not_allowed";
+    }
 }

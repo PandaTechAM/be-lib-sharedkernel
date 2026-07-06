@@ -5,24 +5,24 @@ namespace SharedKernel.OpenApi;
 
 internal class EnumSchemaTransformer : IOpenApiSchemaTransformer
 {
-   public Task TransformAsync(OpenApiSchema schema,
-      OpenApiSchemaTransformerContext context,
-      CancellationToken cancellationToken)
-   {
-      var type = Nullable.GetUnderlyingType(context.JsonTypeInfo.Type) ?? context.JsonTypeInfo.Type;
+    public Task TransformAsync(OpenApiSchema schema,
+        OpenApiSchemaTransformerContext context,
+        CancellationToken cancellationToken)
+    {
+        var type = Nullable.GetUnderlyingType(context.JsonTypeInfo.Type) ?? context.JsonTypeInfo.Type;
 
-      if (!type.IsEnum)
-      {
-         return Task.CompletedTask;
-      }
+        if (!type.IsEnum)
+        {
+            return Task.CompletedTask;
+        }
 
-      var enumDescriptions = Enum.GetValues(type)
-                                 .Cast<object>()
-                                 .Select(value => $"{value} = {(int)value}")
-                                 .ToList();
+        var enumDescriptions = Enum.GetValues(type)
+            .Cast<object>()
+            .Select(value => $"{value} = {(int)value}")
+            .ToList();
 
-      schema.Description = string.Join(", ", enumDescriptions);
+        schema.Description = string.Join(", ", enumDescriptions);
 
-      return Task.CompletedTask;
-   }
+        return Task.CompletedTask;
+    }
 }

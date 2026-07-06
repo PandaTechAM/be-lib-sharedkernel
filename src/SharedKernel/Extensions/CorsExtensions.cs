@@ -5,91 +5,107 @@ using SharedKernel.Helpers;
 
 namespace SharedKernel.Extensions;
 
+/// <summary>
+///     Provides CORS policy registration and middleware wiring.
+/// </summary>
 public static class CorsExtensions
 {
-   private static readonly string[] ExposedHeaders = ["Content-Disposition"];
+    private static readonly string[] ExposedHeaders = ["Content-Disposition"];
 
-   public static WebApplicationBuilder AddCors(this WebApplicationBuilder builder)
-   {
-      if (builder.Environment.IsProduction())
-      {
-         var allowedOrigins = builder.Configuration
-                                     .GetAllowedCorsOrigins()
-                                     .SplitOrigins()
-                                     .EnsureWwwAndNonWwwVersions();
+    /// <summary>
+    ///     Register a CORS policy: restricted to configured allowed origins in production, otherwise permissive.
+    /// </summary>
+    public static WebApplicationBuilder AddCors(this WebApplicationBuilder builder)
+    {
+        if (builder.Environment.IsProduction())
+        {
+            var allowedOrigins = builder.Configuration
+                .GetAllowedCorsOrigins()
+                .SplitOrigins()
+                .EnsureWwwAndNonWwwVersions();
 
-         builder.Services.AddCors(options => options.AddPolicy("AllowSpecific",
-            p => p
-                 .WithOrigins(allowedOrigins)
-                 .AllowCredentials()
-                 .AllowAnyMethod()
-                 .AllowAnyHeader()
-                 .WithExposedHeaders(ExposedHeaders)));
-      }
-      else
-      {
-         builder.Services.AddCors(options => options.AddPolicy("AllowAll",
-            p => p
-                 .SetIsOriginAllowed(_ => true)
-                 .AllowCredentials()
-                 .AllowAnyMethod()
-                 .AllowAnyHeader()
-                 .WithExposedHeaders(ExposedHeaders)));
-      }
+            builder.Services.AddCors(options => options.AddPolicy("AllowSpecific",
+                p => p
+                    .WithOrigins(allowedOrigins)
+                    .AllowCredentials()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .WithExposedHeaders(ExposedHeaders)));
+        }
+        else
+        {
+            builder.Services.AddCors(options => options.AddPolicy("AllowAll",
+                p => p
+                    .SetIsOriginAllowed(_ => true)
+                    .AllowCredentials()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .WithExposedHeaders(ExposedHeaders)));
+        }
 
-      return builder;
-   }
+        return builder;
+    }
 
-   public static WebApplication UseCors(this WebApplication app)
-   {
-      app.UseCors(app.Environment.IsProduction() ? "AllowSpecific" : "AllowAll");
-      return app;
-   }
+    /// <summary>
+    ///     Apply the environment-appropriate CORS policy registered by <see cref="AddCors" />.
+    /// </summary>
+    public static WebApplication UseCors(this WebApplication app)
+    {
+        app.UseCors(app.Environment.IsProduction() ? "AllowSpecific" : "AllowAll");
+        return app;
+    }
 
-   private static string[] SplitOrigins(this string input)
-   {
-      if (string.IsNullOrWhiteSpace(input))
-         throw new ArgumentException("CORS origins cannot be null or empty.", nameof(input));
+    private static string[] SplitOrigins(this string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            throw new ArgumentException("CORS origins cannot be null or empty.", nameof(input));
+        }
 
-      return input
-             .Split([';', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-             .Where(origin =>
-             {
+        return input
+            .Split([';', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(origin =>
+            {
                 if (ValidationHelper.IsUri(origin, false))
                 {
-                   return true;
+                    return true;
                 }
 
                 Console.WriteLine($"Removed invalid CORS origin: {origin}");
                 return false;
-             })
-             .ToArray();
-   }
+            })
+            .ToArray();
+    }
 
-   private static string[] EnsureWwwAndNonWwwVersions(this string[] uris)
-   {
-      var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    private static string[] EnsureWwwAndNonWwwVersions(this string[] uris)
+    {
+        var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-      foreach (var uri in uris)
-      {
-         if (!Uri.TryCreate(uri, UriKind.Absolute, out var parsed)) continue;
+        foreach (var uri in uris)
+        {
+            if (!Uri.TryCreate(uri, UriKind.Absolute, out var parsed))
+            {
+                continue;
+            }
 
-         var bare = parsed.Host.StartsWith("www.", StringComparison.OrdinalIgnoreCase)
-            ? parsed.Host[4..]
-            : parsed.Host;
+            var bare = parsed.Host.StartsWith("www.", StringComparison.OrdinalIgnoreCase)
+                ? parsed.Host[4..]
+                : parsed.Host;
 
-         result.Add(BuildOrigin(parsed, bare));
-         result.Add(BuildOrigin(parsed, "www." + bare));
-      }
+            result.Add(BuildOrigin(parsed, bare));
+            result.Add(BuildOrigin(parsed, "www." + bare));
+        }
 
-      return [..result];
-   }
+        return [..result];
+    }
 
-   private static string BuildOrigin(Uri source, string host) =>
-      new UriBuilder(source)
-         {
-            Host = host
-         }.Uri
-          .ToString()
-          .TrimEnd('/');
+    private static string BuildOrigin(Uri source, string host)
+    {
+        return new UriBuilder(source)
+            {
+                Host = host
+            }.Uri
+            .ToString()
+            .TrimEnd('/');
+    }
 }

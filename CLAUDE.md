@@ -119,7 +119,7 @@ Three modes: `Disabled`, `EnabledForClients` (blocks non-admin routes), `Enabled
 
 ## Code Style
 
-- 3-space indentation
+- 4-space indentation
 - File-scoped namespaces
 - C# 14 extension members for clean builder APIs
 - `partial class` + `[LoggerMessage]` for high-performance structured logging

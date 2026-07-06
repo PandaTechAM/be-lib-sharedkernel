@@ -15,231 +15,239 @@ using Log = Serilog.Log;
 
 namespace SharedKernel.Logging;
 
+/// <summary>
+///     Configures Serilog logging destinations and log file retention for the application.
+/// </summary>
 public static class SerilogExtensions
 {
-   public static WebApplicationBuilder AddSerilog(this WebApplicationBuilder builder,
-      LogBackend logBackend,
-      Dictionary<string, string>? logAdditionalProperties = null,
-      int daysToRetain = 7,
-      bool asyncSinks = false,
-      bool suppressAspNetExceptionHandler = true)
-   {
-      builder.Logging.ClearProviders();
+    /// <summary>
+    ///     Configures Serilog as the logging provider, wiring up console/file destinations and log retention.
+    /// </summary>
+    public static WebApplicationBuilder AddSerilog(this WebApplicationBuilder builder,
+        LogBackend logBackend,
+        Dictionary<string, string>? logAdditionalProperties = null,
+        int daysToRetain = 7,
+        bool asyncSinks = false,
+        bool suppressAspNetExceptionHandler = true)
+    {
+        builder.Logging.ClearProviders();
 
-      var loggerConfig = new LoggerConfiguration()
-                         .FilterOutUnwantedLogs(suppressAspNetExceptionHandler)
-                         .Enrich
-                         .FromLogContext()
-                         .ConfigureDestinations(builder, logBackend, asyncSinks)
-                         .ReadFrom
-                         .Configuration(builder.Configuration);
+        var loggerConfig = new LoggerConfiguration()
+            .FilterOutUnwantedLogs(suppressAspNetExceptionHandler)
+            .Enrich
+            .FromLogContext()
+            .ConfigureDestinations(builder, logBackend, asyncSinks)
+            .ReadFrom
+            .Configuration(builder.Configuration);
 
-      if (logAdditionalProperties is not null)
-      {
-         foreach (var (key, value) in logAdditionalProperties)
-         {
-            loggerConfig.Enrich.WithProperty(key, value);
-         }
-      }
+        if (logAdditionalProperties is not null)
+        {
+            foreach (var (key, value) in logAdditionalProperties)
+            {
+                loggerConfig.Enrich.WithProperty(key, value);
+            }
+        }
 
-      Log.Logger = loggerConfig.CreateLogger();
+        Log.Logger = loggerConfig.CreateLogger();
 
-      builder.Host.UseSerilog();
+        builder.Host.UseSerilog();
 
-      if (daysToRetain <= 0 || logBackend == LogBackend.None || builder.Environment.IsLocal())
-      {
-         return builder;
-      }
+        if (daysToRetain <= 0 || logBackend == LogBackend.None || builder.Environment.IsLocal())
+        {
+            return builder;
+        }
 
-      var logsPath = builder.GetLogsPath();
-      var logDirectory = Path.GetDirectoryName(logsPath)!;
-      builder.Services.AddHostedService(_ =>
-         new LogCleanupHostedService(logDirectory, TimeSpan.FromDays(daysToRetain)));
+        var logsPath = builder.GetLogsPath();
+        var logDirectory = Path.GetDirectoryName(logsPath)!;
+        builder.Services.AddHostedService(_ =>
+            new LogCleanupHostedService(logDirectory, TimeSpan.FromDays(daysToRetain)));
 
-      return builder;
-   }
+        return builder;
+    }
+
+    private static bool ShouldDropExceptionHandlerLogs(LogEvent evt)
+    {
+        if (!evt.Properties.TryGetValue("SourceContext", out var sc) || sc is not ScalarValue sv)
+        {
+            return false;
+        }
+
+        var sourceContext = sv.Value as string ?? "";
+
+        return sourceContext.Equals("Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddleware",
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool ShouldDropByPath(LogEvent evt)
+    {
+        if (!evt.Properties.TryGetValue("RequestPath", out var p) || p is not ScalarValue sv)
+        {
+            return false;
+        }
+
+        var path = sv.Value as string ?? "";
+
+        return path.StartsWith("/swagger")
+               || path.StartsWith("/hangfire")
+               || path.Contains("/above-board")
+               || path.Contains("localhost/auth/is-authenticated.json?api-version=v2");
+    }
+
+    private static bool IsEfOutboxQuery(LogEvent evt)
+    {
+        // Only EF Core command category
+        if (!(evt.Properties.TryGetValue("SourceContext", out var sc) &&
+              sc is ScalarValue sv && sv.Value is string src &&
+              src.Contains("Microsoft.EntityFrameworkCore.Database.Command", StringComparison.OrdinalIgnoreCase)))
+        {
+            return false;
+        }
+
+        var sql = Get(evt, "commandText") ?? Get(evt, "CommandText");
+
+        return !string.IsNullOrEmpty(sql) &&
+               // Match table references, regardless of quoting/schema
+               // e.g. outbox_messages, "outbox_messages", [outbox_messages], public.outbox_messages
+               (sql.Contains("outbox_messages", StringComparison.OrdinalIgnoreCase) ||
+                sql.Contains("inbox_messages", StringComparison.OrdinalIgnoreCase));
+
+        // Grab the structured SQL (EF logs it as 'commandText'; some sinks rename to 'CommandText')
+        static string? Get(LogEvent e, string name)
+        {
+            return e.Properties.TryGetValue(name, out var v) && v is ScalarValue s && s.Value is string str
+                ? str
+                : null;
+        }
+    }
 
 
-   extension(LoggerConfiguration loggerConfig)
-   {
-      private LoggerConfiguration ConfigureDestinations(WebApplicationBuilder builder,
-         LogBackend logBackend,
-         bool asyncSinks)
-      {
-         if (builder.Environment.IsLocal())
-         {
-            loggerConfig.WriteToConsole(asyncSinks);
+    private static string GetLogsPath(this WebApplicationBuilder builder)
+    {
+        var persistencePath = builder.Configuration.GetPersistentPath();
+        var repoName = builder.Configuration.GetRepositoryName();
+        var envName = builder.Environment.GetShortEnvironmentName();
+        var instanceId = Guid.NewGuid()
+            .ToString();
+        var fileName = $"logs-{instanceId}-.json";
+        return Path.Combine(persistencePath, repoName, envName, "logs", fileName);
+    }
+
+
+    extension(LoggerConfiguration loggerConfig)
+    {
+        private LoggerConfiguration ConfigureDestinations(WebApplicationBuilder builder,
+            LogBackend logBackend,
+            bool asyncSinks)
+        {
+            if (builder.Environment.IsLocal())
+            {
+                loggerConfig.WriteToConsole(asyncSinks);
+
+                return loggerConfig;
+            }
+
+            if (!builder.Environment.IsProduction())
+            {
+                loggerConfig.WriteToConsole(asyncSinks);
+            }
+
+            if (logBackend != LogBackend.None)
+            {
+                loggerConfig.WriteToFile(builder, logBackend, asyncSinks);
+            }
 
             return loggerConfig;
-         }
+        }
 
-         if (!builder.Environment.IsProduction())
-         {
-            loggerConfig.WriteToConsole(asyncSinks);
-         }
-
-         if (logBackend != LogBackend.None)
-         {
-            loggerConfig.WriteToFile(builder, logBackend, asyncSinks);
-         }
-
-         return loggerConfig;
-      }
-
-      private LoggerConfiguration WriteToConsole(bool useAsync)
-      {
-         if (useAsync)
-         {
-            loggerConfig.WriteTo.Async(a => a.Console());
-         }
-         else
-         {
-            loggerConfig.WriteTo.Console();
-         }
-
-         return loggerConfig;
-      }
-
-      private LoggerConfiguration WriteToFile(WebApplicationBuilder builder,
-         LogBackend logBackend,
-         bool useAsync)
-      {
-         var ecsConfig = new EcsTextFormatterConfiguration
-         {
-            MessageFormatProvider = CultureInfo.InvariantCulture,
-            IncludeHost = false,
-            IncludeProcess = false,
-            IncludeUser = false,
-
-            MapCustom = (doc, _) =>
+        private LoggerConfiguration WriteToConsole(bool useAsync)
+        {
+            if (useAsync)
             {
-               doc.Agent = null;
-
-               if (doc.Labels is { Count: > 0 })
-               {
-                  doc.Labels.Remove("MessageTemplate");
-               }
-
-               if (doc.Event != null)
-               {
-                  var dur = doc.Event.Duration;
-                  doc.Event = new Event
-                  {
-                     Duration = dur
-                  };
-               }
-
-               if (doc.Service != null)
-               {
-                  doc.Service.Type = null;
-               }
-
-               return doc;
+                loggerConfig.WriteTo.Async(a => a.Console());
             }
-         };
-         ITextFormatter formatter = logBackend switch
-         {
-            LogBackend.ElasticSearch => new EcsTextFormatter(ecsConfig),
-            LogBackend.Loki => new LokiJsonTextFormatter(),
-            LogBackend.CompactJson => new CompactJsonFormatter(),
-            _ => new CompactJsonFormatter() // Fallback
-         };
+            else
+            {
+                loggerConfig.WriteTo.Console();
+            }
 
-         var logPath = builder.GetLogsPath();
+            return loggerConfig;
+        }
 
-         if (useAsync)
-         {
-            return loggerConfig.WriteTo.Async(a =>
-                  a.File(formatter,
-                     logPath,
-                     rollingInterval: RollingInterval.Day),
-               blockWhenFull: true,
-               bufferSize: 10_000);
-         }
+        private LoggerConfiguration WriteToFile(WebApplicationBuilder builder,
+            LogBackend logBackend,
+            bool useAsync)
+        {
+            var ecsConfig = new EcsTextFormatterConfiguration
+            {
+                MessageFormatProvider = CultureInfo.InvariantCulture,
+                IncludeHost = false,
+                IncludeProcess = false,
+                IncludeUser = false,
 
-         return loggerConfig.WriteTo.File(formatter, logPath, rollingInterval: RollingInterval.Day);
-      }
+                MapCustom = (doc, _) =>
+                {
+                    doc.Agent = null;
 
-      private LoggerConfiguration FilterOutUnwantedLogs(bool suppressAspNetExceptionHandler)
-      {
-         var filteredConfig = loggerConfig
-                              .Filter
-                              .ByExcluding(IsEfOutboxQuery)
-                              .Filter
-                              .ByExcluding(ShouldDropByPath);
-         if (suppressAspNetExceptionHandler)
-         {
-            filteredConfig = filteredConfig
-                             .Filter
-                             .ByExcluding(ShouldDropExceptionHandlerLogs);
-         }
+                    if (doc.Labels is { Count: > 0 })
+                    {
+                        doc.Labels.Remove("MessageTemplate");
+                    }
 
-         return filteredConfig;
-      }
-   }
+                    if (doc.Event != null)
+                    {
+                        var dur = doc.Event.Duration;
+                        doc.Event = new Event
+                        {
+                            Duration = dur
+                        };
+                    }
 
-   private static bool ShouldDropExceptionHandlerLogs(LogEvent evt)
-   {
-      if (!evt.Properties.TryGetValue("SourceContext", out var sc) || sc is not ScalarValue sv)
-      {
-         return false;
-      }
+                    if (doc.Service != null)
+                    {
+                        doc.Service.Type = null;
+                    }
 
-      var sourceContext = sv.Value as string ?? "";
+                    return doc;
+                }
+            };
+            ITextFormatter formatter = logBackend switch
+            {
+                LogBackend.ElasticSearch => new EcsTextFormatter(ecsConfig),
+                LogBackend.Loki => new LokiJsonTextFormatter(),
+                LogBackend.CompactJson => new CompactJsonFormatter(),
+                _ => new CompactJsonFormatter() // Fallback
+            };
 
-      return sourceContext.Equals("Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddleware",
-         StringComparison.OrdinalIgnoreCase);
-   }
+            var logPath = builder.GetLogsPath();
 
-   private static bool ShouldDropByPath(LogEvent evt)
-   {
-      if (!evt.Properties.TryGetValue("RequestPath", out var p) || p is not ScalarValue sv)
-      {
-         return false;
-      }
+            if (useAsync)
+            {
+                return loggerConfig.WriteTo.Async(a =>
+                        a.File(formatter,
+                            logPath,
+                            rollingInterval: RollingInterval.Day),
+                    blockWhenFull: true,
+                    bufferSize: 10_000);
+            }
 
-      var path = sv.Value as string ?? "";
+            return loggerConfig.WriteTo.File(formatter, logPath, rollingInterval: RollingInterval.Day);
+        }
 
-      return path.StartsWith("/swagger")
-             || path.StartsWith("/hangfire")
-             || path.Contains("/above-board")
-             || path.Contains("localhost/auth/is-authenticated.json?api-version=v2");
-   }
+        private LoggerConfiguration FilterOutUnwantedLogs(bool suppressAspNetExceptionHandler)
+        {
+            var filteredConfig = loggerConfig
+                .Filter
+                .ByExcluding(IsEfOutboxQuery)
+                .Filter
+                .ByExcluding(ShouldDropByPath);
+            if (suppressAspNetExceptionHandler)
+            {
+                filteredConfig = filteredConfig
+                    .Filter
+                    .ByExcluding(ShouldDropExceptionHandlerLogs);
+            }
 
-   private static bool IsEfOutboxQuery(LogEvent evt)
-   {
-      // Only EF Core command category
-      if (!(evt.Properties.TryGetValue("SourceContext", out var sc) &&
-            sc is ScalarValue sv && sv.Value is string src &&
-            src.Contains("Microsoft.EntityFrameworkCore.Database.Command", StringComparison.OrdinalIgnoreCase)))
-      {
-         return false;
-      }
-
-      var sql = Get(evt, "commandText") ?? Get(evt, "CommandText");
-
-      return !string.IsNullOrEmpty(sql) &&
-             // Match table references, regardless of quoting/schema
-             // e.g. outbox_messages, "outbox_messages", [outbox_messages], public.outbox_messages
-             (sql.Contains("outbox_messages", StringComparison.OrdinalIgnoreCase) ||
-             sql.Contains("inbox_messages", StringComparison.OrdinalIgnoreCase));
-
-      // Grab the structured SQL (EF logs it as 'commandText'; some sinks rename to 'CommandText')
-      static string? Get(LogEvent e, string name)
-      {
-         return e.Properties.TryGetValue(name, out var v) && v is ScalarValue s && s.Value is string str ? str : null;
-      }
-   }
-
-
-   private static string GetLogsPath(this WebApplicationBuilder builder)
-   {
-      var persistencePath = builder.Configuration.GetPersistentPath();
-      var repoName = builder.Configuration.GetRepositoryName();
-      var envName = builder.Environment.GetShortEnvironmentName();
-      var instanceId = Guid.NewGuid()
-                           .ToString();
-      var fileName = $"logs-{instanceId}-.json";
-      return Path.Combine(persistencePath, repoName, envName, "logs", fileName);
-   }
+            return filteredConfig;
+        }
+    }
 }

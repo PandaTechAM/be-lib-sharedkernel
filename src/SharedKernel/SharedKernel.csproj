@@ -1,90 +1,90 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <ImplicitUsings>enable</ImplicitUsings>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
 
-        <IsPackable>true</IsPackable>
+    <IsPackable>true</IsPackable>
 
-        <PackageId>Pandatech.SharedKernel</PackageId>
-        <Authors>Pandatech</Authors>
-        <Description>Opinionated ASP.NET Core 10 infrastructure kernel: OpenAPI (Swagger + Scalar), Serilog, MediatR, FluentValidation, CORS, SignalR, OpenTelemetry, health checks, maintenance mode, resilience pipelines, and shared utilities.</Description>
-        <PackageTags>aspnetcore;serilog;mediatr;fluentvalidation;openapi;swagger;scalar;opentelemetry;signalr;healthchecks;resilience;shared-kernel;pandatech</PackageTags>
+    <PackageId>Pandatech.SharedKernel</PackageId>
+    <Authors>Pandatech</Authors>
+    <Description>Opinionated ASP.NET Core 10 infrastructure kernel: OpenAPI (Swagger + Scalar), Serilog, MediatR, FluentValidation, CORS, SignalR, OpenTelemetry, health checks, maintenance mode, resilience pipelines, and shared utilities.</Description>
+    <PackageTags>aspnetcore;serilog;mediatr;fluentvalidation;openapi;swagger;scalar;opentelemetry;signalr;healthchecks;resilience;shared-kernel;pandatech</PackageTags>
 
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <RepositoryType>git</RepositoryType>
-        <RepositoryUrl>https://github.com/PandaTechAM/be-lib-sharedkernel</RepositoryUrl>
-        <PackageProjectUrl>https://github.com/PandaTechAM/be-lib-sharedkernel</PackageProjectUrl>
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/PandaTechAM/be-lib-sharedkernel</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/PandaTechAM/be-lib-sharedkernel</PackageProjectUrl>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
 
-        <PackageIcon>pandatech.png</PackageIcon>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>pandatech.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
 
-        <Version>2.4.0</Version>
-        <PackageReleaseNotes>Suppress prometheus-net default Meter/EventCounter adapters in MapPrometheusExporterEndpoints. The adapters mirror every .NET meter and lock in the first-seen tag layout per instrument, causing instruments with varying tag sets (e.g. Npgsql command metrics) to throw a swallowed ArgumentException on every measurement (~90/s per app). /above-board/prometheus (OTel) and the health gauges on /above-board/prometheus/health are unaffected; only the duplicated auto-mirrored series are removed.</PackageReleaseNotes>
+    <Version>2.4.1</Version>
+    <PackageReleaseNotes>Tooling modernization: dependency updates (incl. ASP.NET Core 10.0.9 security patches), full XML-doc coverage, xUnit v3 test migration, standardized editorconfig/gitignore/global.json.</PackageReleaseNotes>
 
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <IncludeSymbols>true</IncludeSymbols>
-        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
 
-        <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
-        <RunAnalyzersDuringLiveAnalysis>true</RunAnalyzersDuringLiveAnalysis>
-        <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
-    </PropertyGroup>
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+    <RunAnalyzersDuringLiveAnalysis>true</RunAnalyzersDuringLiveAnalysis>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <None Include="..\..\pandatech.png" Pack="true" PackagePath="\" />
-        <None Include="..\..\README.md" Pack="true" PackagePath="\" />
-    </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\pandatech.png" Pack="true" PackagePath="\"/>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
 
-    <ItemGroup>
-        <EmbeddedResource Include="OpenApi\UiAssets\**\*" />
-    </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="OpenApi\UiAssets\**\*"/>
+  </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="AspNetCore.HealthChecks.Prometheus.Metrics" Version="9.0.0" />
-        <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
-        <PackageReference Include="Elastic.CommonSchema.Serilog" Version="9.0.0" />
-        <PackageReference Include="FluentDateTime" Version="3.0.0" />
-        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
-        <PackageReference Include="HtmlSanitizer" Version="9.0.892" />
-        <PackageReference Include="MediatR" Version="[12.5.0]" />
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8" />
-        <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.8" />
-        <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="10.0.8" />
-        <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.8" />
-        <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.6.0" />
-        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
-        <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.15.0-beta.1" />
-        <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
-        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
-        <PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.15.0-beta.1" />
-        <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
-        <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
-        <PackageReference Include="Pandatech.CommissionCalculator" Version="6.0.0" />
-        <PackageReference Include="Pandatech.Crypto" Version="8.0.0" />
-        <PackageReference Include="Pandatech.DistributedCache" Version="6.0.0" />
-        <PackageReference Include="PandaTech.FileExporter" Version="7.0.0" />
-        <PackageReference Include="PandaTech.FluentImporter" Version="5.0.0" />
-        <PackageReference Include="Pandatech.FluentMinimalApiMapper" Version="4.1.0" />
-        <PackageReference Include="Pandatech.PandaVaultClient" Version="6.0.0" />
-        <PackageReference Include="Pandatech.ResponseCrafter" Version="7.0.0" />
-        <PackageReference Include="Scalar.AspNetCore" Version="2.14.14" />
-        <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
-        <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
-        <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="8.3.2" />
-        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.1.7" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="AspNetCore.HealthChecks.Prometheus.Metrics" Version="9.0.0"/>
+    <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0"/>
+    <PackageReference Include="Elastic.CommonSchema.Serilog" Version="9.0.0"/>
+    <PackageReference Include="FluentDateTime" Version="3.0.0"/>
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1"/>
+    <PackageReference Include="HtmlSanitizer" Version="9.0.892"/>
+    <PackageReference Include="MediatR" Version="[12.5.0]"/>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9"/>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.9"/>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="10.0.9"/>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.9"/>
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.7.0"/>
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.16.0"/>
+    <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.16.0-beta.1"/>
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.16.0"/>
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.16.0"/>
+    <PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.16.0-beta.1"/>
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.16.0"/>
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1"/>
+    <PackageReference Include="Pandatech.CommissionCalculator" Version="6.0.2"/>
+    <PackageReference Include="Pandatech.Crypto" Version="8.0.1"/>
+    <PackageReference Include="Pandatech.DistributedCache" Version="6.0.1"/>
+    <PackageReference Include="PandaTech.FileExporter" Version="7.0.1"/>
+    <PackageReference Include="PandaTech.FluentImporter" Version="5.0.1"/>
+    <PackageReference Include="Pandatech.FluentMinimalApiMapper" Version="4.1.1"/>
+    <PackageReference Include="Pandatech.PandaVaultClient" Version="6.0.1"/>
+    <PackageReference Include="Pandatech.ResponseCrafter" Version="7.0.1"/>
+    <PackageReference Include="Scalar.AspNetCore" Version="2.16.10"/>
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0"/>
+    <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0"/>
+    <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="9.0.1"/>
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.2.3"/>
+  </ItemGroup>
 
-    <!-- Analyzers only — never shipped to consumers -->
-    <ItemGroup>
-        <PackageReference Include="Pandatech.Analyzers" Version="[2.1.0]" PrivateAssets="all" />
-        <PackageReference Include="SonarAnalyzer.CSharp" Version="[10.18.0.131500]">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-    </ItemGroup>
+  <!-- Analyzers only — never shipped to consumers -->
+  <ItemGroup>
+    <PackageReference Include="Pandatech.Analyzers" Version="[2.1.0]" PrivateAssets="all"/>
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="[10.28.0.143324]">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
 
 </Project>

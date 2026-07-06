@@ -2,15 +2,18 @@
 
 internal static class Exts
 {
-   public static string Norm(string ext)
-   {
-      if (string.IsNullOrWhiteSpace(ext))
-      {
-         return "";
-      }
+    public static string Norm(string ext)
+    {
+        if (string.IsNullOrWhiteSpace(ext))
+        {
+            return "";
+        }
 
-      return ext.StartsWith('.') ? ext.ToLowerInvariant() : "." + ext.ToLowerInvariant();
-   }
+        return ext.StartsWith('.') ? ext.ToLowerInvariant() : "." + ext.ToLowerInvariant();
+    }
 
-   public static string GetExt(string fileName) => Norm(Path.GetExtension(fileName));
+    public static string GetExt(string fileName)
+    {
+        return Norm(Path.GetExtension(fileName));
+    }
 }

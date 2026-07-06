@@ -7,108 +7,113 @@ namespace SharedKernel.Logging.Middleware;
 
 internal sealed partial class SignalRLoggingHubFilter(ILogger<SignalRLoggingHubFilter> logger) : IHubFilter
 {
-   public async ValueTask<object?> InvokeMethodAsync(
-      HubInvocationContext invocationContext,
-      Func<HubInvocationContext, ValueTask<object?>> next)
-   {
-      var timestamp = Stopwatch.GetTimestamp();
+    public async ValueTask<object?> InvokeMethodAsync(
+        HubInvocationContext invocationContext,
+        Func<HubInvocationContext, ValueTask<object?>> next)
+    {
+        var timestamp = Stopwatch.GetTimestamp();
 
-      var hubName = invocationContext.Hub.GetType().Name;
-      var methodName = invocationContext.HubMethodName;
-      var connectionId = invocationContext.Context.ConnectionId;
-      var userId = invocationContext.Context.UserIdentifier;
+        var hubName = invocationContext.Hub.GetType().Name;
+        var methodName = invocationContext.HubMethodName;
+        var connectionId = invocationContext.Context.ConnectionId;
+        var userId = invocationContext.Context.UserIdentifier;
 
-      var rawArgsJson = JsonSerializer.Serialize(invocationContext.HubMethodArguments);
-      var redactedArgs = RedactionHelper.RedactBody("application/json", rawArgsJson);
+        var rawArgsJson = JsonSerializer.Serialize(invocationContext.HubMethodArguments);
+        var redactedArgs = RedactionHelper.RedactBody("application/json", rawArgsJson);
 
-      object? result;
-      try
-      {
-         result = await next(invocationContext);
-      }
-      catch (Exception ex)
-      {
-         var elapsedMs = Stopwatch.GetElapsedTime(timestamp).TotalMilliseconds;
+        object? result;
+        try
+        {
+            result = await next(invocationContext);
+        }
+        catch (Exception ex)
+        {
+            var elapsedMs = Stopwatch.GetElapsedTime(timestamp).TotalMilliseconds;
 
-         var errorBody = new Dictionary<string, object?>
-         {
-            ["exceptionType"] = ex.GetType().Name,
-            ["message"] = ex.Message
-         };
+            var errorBody = new Dictionary<string, object?>
+            {
+                ["exceptionType"] = ex.GetType().Name,
+                ["message"] = ex.Message
+            };
 
-         LogInvokeFailure(ex, hubName, methodName, elapsedMs, "SignalR", connectionId, userId,
-            LogFormatting.ToJsonString(redactedArgs), LogFormatting.ToJsonString(errorBody));
+            LogInvokeFailure(ex, hubName, methodName, elapsedMs, "SignalR", connectionId, userId,
+                LogFormatting.ToJsonString(redactedArgs), LogFormatting.ToJsonString(errorBody));
 
-         throw;
-      }
+            throw;
+        }
 
-      var elapsed = Stopwatch.GetElapsedTime(timestamp).TotalMilliseconds;
+        var elapsed = Stopwatch.GetElapsedTime(timestamp).TotalMilliseconds;
 
-      LogInvoke(hubName, methodName, elapsed, "SignalR", connectionId, userId, LogFormatting.ToJsonString(redactedArgs));
+        LogInvoke(hubName, methodName, elapsed, "SignalR", connectionId, userId,
+            LogFormatting.ToJsonString(redactedArgs));
 
-      return result;
-   }
+        return result;
+    }
 
-   public async Task OnConnectedAsync(HubLifetimeContext context, Func<HubLifetimeContext, Task> next)
-   {
-      var (hub, connId, userId) = ExtractContext(context);
-      LogConnected(hub, "SignalR", connId, userId);
-      await next(context);
-   }
+    public async Task OnConnectedAsync(HubLifetimeContext context, Func<HubLifetimeContext, Task> next)
+    {
+        var (hub, connId, userId) = ExtractContext(context);
+        LogConnected(hub, "SignalR", connId, userId);
+        await next(context);
+    }
 
-   public async Task OnDisconnectedAsync(
-      HubLifetimeContext context,
-      Exception? exception,
-      Func<HubLifetimeContext, Exception?, Task> next)
-   {
-      var (hub, connId, userId) = ExtractContext(context);
-      LogDisconnected(hub, "SignalR", connId, userId);
-      await next(context, exception);
-   }
+    public async Task OnDisconnectedAsync(
+        HubLifetimeContext context,
+        Exception? exception,
+        Func<HubLifetimeContext, Exception?, Task> next)
+    {
+        var (hub, connId, userId) = ExtractContext(context);
+        LogDisconnected(hub, "SignalR", connId, userId);
+        await next(context, exception);
+    }
 
-   private static (string Hub, string? ConnId, string? UserId) ExtractContext(HubLifetimeContext ctx) =>
-      (ctx.Hub.GetType().Name, ctx.Context.ConnectionId, ctx.Context.UserIdentifier);
+    private static (string Hub, string? ConnId, string? UserId) ExtractContext(HubLifetimeContext ctx)
+    {
+        return (ctx.Hub.GetType().Name, ctx.Context.ConnectionId, ctx.Context.UserIdentifier);
+    }
 
-   // All named placeholders become structured properties in Serilog / Elasticsearch.
-   // Eliminates the BeginScope dictionary allocation and the LogInformation args-array allocation.
+    // All named placeholders become structured properties in Serilog / Elasticsearch.
+    // Eliminates the BeginScope dictionary allocation and the LogInformation args-array allocation.
 
-   [LoggerMessage(Level = LogLevel.Information,
-      Message = "[SignalR] {Hub}.{HubMethod} completed in {ElapsedMs}ms | {Kind} connId={ConnId} userId={UserId} args={Args}")]
-   private partial void LogInvoke(
-      string hub,
-      string hubMethod,
-      double elapsedMs,
-      string kind,
-      string? connId,
-      string? userId,
-      string args);
+    [LoggerMessage(Level = LogLevel.Information,
+        Message =
+            "[SignalR] {Hub}.{HubMethod} completed in {ElapsedMs}ms | {Kind} connId={ConnId} userId={UserId} args={Args}")]
+    private partial void LogInvoke(
+        string hub,
+        string hubMethod,
+        double elapsedMs,
+        string kind,
+        string? connId,
+        string? userId,
+        string args);
 
-   [LoggerMessage(Level = LogLevel.Warning,
-      Message = "[SignalR] {Hub}.{HubMethod} FAILED in {ElapsedMs}ms | {Kind} connId={ConnId} userId={UserId} args={Args} error={ErrorBody}")]
-   private partial void LogInvokeFailure(
-      Exception ex,
-      string hub,
-      string hubMethod,
-      double elapsedMs,
-      string kind,
-      string? connId,
-      string? userId,
-      string args,
-      string errorBody);
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message =
+            "[SignalR] {Hub}.{HubMethod} FAILED in {ElapsedMs}ms | {Kind} connId={ConnId} userId={UserId} args={Args} error={ErrorBody}")]
+    private partial void LogInvokeFailure(
+        Exception ex,
+        string hub,
+        string hubMethod,
+        double elapsedMs,
+        string kind,
+        string? connId,
+        string? userId,
+        string args,
+        string errorBody);
 
-   [LoggerMessage(Level = LogLevel.Information,
-      Message = "[Connected] SignalR {Hub} | {Kind} connId={ConnId} userId={UserId}")]
-   private partial void LogConnected(
-      string hub,
-      string kind,
-      string? connId,
-      string? userId);
+    [LoggerMessage(Level = LogLevel.Information,
+        Message = "[Connected] SignalR {Hub} | {Kind} connId={ConnId} userId={UserId}")]
+    private partial void LogConnected(
+        string hub,
+        string kind,
+        string? connId,
+        string? userId);
 
-   [LoggerMessage(Level = LogLevel.Information,
-      Message = "[Disconnected] SignalR {Hub} | {Kind} connId={ConnId} userId={UserId}")]
-   private partial void LogDisconnected(
-      string hub,
-      string kind,
-      string? connId,
-      string? userId);
+    [LoggerMessage(Level = LogLevel.Information,
+        Message = "[Disconnected] SignalR {Hub} | {Kind} connId={ConnId} userId={UserId}")]
+    private partial void LogDisconnected(
+        string hub,
+        string kind,
+        string? connId,
+        string? userId);
 }

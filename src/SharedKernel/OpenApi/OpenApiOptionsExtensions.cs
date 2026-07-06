@@ -6,69 +6,72 @@ namespace SharedKernel.OpenApi;
 
 internal static class OpenApiOptionsExtensions
 {
-   extension(OpenApiOptions options)
-   {
-      internal OpenApiOptions AddDocument(Document doc, OpenApiConfig openApiConfig)
-      {
-         options.AddDocumentTransformer((document, _, _) =>
-         {
-            document.Info = new OpenApiInfo
+    extension(OpenApiOptions options)
+    {
+        internal OpenApiOptions AddDocument(Document doc, OpenApiConfig openApiConfig)
+        {
+            options.AddDocumentTransformer((document, _, _) =>
             {
-               Title = doc.Title,
-               Description = doc.Description,
-               Version = doc.Version,
-               Contact = new OpenApiContact
-               {
-                  Name = openApiConfig.Contact.Name,
-                  Url = new Uri(openApiConfig.Contact.Url),
-                  Email = openApiConfig.Contact.Email
-               }
-            };
+                document.Info = new OpenApiInfo
+                {
+                    Title = doc.Title,
+                    Description = doc.Description,
+                    Version = doc.Version,
+                    Contact = new OpenApiContact
+                    {
+                        Name = openApiConfig.Contact.Name,
+                        Url = new Uri(openApiConfig.Contact.Url),
+                        Email = openApiConfig.Contact.Email
+                    }
+                };
 
-            return Task.CompletedTask;
-         });
+                return Task.CompletedTask;
+            });
 
-         return options;
-      }
-      
-      internal OpenApiOptions UseApiSecuritySchemes(OpenApiConfig? config)
-      {
-         if (config?.SecuritySchemes is not { Count: > 0 }) { return options; }
+            return options;
+        }
 
-         options.AddDocumentTransformer((document, _, _) =>
-         {
-            document.Components ??= new OpenApiComponents();
-            document.Components.SecuritySchemes ??=
-               new Dictionary<string, IOpenApiSecurityScheme>(StringComparer.Ordinal);
-
-            document.Security ??= new List<OpenApiSecurityRequirement>();
-            document.Security.Clear();
-
-            foreach (var s in config.SecuritySchemes)
+        internal OpenApiOptions UseApiSecuritySchemes(OpenApiConfig? config)
+        {
+            if (config?.SecuritySchemes is not { Count: > 0 })
             {
-               // Strongly recommended: separate ID from header name.
-               // If you can't change config now, keep s.HeaderName as the ID.
-               var schemeId = s.HeaderName;
-
-               document.Components.SecuritySchemes[schemeId] = new OpenApiSecurityScheme
-               {
-                  Type = SecuritySchemeType.ApiKey,
-                  In = ParameterLocation.Header,
-                  Name = s.HeaderName,
-                  Description = s.Description
-               };
-
-               // IMPORTANT: reference must be created with document context
-               document.Security.Add(new OpenApiSecurityRequirement
-               {
-                  [new OpenApiSecuritySchemeReference(schemeId, document)] = []
-               });
+                return options;
             }
 
-            return Task.CompletedTask;
-         });
+            options.AddDocumentTransformer((document, _, _) =>
+            {
+                document.Components ??= new OpenApiComponents();
+                document.Components.SecuritySchemes ??=
+                    new Dictionary<string, IOpenApiSecurityScheme>(StringComparer.Ordinal);
 
-         return options;
-      }
-   }
+                document.Security ??= new List<OpenApiSecurityRequirement>();
+                document.Security.Clear();
+
+                foreach (var s in config.SecuritySchemes)
+                {
+                    // Strongly recommended: separate ID from header name.
+                    // If you can't change config now, keep s.HeaderName as the ID.
+                    var schemeId = s.HeaderName;
+
+                    document.Components.SecuritySchemes[schemeId] = new OpenApiSecurityScheme
+                    {
+                        Type = SecuritySchemeType.ApiKey,
+                        In = ParameterLocation.Header,
+                        Name = s.HeaderName,
+                        Description = s.Description
+                    };
+
+                    // IMPORTANT: reference must be created with document context
+                    document.Security.Add(new OpenApiSecurityRequirement
+                    {
+                        [new OpenApiSecuritySchemeReference(schemeId, document)] = []
+                    });
+                }
+
+                return Task.CompletedTask;
+            });
+
+            return options;
+        }
+    }
 }

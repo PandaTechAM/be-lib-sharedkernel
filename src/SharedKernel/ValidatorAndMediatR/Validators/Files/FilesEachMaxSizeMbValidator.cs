@@ -5,34 +5,46 @@ using Microsoft.AspNetCore.Http;
 
 namespace SharedKernel.ValidatorAndMediatR.Validators.Files;
 
+/// <summary>
+///     Validates that no single file in an uploaded collection exceeds the allowed size.
+/// </summary>
+/// <param name="maxMb">The maximum allowed size per file, in megabytes.</param>
 public sealed class FilesEachMaxSizeMbValidator<T>(int maxMb) : PropertyValidator<T, IFormFileCollection?>
 {
-   private readonly long _maxBytes = maxMb * 1024L * 1024L;
-   public override string Name => "FilesEachMaxSizeMb";
+    private readonly long _maxBytes = maxMb * 1024L * 1024L;
 
-   public override bool IsValid(ValidationContext<T> context, IFormFileCollection? value)
-   {
-      var files = FormFileFilter.ForProperty(value, context.PropertyPath);
-      if (files.Count == 0)
-      {
-         return true;
-      }
+    /// <inheritdoc />
+    public override string Name => "FilesEachMaxSizeMb";
 
-      var ok = true;
-      for (var i = 0; i < files.Count; i++)
-      {
-         var f = files[i];
-         if (f.Length <= _maxBytes)
-         {
-            continue;
-         }
+    /// <inheritdoc />
+    public override bool IsValid(ValidationContext<T> context, IFormFileCollection? value)
+    {
+        var files = FormFileFilter.ForProperty(value, context.PropertyPath);
+        if (files.Count == 0)
+        {
+            return true;
+        }
 
-         context.AddFailure($"File #{i + 1} '{f.FileName}' exceeds {maxMb.ToString(CultureInfo.InvariantCulture)} MB.");
-         ok = false;
-      }
+        var ok = true;
+        for (var i = 0; i < files.Count; i++)
+        {
+            var f = files[i];
+            if (f.Length <= _maxBytes)
+            {
+                continue;
+            }
 
-      return ok;
-   }
+            context.AddFailure(
+                $"File #{i + 1} '{f.FileName}' exceeds {maxMb.ToString(CultureInfo.InvariantCulture)} MB.");
+            ok = false;
+        }
 
-   protected override string GetDefaultMessageTemplate(string errorCode) => "file_too_large";
+        return ok;
+    }
+
+    /// <inheritdoc />
+    protected override string GetDefaultMessageTemplate(string errorCode)
+    {
+        return "file_too_large";
+    }
 }

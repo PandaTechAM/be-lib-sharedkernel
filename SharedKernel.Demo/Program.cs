@@ -21,65 +21,65 @@ builder.LogStartAttempt();
 AssemblyRegistry.Add(typeof(Program).Assembly);
 
 builder
-   // .ConfigureWithPandaVault()
-   .AddSerilog(LogBackend.ElasticSearch)
-   .AddResponseCrafter(NamingConvention.ToSnakeCase)
-   .AddOpenApi()
-   .AddMaintenanceMode()
-   .AddOpenTelemetry()
-   .AddMinimalApis(AssemblyRegistry.ToArray())
-   .AddControllers(AssemblyRegistry.ToArray())
-   .AddMediatrWithBehaviors(AssemblyRegistry.ToArray())
-   .AddResilienceDefaultPipeline()
-   .AddDistributedSignalR("localhost:6379", "app_name")
-   .AddDistributedCache(o =>
-   {
-      o.RedisConnectionString = "localhost:6379";
-      o.ChannelPrefix = "app_name";
-   })
-   .AddMassTransit(AssemblyRegistry.ToArray())
-   .AddFileExporter(AssemblyRegistry.ToArray())
-   .MapDefaultTimeZone()
-   .AddCors()
-   .AddOutboundLoggingHandler()
-   .AddHealthChecks();
+    // .ConfigureWithPandaVault()
+    .AddSerilog(LogBackend.ElasticSearch)
+    .AddResponseCrafter(NamingConvention.ToSnakeCase)
+    .AddOpenApi()
+    .AddMaintenanceMode()
+    .AddOpenTelemetry()
+    .AddMinimalApis(AssemblyRegistry.ToArray())
+    .AddControllers(AssemblyRegistry.ToArray())
+    .AddMediatrWithBehaviors(AssemblyRegistry.ToArray())
+    .AddResilienceDefaultPipeline()
+    .AddDistributedSignalR("localhost:6379", "app_name")
+    .AddDistributedCache(o =>
+    {
+        o.RedisConnectionString = "localhost:6379";
+        o.ChannelPrefix = "app_name";
+    })
+    .AddMassTransit(AssemblyRegistry.ToArray())
+    .AddFileExporter(AssemblyRegistry.ToArray())
+    .MapDefaultTimeZone()
+    .AddCors()
+    .AddOutboundLoggingHandler()
+    .AddHealthChecks();
 
 builder.Services
-       .AddHttpClient("RandomApiClient",
-          client =>
-          {
-             client.DefaultRequestHeaders.Add("RequestCustomHeader", "CustomValue");
-             client.BaseAddress = new Uri("http://localhost");
-          })
-       .AddOutboundLoggingHandler();
+    .AddHttpClient("RandomApiClient",
+        client =>
+        {
+            client.DefaultRequestHeaders.Add("RequestCustomHeader", "CustomValue");
+            client.BaseAddress = new Uri("http://localhost");
+        })
+    .AddOutboundLoggingHandler();
 
 builder.UseSqlLiteInMemory();
 
 var app = builder.Build();
 
 app
-   .UseRequestLogging()
-   .UseMaintenanceMode()
-   .UseResponseCrafter()
-   .UseCors()
-   .MapMinimalApis()
-   .MapHealthCheckEndpoints()
-   .MapPrometheusExporterEndpoints()
-   .EnsureHealthy()
-   .ClearAssemblyRegistry()
-   .UseOpenApi()
-   .MapControllers();
+    .UseRequestLogging()
+    .UseMaintenanceMode()
+    .UseResponseCrafter()
+    .UseCors()
+    .MapMinimalApis()
+    .MapHealthCheckEndpoints()
+    .MapPrometheusExporterEndpoints()
+    .EnsureHealthy()
+    .ClearAssemblyRegistry()
+    .UseOpenApi()
+    .MapControllers();
 
 app.CreateInMemoryDb();
 app.MapMaintenanceEndpoint();
 
 // Tests EF outbox_messages log filtering (see SerilogExtensions.IsEfOutboxQuery)
 app.MapGet("/outbox-count",
-   async (InMemoryContext db) =>
-   {
-      var cnt = await db.OutboxMessages.CountAsync();
-      return TypedResults.Ok(new { count = cnt });
-   });
+    async (InMemoryContext db) =>
+    {
+        var cnt = await db.OutboxMessages.CountAsync();
+        return TypedResults.Ok(new { count = cnt });
+    });
 
 app.MapHub<MessageHub>("/hub");
 
