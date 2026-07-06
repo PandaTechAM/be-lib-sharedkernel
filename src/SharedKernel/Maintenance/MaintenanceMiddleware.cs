@@ -5,54 +5,55 @@ namespace SharedKernel.Maintenance;
 
 internal sealed class MaintenanceMiddleware(RequestDelegate next, MaintenanceState state)
 {
-   // TODO: Consider making admin prefixes configurable for projects with different path conventions
-   private static readonly PathString[] AdminPrefixes = ["/api/admin", "/hub/admin"];
+    // TODO: Consider making admin prefixes configurable for projects with different path conventions
+    private static readonly PathString[] AdminPrefixes = ["/api/admin", "/hub/admin"];
 
-   public async Task InvokeAsync(HttpContext httpContext)
-   {
-      var path = httpContext.Request.Path;
+    public async Task InvokeAsync(HttpContext httpContext)
+    {
+        var path = httpContext.Request.Path;
 
-      // always allow health/metrics/ping and CORS preflight
-      if (path.StartsWithSegments("/above-board", StringComparison.OrdinalIgnoreCase, out _) ||
-          HttpMethods.IsOptions(httpContext.Request.Method))
-      {
-         await next(httpContext);
-         return;
-      }
+        // always allow health/metrics/ping and CORS preflight
+        if (path.StartsWithSegments("/above-board", StringComparison.OrdinalIgnoreCase, out _) ||
+            HttpMethods.IsOptions(httpContext.Request.Method))
+        {
+            await next(httpContext);
+            return;
+        }
 
-      var mode = state.Mode;
+        var mode = state.Mode;
 
-      if (mode == MaintenanceMode.EnabledForAll)
-      {
-         await Set503Async(httpContext);
-         return;
-      }
+        if (mode == MaintenanceMode.EnabledForAll)
+        {
+            await Set503Async(httpContext);
+            return;
+        }
 
-      var isAdminRoute = AdminPrefixes.Any(p => path.StartsWithSegments(p, StringComparison.OrdinalIgnoreCase, out _));
+        var isAdminRoute =
+            AdminPrefixes.Any(p => path.StartsWithSegments(p, StringComparison.OrdinalIgnoreCase, out _));
 
-      if (mode == MaintenanceMode.EnabledForClients && !isAdminRoute)
-      {
-         await Set503Async(httpContext);
-         return;
-      }
+        if (mode == MaintenanceMode.EnabledForClients && !isAdminRoute)
+        {
+            await Set503Async(httpContext);
+            return;
+        }
 
-      await next(httpContext);
-   }
+        await next(httpContext);
+    }
 
-   private static async Task Set503Async(HttpContext ctx, CancellationToken ct = default)
-   {
-      ctx.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
-      ctx.Response.Headers.RetryAfter = "60";
-      ctx.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate";
-      ctx.Response.ContentType = "application/json; charset=utf-8";
+    private static async Task Set503Async(HttpContext ctx, CancellationToken ct = default)
+    {
+        ctx.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+        ctx.Response.Headers.RetryAfter = "60";
+        ctx.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate";
+        ctx.Response.ContentType = "application/json; charset=utf-8";
 
-      if (!HttpMethods.IsHead(ctx.Request.Method))
-      {
-         var payload = JsonSerializer.Serialize(new
-         {
-            message = "The service is under maintenance. Please try again later."
-         });
-         await ctx.Response.WriteAsync(payload, cancellationToken: ct);
-      }
-   }
+        if (!HttpMethods.IsHead(ctx.Request.Method))
+        {
+            var payload = JsonSerializer.Serialize(new
+            {
+                message = "The service is under maintenance. Please try again later."
+            });
+            await ctx.Response.WriteAsync(payload, ct);
+        }
+    }
 }

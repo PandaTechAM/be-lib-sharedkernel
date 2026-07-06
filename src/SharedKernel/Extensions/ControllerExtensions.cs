@@ -6,30 +6,42 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace SharedKernel.Extensions;
 
+/// <summary>
+///     Provides MVC controller registration helpers.
+/// </summary>
 public static class ControllerExtensions
 {
-   public static WebApplicationBuilder AddControllers(this WebApplicationBuilder builder, Assembly[] assemblies)
-   {
-      var mvcBuilder =
-         builder.Services.AddControllers(options => options.Conventions.Add(new ToLowerNamingConvention()));
-      foreach (var assembly in assemblies)
-      {
-         mvcBuilder.AddApplicationPart(assembly);
-      }
+    /// <summary>
+    ///     Register MVC controllers with kebab-case route naming, adding the given assemblies as application parts.
+    /// </summary>
+    public static WebApplicationBuilder AddControllers(this WebApplicationBuilder builder, Assembly[] assemblies)
+    {
+        var mvcBuilder =
+            builder.Services.AddControllers(options => options.Conventions.Add(new ToLowerNamingConvention()));
+        foreach (var assembly in assemblies)
+        {
+            mvcBuilder.AddApplicationPart(assembly);
+        }
 
-      return builder;
-   }
+        return builder;
+    }
 }
 
+/// <summary>
+///     Controller model convention that kebab-cases controller and action names for lowercase routes.
+/// </summary>
 public class ToLowerNamingConvention : IControllerModelConvention
 {
-   public void Apply(ControllerModel controller)
-   {
-      controller.ControllerName = controller.ControllerName.Kebaberize();
+    /// <summary>
+    ///     Kebab-case the controller name and all of its action names.
+    /// </summary>
+    public void Apply(ControllerModel controller)
+    {
+        controller.ControllerName = controller.ControllerName.Kebaberize();
 
-      foreach (var action in controller.Actions)
-      {
-         action.ActionName = action.ActionName.Kebaberize();
-      }
-   }
+        foreach (var action in controller.Actions)
+        {
+            action.ActionName = action.ActionName.Kebaberize();
+        }
+    }
 }

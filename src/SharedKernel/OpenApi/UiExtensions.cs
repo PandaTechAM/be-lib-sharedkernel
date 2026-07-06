@@ -7,68 +7,68 @@ namespace SharedKernel.OpenApi;
 
 internal static class UiExtensions
 {
-   extension(WebApplication app)
-   {
-      internal WebApplication MapSwaggerUi(OpenApiConfig openApiConfigConfiguration)
-      {
-         app.UseSwaggerUI(options =>
-         {
-            foreach (var document in openApiConfigConfiguration.Documents)
-            {
-               options.SwaggerEndpoint($"{document.GetEndpointUrl()}", document.Title);
-            }
+    private static string GetEndpointUrl(this Document document)
+    {
+        return $"/openapi/{document.GroupName}.json";
+    }
 
-            options.RoutePrefix = "swagger";
-            options.AddPandaOptions();
-         });
+    private static SwaggerUIOptions AddPandaOptions(this SwaggerUIOptions options)
+    {
+        options.DocExpansion(DocExpansion.None);
 
+        options.InjectStylesheet("/swagger-resources/panda-style.css");
+        options.InjectJavascript("/swagger-resources/panda-style.js");
 
-         foreach (var document in openApiConfigConfiguration.Documents.Where(x => x.ForExternalUse))
-         {
+        return options;
+    }
+
+    extension(WebApplication app)
+    {
+        internal WebApplication MapSwaggerUi(OpenApiConfig openApiConfigConfiguration)
+        {
             app.UseSwaggerUI(options =>
             {
-               options.SwaggerEndpoint($"{document.GetEndpointUrl()}", document.Title);
-               options.RoutePrefix = $"swagger/{document.GroupName}";
-               options.AddPandaOptions();
+                foreach (var document in openApiConfigConfiguration.Documents)
+                {
+                    options.SwaggerEndpoint($"{document.GetEndpointUrl()}", document.Title);
+                }
+
+                options.RoutePrefix = "swagger";
+                options.AddPandaOptions();
             });
-         }
 
-         return app;
-      }
 
-      internal WebApplication MapScalarUi(OpenApiConfig openApiConfigConfiguration)
-      {
-         app.MapScalarApiReference(options =>
-         {
-            options.Theme = ScalarTheme.Kepler;
-            options.Favicon = "/swagger-resources/favicon.svg";
-            options.SortTagsAlphabetically();
-
-            foreach (var document in openApiConfigConfiguration.Documents)
+            foreach (var document in openApiConfigConfiguration.Documents.Where(x => x.ForExternalUse))
             {
-               options.AddDocument(
-                  document.GroupName,
-                  document.Title,
-                  document.GetEndpointUrl()
-               );
+                app.UseSwaggerUI(options =>
+                {
+                    options.SwaggerEndpoint($"{document.GetEndpointUrl()}", document.Title);
+                    options.RoutePrefix = $"swagger/{document.GroupName}";
+                    options.AddPandaOptions();
+                });
             }
-         });
-         return app;
-      }
-   }
 
-   private static string GetEndpointUrl(this Document document)
-   {
-      return $"/openapi/{document.GroupName}.json";
-   }
+            return app;
+        }
 
-   private static SwaggerUIOptions AddPandaOptions(this SwaggerUIOptions options)
-   {
-      options.DocExpansion(DocExpansion.None);
+        internal WebApplication MapScalarUi(OpenApiConfig openApiConfigConfiguration)
+        {
+            app.MapScalarApiReference(options =>
+            {
+                options.Theme = ScalarTheme.Kepler;
+                options.Favicon = "/swagger-resources/favicon.svg";
+                options.SortTagsAlphabetically();
 
-      options.InjectStylesheet("/swagger-resources/panda-style.css");
-      options.InjectJavascript("/swagger-resources/panda-style.js");
-
-      return options;
-   }
+                foreach (var document in openApiConfigConfiguration.Documents)
+                {
+                    options.AddDocument(
+                        document.GroupName,
+                        document.Title,
+                        document.GetEndpointUrl()
+                    );
+                }
+            });
+            return app;
+        }
+    }
 }

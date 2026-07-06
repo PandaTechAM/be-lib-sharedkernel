@@ -1,25 +1,32 @@
-﻿using System.Text.Json;
+﻿using System.Globalization;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace SharedKernel.JsonConverters;
 
+/// <summary>
+///     Serializes and deserializes <see cref="DateOnly" /> values using the "dd-MM-yyyy" format.
+/// </summary>
 public class CustomDateOnlyConverter : JsonConverter<DateOnly>
 {
-   private const string DateFormat = "dd-MM-yyyy";
-   public override DateOnly Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-   {
-      var dateString = reader.GetString();
+    private const string DateFormat = "dd-MM-yyyy";
 
-      if (DateOnly.TryParseExact(dateString, DateFormat, null, System.Globalization.DateTimeStyles.None, out var date))
-      {
-         return date;
-      }
+    /// <inheritdoc />
+    public override DateOnly Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        var dateString = reader.GetString();
 
-      throw new JsonException($"Unable to parse date: {dateString}");
-   }
+        if (DateOnly.TryParseExact(dateString, DateFormat, null, DateTimeStyles.None, out var date))
+        {
+            return date;
+        }
 
-   public override void Write(Utf8JsonWriter writer, DateOnly value, JsonSerializerOptions options)
-   {
-      writer.WriteStringValue(value.ToString(DateFormat));
-   }
+        throw new JsonException($"Unable to parse date: {dateString}");
+    }
+
+    /// <inheritdoc />
+    public override void Write(Utf8JsonWriter writer, DateOnly value, JsonSerializerOptions options)
+    {
+        writer.WriteStringValue(value.ToString(DateFormat));
+    }
 }

@@ -4,28 +4,34 @@ using SharedKernel.Helpers;
 
 namespace SharedKernel.ValidatorAndMediatR.Validators;
 
+/// <summary>
+///     FluentValidation property validator that checks whether a string is a valid credit card number.
+/// </summary>
 public sealed class CreditCardNumberValidator<T> : PropertyValidator<T, string?>
 {
-   public override string Name => "CreditCardNumberValidator";
+    /// <inheritdoc />
+    public override string Name => "CreditCardNumberValidator";
 
-   public override bool IsValid(ValidationContext<T> context, string? value)
-   {
-      if (value is null)
-      {
-         return true;
-      }
+    /// <inheritdoc />
+    public override bool IsValid(ValidationContext<T> context, string? value)
+    {
+        if (value is null)
+        {
+            return true;
+        }
 
-      if (ValidationHelper.IsCreditCardNumber(value))
-      {
-         return true;
-      }
+        if (ValidationHelper.IsCreditCardNumber(value))
+        {
+            return true;
+        }
 
-      context.AddFailure("credit_card_number_format_is_not_valid");
-      return false;
-   }
+        context.AddFailure("credit_card_number_format_is_not_valid");
+        return false;
+    }
 
-   protected override string GetDefaultMessageTemplate(string errorCode)
-   {
-      return "credit_card_number_format_is_not_valid";
-   }
+    /// <inheritdoc />
+    protected override string GetDefaultMessageTemplate(string errorCode)
+    {
+        return "credit_card_number_format_is_not_valid";
+    }
 }

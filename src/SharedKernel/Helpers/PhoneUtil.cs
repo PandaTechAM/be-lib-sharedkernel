@@ -2,130 +2,138 @@
 
 namespace SharedKernel.Helpers;
 
+/// <summary>
+///     Helper for normalizing Armenian phone numbers into MSISDN format.
+/// </summary>
 public static class PhoneUtil
 {
-   public static bool TryFormatArmenianMsisdn(string? input, out string? formatted)
-   {
-      formatted = null;
-      if (string.IsNullOrWhiteSpace(input))
-      {
-         return false;
-      }
+    /// <summary>
+    ///     Attempts to normalize an Armenian phone number into "+374XXXXXXXX" format, accepting
+    ///     "(374)", "+374", "00374", leading "0", or bare 8-digit inputs. Returns false and sets
+    ///     <paramref name="formatted" /> to the original input if the value cannot be normalized.
+    /// </summary>
+    public static bool TryFormatArmenianMsisdn(string? input, out string? formatted)
+    {
+        formatted = null;
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return false;
+        }
 
-      var s = input.Trim();
+        var s = input.Trim();
 
-      if (s.StartsWith("(374)", StringComparison.Ordinal))
-      {
-         var rest = DigitsOnly(s.AsSpan(5));
-         if (rest.Length == 8)
-         {
-            formatted = "+374" + rest;
-            return true;
-         }
+        if (s.StartsWith("(374)", StringComparison.Ordinal))
+        {
+            var rest = DigitsOnly(s.AsSpan(5));
+            if (rest.Length == 8)
+            {
+                formatted = "+374" + rest;
+                return true;
+            }
 
-         formatted = input;
-         return false;
-      }
-
-      var sb = new StringBuilder(s.Length);
-      for (var i = 0; i < s.Length; i++)
-      {
-         var c = s[i];
-         if (c is >= '0' and <= '9')
-         {
-            sb.Append(c);
-            continue;
-         }
-
-         if (i == 0 && c == '+')
-         {
-            continue;
-         }
-
-         if (c == ' ' || c == '-' || c == '.' || c == '(' || c == ')' || char.IsWhiteSpace(c))
-         {
-            continue;
-         }
-
-         formatted = input;
-         return false;
-      }
-
-      var digits = sb.ToString();
-      var span = digits.AsSpan();
-      ReadOnlySpan<char> last8;
-
-      var plusAtStart = s[0] == '+';
-      var doubleZeroAtStart = s.StartsWith("00", StringComparison.Ordinal);
-
-      if (plusAtStart)
-      {
-         if (span.Length == 11 && span.StartsWith("374".AsSpan()))
-         {
-            last8 = span[3..];
-         }
-         else
-         {
             formatted = input;
             return false;
-         }
-      }
-      else
-      {
-         // Handle "00" international prefix for Armenia: "00374" + 8 digits => total 13 digits
-         if (doubleZeroAtStart && span.Length == 13 && span.StartsWith("00374".AsSpan()))
-         {
-            last8 = span[5..]; // skip "00" + "374"
-         }
-         else
-         {
-            switch (span.Length)
+        }
+
+        var sb = new StringBuilder(s.Length);
+        for (var i = 0; i < s.Length; i++)
+        {
+            var c = s[i];
+            if (c is >= '0' and <= '9')
             {
-               case 11 when span.StartsWith("374".AsSpan()):
-               {
-                  last8 = span[3..];
-                  break;
-               }
-               case 9 when span[0] == '0':
-               {
-                  last8 = span[1..];
-                  break;
-               }
-               case 8:
-               {
-                  last8 = span;
-                  break;
-               }
-               default:
-               {
-                  formatted = input;
-                  return false;
-               }
+                sb.Append(c);
+                continue;
             }
-         }
-      }
 
-      if (last8.Length != 8)
-      {
-         formatted = input;
-         return false;
-      }
+            if (i == 0 && c == '+')
+            {
+                continue;
+            }
 
-      formatted = $"+374{last8.ToString()}";
-      return true;
-   }
+            if (c == ' ' || c == '-' || c == '.' || c == '(' || c == ')' || char.IsWhiteSpace(c))
+            {
+                continue;
+            }
 
-   private static string DigitsOnly(ReadOnlySpan<char> span)
-   {
-      var sb = new StringBuilder(span.Length);
-      foreach (var c in span)
-      {
-         if (c is >= '0' and <= '9')
-         {
-            sb.Append(c);
-         }
-      }
+            formatted = input;
+            return false;
+        }
 
-      return sb.ToString();
-   }
+        var digits = sb.ToString();
+        var span = digits.AsSpan();
+        ReadOnlySpan<char> last8;
+
+        var plusAtStart = s[0] == '+';
+        var doubleZeroAtStart = s.StartsWith("00", StringComparison.Ordinal);
+
+        if (plusAtStart)
+        {
+            if (span.Length == 11 && span.StartsWith("374".AsSpan()))
+            {
+                last8 = span[3..];
+            }
+            else
+            {
+                formatted = input;
+                return false;
+            }
+        }
+        else
+        {
+            // Handle "00" international prefix for Armenia: "00374" + 8 digits => total 13 digits
+            if (doubleZeroAtStart && span.Length == 13 && span.StartsWith("00374".AsSpan()))
+            {
+                last8 = span[5..]; // skip "00" + "374"
+            }
+            else
+            {
+                switch (span.Length)
+                {
+                    case 11 when span.StartsWith("374".AsSpan()):
+                    {
+                        last8 = span[3..];
+                        break;
+                    }
+                    case 9 when span[0] == '0':
+                    {
+                        last8 = span[1..];
+                        break;
+                    }
+                    case 8:
+                    {
+                        last8 = span;
+                        break;
+                    }
+                    default:
+                    {
+                        formatted = input;
+                        return false;
+                    }
+                }
+            }
+        }
+
+        if (last8.Length != 8)
+        {
+            formatted = input;
+            return false;
+        }
+
+        formatted = $"+374{last8.ToString()}";
+        return true;
+    }
+
+    private static string DigitsOnly(ReadOnlySpan<char> span)
+    {
+        var sb = new StringBuilder(span.Length);
+        foreach (var c in span)
+        {
+            if (c is >= '0' and <= '9')
+            {
+                sb.Append(c);
+            }
+        }
+
+        return sb.ToString();
+    }
 }

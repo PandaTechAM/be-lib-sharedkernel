@@ -210,7 +210,7 @@ builder.AddSerilog(
 ### Log Backends
 
 | Value           | Output format                                     |
-|-----------------|----------------------------------------------------|
+|-----------------|---------------------------------------------------|
 | `None`          | Console only, no file output                      |
 | `ElasticSearch` | ECS JSON to file (forward with Filebeat/Logstash) |
 | `Loki`          | Loki JSON to file (forward with Promtail)         |
@@ -382,8 +382,10 @@ The list accepts comma- or semicolon-separated URLs. Invalid entries are logged 
 Built on Polly via `Microsoft.Extensions.Http.Resilience`. Two pipeline variants share the same configuration constants
 from a single source of truth:
 
-- **General pipeline** — registered globally via `AddResilienceDefaultPipeline()` on the builder, or used manually via `ResiliencePipelineProvider<string>`
-- **HTTP pipeline** — attached per-client via `AddResilienceDefaultPipeline()` on an `IHttpClientBuilder`, with additional `Retry-After` header support for 429 responses
+- **General pipeline** — registered globally via `AddResilienceDefaultPipeline()` on the builder, or used manually via
+  `ResiliencePipelineProvider<string>`
+- **HTTP pipeline** — attached per-client via `AddResilienceDefaultPipeline()` on an `IHttpClientBuilder`, with
+  additional `Retry-After` header support for 429 responses
 
 ### Options
 

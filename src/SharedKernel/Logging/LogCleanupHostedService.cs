@@ -3,43 +3,48 @@ using Serilog;
 
 namespace SharedKernel.Logging;
 
+/// <summary>
+///     Background service that periodically deletes log files older than the retention period.
+/// </summary>
+/// <param name="logsDirectory">Directory containing the log files to clean up.</param>
+/// <param name="retentionPeriod">Maximum age a log file may reach before being deleted.</param>
 public class LogCleanupHostedService(string logsDirectory, TimeSpan retentionPeriod) : BackgroundService
 {
-   /// <inheritdoc />
-   protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-   {
-      while (!stoppingToken.IsCancellationRequested)
-      {
-         try
-         {
-            if (!Directory.Exists(logsDirectory))
+    /// <inheritdoc />
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            try
             {
-               Log.Logger.Information("Logs directory does not exist yet: {Directory}", logsDirectory);
+                if (!Directory.Exists(logsDirectory))
+                {
+                    Log.Logger.Information("Logs directory does not exist yet: {Directory}", logsDirectory);
+                }
+                else
+                {
+                    var files = Directory.EnumerateFiles(logsDirectory, "logs-*.json", SearchOption.TopDirectoryOnly);
+                    foreach (var file in files)
+                    {
+                        var creationTime = File.GetCreationTime(file);
+                        if (DateTime.UtcNow - creationTime > retentionPeriod)
+                        {
+                            File.Delete(file);
+                        }
+                    }
+                }
             }
-            else
+            catch (IOException ex)
             {
-               var files = Directory.EnumerateFiles(logsDirectory, "logs-*.json", SearchOption.TopDirectoryOnly);
-               foreach (var file in files)
-               {
-                  var creationTime = File.GetCreationTime(file);
-                  if (DateTime.UtcNow - creationTime > retentionPeriod)
-                  {
-                     File.Delete(file);
-                  }
-               }
+                // If 2 instances do the same job at the same time, one of them will throw an exception
+                Log.Logger.Information(ex, "Failed to delete log files");
             }
-         }
-         catch (IOException ex)
-         {
-            // If 2 instances do the same job at the same time, one of them will throw an exception
-            Log.Logger.Information(ex, "Failed to delete log files");
-         }
-         catch (Exception ex)
-         {
-            Log.Logger.Error(ex, "Failed to delete logs");
-         }
+            catch (Exception ex)
+            {
+                Log.Logger.Error(ex, "Failed to delete logs");
+            }
 
-         await Task.Delay(TimeSpan.FromHours(12), stoppingToken);
-      }
-   }
+            await Task.Delay(TimeSpan.FromHours(12), stoppingToken);
+        }
+    }
 }
