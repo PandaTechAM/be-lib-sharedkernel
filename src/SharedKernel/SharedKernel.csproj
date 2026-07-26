@@ -21,8 +21,8 @@
     <PackageIcon>pandatech.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
-    <Version>2.4.2</Version>
-    <PackageReleaseNotes>Nugets update</PackageReleaseNotes>
+    <Version>2.4.3</Version>
+    <PackageReleaseNotes>Picks up ResponseCrafter 7.1.0, which maps every FluentImporter ImportException to 400 off the base type (MissingColumns, DuplicateColumn and SheetNotFound previously returned 500) and routes InvalidPropertyNameException to 500. Also updates CommissionCalculator, OpenTelemetry.Instrumentation.Runtime, the ASP.NET Core SignalR/OpenAPI packages and Http.Resilience.</PackageReleaseNotes>
 
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IncludeSymbols>true</IncludeSymbols>
@@ -51,26 +51,26 @@
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1"/>
     <PackageReference Include="HtmlSanitizer" Version="9.0.967" />
     <PackageReference Include="MediatR" Version="[12.5.0]"/>
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9"/>
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.9"/>
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="10.0.9"/>
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.9"/>
-    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.7.0"/>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10"/>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.10"/>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="10.0.10"/>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.10"/>
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.8.0"/>
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.17.0" />
     <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.16.0-beta.1"/>
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.17.0" />
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.17.0" />
     <PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.16.0-beta.1"/>
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.17.0" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1"/>
-    <PackageReference Include="Pandatech.CommissionCalculator" Version="6.0.2"/>
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.17.0" />
+    <PackageReference Include="Pandatech.CommissionCalculator" Version="6.0.3" />
     <PackageReference Include="Pandatech.Crypto" Version="8.0.1"/>
     <PackageReference Include="Pandatech.DistributedCache" Version="6.0.1"/>
     <PackageReference Include="PandaTech.FileExporter" Version="7.0.1"/>
     <PackageReference Include="PandaTech.FluentImporter" Version="6.0.0" />
     <PackageReference Include="Pandatech.FluentMinimalApiMapper" Version="4.1.1"/>
     <PackageReference Include="Pandatech.PandaVaultClient" Version="6.0.1"/>
-    <PackageReference Include="Pandatech.ResponseCrafter" Version="7.0.1"/>
+    <PackageReference Include="Pandatech.ResponseCrafter" Version="7.1.0" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.16.16" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0"/>
     <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0"/>
