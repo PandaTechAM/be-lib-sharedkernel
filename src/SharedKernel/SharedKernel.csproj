@@ -21,8 +21,8 @@
     <PackageIcon>pandatech.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
-    <Version>2.4.3</Version>
-    <PackageReleaseNotes>Picks up ResponseCrafter 7.1.0, which maps every FluentImporter ImportException to 400 off the base type (MissingColumns, DuplicateColumn and SheetNotFound previously returned 500) and routes InvalidPropertyNameException to 500. Also updates CommissionCalculator, OpenTelemetry.Instrumentation.Runtime, the ASP.NET Core SignalR/OpenAPI packages and Http.Resilience.</PackageReleaseNotes>
+    <Version>2.4.4</Version>
+    <PackageReleaseNotes>Picks up FileExporter 8.0.0, which adds ExportOptions for per-request overrides — localized column headers, an enum label resolver, and explicit file and sheet names — none of which were reachable before, because an ExportRule is a boot-time singleton. It also stamps the file name's timestamp at export time instead of at rule construction, raises the name cap from 30 to 100 characters, substitutes WithName's {DateTime} placeholder instead of shipping it as a literal, rejects an undefined export format explicitly, stops rendering "7 - " for undefined enum values, and makes CSV percentages agree with XLSX. No public API break.</PackageReleaseNotes>
 
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IncludeSymbols>true</IncludeSymbols>
@@ -66,7 +66,7 @@
     <PackageReference Include="Pandatech.CommissionCalculator" Version="6.0.3" />
     <PackageReference Include="Pandatech.Crypto" Version="8.0.1"/>
     <PackageReference Include="Pandatech.DistributedCache" Version="6.0.1"/>
-    <PackageReference Include="PandaTech.FileExporter" Version="7.0.1"/>
+    <PackageReference Include="PandaTech.FileExporter" Version="8.0.0"/>
     <PackageReference Include="PandaTech.FluentImporter" Version="6.0.0" />
     <PackageReference Include="Pandatech.FluentMinimalApiMapper" Version="4.1.1"/>
     <PackageReference Include="Pandatech.PandaVaultClient" Version="6.0.1"/>
