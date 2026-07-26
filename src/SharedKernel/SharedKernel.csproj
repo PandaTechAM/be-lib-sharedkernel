@@ -21,8 +21,8 @@
     <PackageIcon>pandatech.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
-    <Version>2.4.1</Version>
-    <PackageReleaseNotes>Tooling modernization: dependency updates (incl. ASP.NET Core 10.0.9 security patches), full XML-doc coverage, xUnit v3 test migration, standardized editorconfig/gitignore/global.json.</PackageReleaseNotes>
+    <Version>2.4.2</Version>
+    <PackageReleaseNotes>Nugets update</PackageReleaseNotes>
 
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IncludeSymbols>true</IncludeSymbols>
@@ -49,29 +49,29 @@
     <PackageReference Include="Elastic.CommonSchema.Serilog" Version="9.0.0"/>
     <PackageReference Include="FluentDateTime" Version="3.0.0"/>
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1"/>
-    <PackageReference Include="HtmlSanitizer" Version="9.0.892"/>
+    <PackageReference Include="HtmlSanitizer" Version="9.0.967" />
     <PackageReference Include="MediatR" Version="[12.5.0]"/>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9"/>
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.9"/>
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="10.0.9"/>
     <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.9"/>
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.7.0"/>
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.16.0"/>
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.17.0" />
     <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.16.0-beta.1"/>
-    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.16.0"/>
-    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.16.0"/>
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.17.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.17.0" />
     <PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.16.0-beta.1"/>
-    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.16.0"/>
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.17.0" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1"/>
     <PackageReference Include="Pandatech.CommissionCalculator" Version="6.0.2"/>
     <PackageReference Include="Pandatech.Crypto" Version="8.0.1"/>
     <PackageReference Include="Pandatech.DistributedCache" Version="6.0.1"/>
     <PackageReference Include="PandaTech.FileExporter" Version="7.0.1"/>
-    <PackageReference Include="PandaTech.FluentImporter" Version="5.0.1"/>
+    <PackageReference Include="PandaTech.FluentImporter" Version="6.0.0" />
     <PackageReference Include="Pandatech.FluentMinimalApiMapper" Version="4.1.1"/>
     <PackageReference Include="Pandatech.PandaVaultClient" Version="6.0.1"/>
     <PackageReference Include="Pandatech.ResponseCrafter" Version="7.0.1"/>
-    <PackageReference Include="Scalar.AspNetCore" Version="2.16.10"/>
+    <PackageReference Include="Scalar.AspNetCore" Version="2.16.16" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0"/>
     <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0"/>
     <PackageReference Include="Serilog.Sinks.Grafana.Loki" Version="9.0.1"/>
