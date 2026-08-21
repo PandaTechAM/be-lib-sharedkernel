@@ -69,6 +69,7 @@ All infrastructure endpoints live under `/above-board/`:
 - `GET /above-board/health/detailed` — full health check JSON (UI format, exposes per-check details)
 - `GET /above-board/prometheus` — metrics scrape
 - `PUT /above-board/maintenance` — set maintenance mode
+- `GET /above-board/maintenance` — get maintenance mode
 
 These paths are excluded from request logging and pass through maintenance mode.
 

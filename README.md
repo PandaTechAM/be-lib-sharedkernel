@@ -537,6 +537,7 @@ Map the built-in endpoint and protect it with your own authorization:
 
 ```csharp
 app.MapMaintenanceEndpoint();
+// GET /above-board/maintenance    response: { "mode": 0 }
 // PUT /above-board/maintenance   body: { "mode": 1 }
 ```
 
@@ -544,6 +545,7 @@ Or protect with a shared secret query parameter (useful before auth is in place)
 
 ```csharp
 app.MapMaintenanceEndpoint(querySecret: "my-secret");
+// GET /above-board/maintenance?secret=my-secret
 // PUT /above-board/maintenance?secret=my-secret
 ```
 

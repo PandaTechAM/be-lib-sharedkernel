@@ -50,7 +50,7 @@ public static class WebAppExtensions
     }
 
     /// <summary>
-    ///     Maps PUT {EndpointConstants.BasePath}/maintenance.
+    ///     Maps GET and PUT {EndpointConstants.BasePath}/maintenance.
     ///     Set <paramref name="querySecret" /> to enable a shared-secret check; leave it null to use your own authorization
     ///     instead.
     /// </summary>
@@ -66,6 +66,12 @@ public static class WebAppExtensions
 
         if (string.IsNullOrWhiteSpace(querySecret))
         {
+            app.MapGet(EndpointConstants.BasePath + "/maintenance",
+                    ([FromServices] MaintenanceState state) =>
+                        TypedResults.Ok(new MaintenanceModeStatusResponse(state.Mode)))
+                .WithTags(EndpointConstants.TagName)
+                .WithSummary("Get maintenance mode");
+
             return app.MapPut(EndpointConstants.BasePath + "/maintenance",
                     async ([FromServices] MaintenanceState state,
                         [FromBody] MaintenanceModeRequest req,
@@ -78,6 +84,21 @@ public static class WebAppExtensions
                 .WithTags(EndpointConstants.TagName)
                 .WithSummary("Set maintenance mode");
         }
+
+        app.MapGet(EndpointConstants.BasePath + "/maintenance",
+                ([FromServices] MaintenanceState state, [FromQuery] string secret) =>
+                {
+                    if (!string.Equals(secret, querySecret, StringComparison.Ordinal))
+                    {
+                        return Results.Unauthorized();
+                    }
+
+                    return Results.Ok(new MaintenanceModeStatusResponse(state.Mode));
+                })
+            .WithTags(EndpointConstants.TagName)
+            .WithSummary("Get maintenance mode")
+            .Produces<MaintenanceModeStatusResponse>()
+            .Produces(StatusCodes.Status401Unauthorized);
 
         return app.MapPut(EndpointConstants.BasePath + "/maintenance",
                 async ([FromServices] MaintenanceState state,
@@ -117,3 +138,9 @@ public sealed record MaintenanceModeRequest(MaintenanceMode Mode);
 /// <param name="Message">A human-readable confirmation message.</param>
 /// <param name="UpdatedAt">The timestamp when the mode was updated.</param>
 public sealed record MaintenanceModeResponse(string Message, DateTimeOffset UpdatedAt);
+
+/// <summary>
+///     Response containing the current maintenance mode.
+/// </summary>
+/// <param name="Mode">The current maintenance mode.</param>
+public sealed record MaintenanceModeStatusResponse(MaintenanceMode Mode);
