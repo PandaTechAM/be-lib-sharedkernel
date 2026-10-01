@@ -21,8 +21,12 @@
     <PackageIcon>pandatech.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
-    <Version>2.5.0</Version>
-    <PackageReleaseNotes>Added Get endpoint for maintenance mode</PackageReleaseNotes>
+    <Version>2.5.1</Version>
+    <PackageReleaseNotes>Picks up FileExporter 8.2.0, which adds PDF export: ExportFormat.Pdf (3) through the same ToFileFormatAsync and ExportOptions as CSV and XLSX, with ToPdfAsync on IAsyncEnumerable. A PDF is a paginated table with automatic column widths, the header on every page and a page size chosen from A4 portrait to A2 landscape. Fonts are embedded in FileExporter.dll, so no font files reach the application; PDFsharp 6.2.4 comes in as a new transitive dependency. A PDF holds at most 100,000 rows: a larger export throws FileExporter.Exceptions.ExportRowLimitExceededException before anything is rendered, so an application should map it to a 400. An application that sets PDFsharp's GlobalFontSettings.FontResolver itself must do so at startup, before the first PDF export.
+
+Previous release notes follow.
+
+2.5.0: Added Get endpoint for maintenance mode</PackageReleaseNotes>
 
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IncludeSymbols>true</IncludeSymbols>
@@ -66,7 +70,7 @@
     <PackageReference Include="Pandatech.CommissionCalculator" Version="6.0.3" />
     <PackageReference Include="Pandatech.Crypto" Version="8.0.1" />
     <PackageReference Include="Pandatech.DistributedCache" Version="6.0.1" />
-    <PackageReference Include="PandaTech.FileExporter" Version="8.1.0" />
+    <PackageReference Include="PandaTech.FileExporter" Version="8.2.0" />
     <PackageReference Include="PandaTech.FluentImporter" Version="6.2.0" />
     <PackageReference Include="Pandatech.FluentMinimalApiMapper" Version="4.1.1" />
     <PackageReference Include="Pandatech.PandaVaultClient" Version="6.0.1" />
